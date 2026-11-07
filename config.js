@@ -1,1 +1,2 @@
 https://seducczotbziwhmugkrw.supabase.co
+sb_publishable_Ff4fggsqtIfvuz1umpxqrw_5urTSQK1
