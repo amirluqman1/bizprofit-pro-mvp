@@ -4,9 +4,68 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BizProfit Pro</title>
+  <style>
+    body { font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 16px; }
+    input, button { width: 100%; padding: 12px; margin: 6px 0; font-size: 16px; box-sizing: border-box; }
+    #mesej { color: #b00020; }
+  </style>
 </head>
 <body>
   <h1>BizProfit Pro</h1>
-  <p>App sedang dibina.</p>
+
+  <div id="skrin-login">
+    <input id="emel" type="email" placeholder="Emel" autocomplete="username">
+    <input id="katalaluan" type="password" placeholder="Kata laluan" autocomplete="current-password">
+    <button id="btn-login">Log masuk</button>
+  </div>
+
+  <div id="skrin-app" hidden>
+    <p id="status"></p>
+    <button id="btn-logout">Log keluar</button>
+  </div>
+
+  <p id="mesej"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
+  <script>
+    const SUPABASE_URL = "https://seducczotbziwhmugkrw.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_Ff4fggsqtIfvuz1umpxqrw_5urTSQK1";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const $ = (id) => document.getElementById(id);
+
+    async function papar() {
+      const { data: { session } } = await sb.auth.getSession();
+      $("skrin-login").hidden = !!session;
+      $("skrin-app").hidden = !session;
+      if (!session) return;
+
+      const { data: profil, error: e1 } = await sb
+        .from("staff_profiles").select("role")
+        .eq("user_id", session.user.id).maybeSingle();
+      const { data: outlet, error: e2 } = await sb
+        .from("outlets").select("name");
+      if (e1 || e2) { $("mesej").textContent = "Gagal baca data."; return; }
+
+      $("status").textContent = "Log masuk: " + session.user.email +
+        " | Role: " + (profil ? profil.role : "tiada") +
+        " | Outlet nampak: " + (outlet ? outlet.length : 0);
+    }
+
+    $("btn-login").onclick = async () => {
+      $("mesej").textContent = "";
+      const { error } = await sb.auth.signInWithPassword({
+        email: $("emel").value.trim(),
+        password: $("katalaluan").value
+      });
+      if (error) { $("mesej").textContent = "Emel atau kata laluan salah."; return; }
+      $("katalaluan").value = "";
+      papar();
+    };
+
+    $("btn-logout").onclick = async () => { await sb.auth.signOut(); papar(); };
+
+    papar();
+  </script>
 </body>
 </html>
