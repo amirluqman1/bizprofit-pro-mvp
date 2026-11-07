@@ -11,6 +11,7 @@
     #mesej { font-weight: bold; }
     ul { padding-left: 18px; }
     li { margin-bottom: 8px; font-size: 14px; }
+    #ringkasan p { font-size: 14px; margin: 8px 0; }
   </style>
 </head>
 <body>
@@ -54,6 +55,11 @@
     <input id="rujukan" type="text" maxlength="50">
 
     <button id="btn-simpan">Simpan transaksi</button>
+
+    <h2>Ringkasan harian</h2>
+    <label for="tarikh-ringkasan">Tarikh</label>
+    <input id="tarikh-ringkasan" type="date">
+    <div id="ringkasan"></div>
 
     <h2>5 transaksi terkini</h2>
     <ul id="senarai"></ul>
@@ -104,6 +110,37 @@
       }));
     }
 
+    async function muatRingkasan() {
+      const tarikh = $("tarikh-ringkasan").value;
+      if (!tarikh) return;
+      const { data, error } = await sb.from("daily_summary")
+        .select("outlet_name,money_in,money_out,profit,bil_transaksi")
+        .eq("transaction_date", tarikh)
+        .order("outlet_name");
+      if (error) { pesan("Gagal baca ringkasan."); return; }
+      if (data.length === 0) {
+        $("ringkasan").textContent = "Tiada transaksi pada tarikh ini.";
+        return;
+      }
+      const baris = data.map((r) => {
+        const p = document.createElement("p");
+        p.textContent = r.outlet_name +
+          ": Masuk RM " + Number(r.money_in).toFixed(2) +
+          " | Keluar RM " + Number(r.money_out).toFixed(2) +
+          " | Untung RM " + Number(r.profit).toFixed(2) +
+          " (" + r.bil_transaksi + " transaksi)";
+        return p;
+      });
+      if (data.length > 1) {
+        const jumlah = data.reduce((s, r) => s + Math.round(Number(r.profit) * 100), 0) / 100;
+        const p = document.createElement("p");
+        p.textContent = "Untung semua outlet: RM " + jumlah.toFixed(2);
+        p.style.fontWeight = "bold";
+        baris.push(p);
+      }
+      $("ringkasan").replaceChildren(...baris);
+    }
+
     async function papar() {
       const { data: { session } } = await sb.auth.getSession();
       $("skrin-login").hidden = !!session;
@@ -125,13 +162,17 @@
       $("status").textContent = "Log masuk: " + session.user.email +
         " | Role: " + p.role + " | Outlet nampak: " + outlet.length;
       $("outlet-nama").textContent = "Outlet: " + (sendiri ? sendiri.name : "tidak diketahui");
-      $("tarikh").value = new Date().toLocaleDateString("sv-SE");
+      const hariIni = new Date().toLocaleDateString("sv-SE");
+      $("tarikh").value = hariIni;
+      $("tarikh-ringkasan").value = hariIni;
       isiKategori();
       isiPilihan($("bayaran"), bayar.map((b) => b.name));
       muatSenarai();
+      muatRingkasan();
     }
 
     $("jenis").onchange = isiKategori;
+    $("tarikh-ringkasan").onchange = muatRingkasan;
 
     $("btn-login").onclick = async () => {
       pesan("");
@@ -178,6 +219,7 @@
       $("rujukan").value = "";
       pesan("Transaksi disimpan.", true);
       muatSenarai();
+      muatRingkasan();
     };
 
     papar();
