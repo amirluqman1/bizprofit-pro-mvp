@@ -1,1 +1,1 @@
-
+https://seducczotbziwhmugkrw.supabase.co
