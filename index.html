@@ -13,7 +13,7 @@
   <style>
     /* BIZPROFIT PRO · Forest & Paper
        Semua gaya disimpan di sini. Tiada Tailwind runtime diperlukan.
-       Susunan borang, ID, nilai input dan sambungan Supabase dikekalkan. */
+       Borang dan laporan menggunakan sambungan Supabase yang sama. */
     :root {
       color-scheme: light;
       --forest: #123e2c;
@@ -103,15 +103,54 @@
     .page-signature::before, .page-signature::after { content: ""; width: 20px; height: 1px; background: #cbd3c4; }
 
     /* App header: the same outlet + account + log-out arrangement. */
-    #skrin-app { min-height: 100dvh; padding-bottom: calc(108px + env(safe-area-inset-bottom)); }
+    #skrin-app { min-height: 100dvh; padding-bottom: max(38px, env(safe-area-inset-bottom)); }
     .app-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 30px; padding-bottom: 132px; }
     .app-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .app-identity .brand-mark { width: 39px; height: 42px; font-size: 16px; border-radius: 10px 10px 10px 3px; }
     .account-copy { min-width: 0; }
     #nama-outlet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: -.3px; }
     #info-akaun { margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c8d8c9; font-size: 11px; }
+    .logout-button { display: flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0; min-height: 42px; border: 1px solid #d6e3ce2a; border-radius: 10px; padding: 8px 11px; background: #dce7d10a; color: #e6eedf; font-size: 11px; font-weight: 600; transition: background .2s, border-color .2s; }
+    .logout-button .icon { width: 14px; height: 14px; }
+    .logout-button:hover { background: #dce7d11c; border-color: #d6e3ce66; }
     .app-content { position: relative; margin-top: -101px; }
-    .app-view > * + * { margin-top: 27px; }
+    .app-content > * + * { margin-top: 27px; }
+    .header-actions { display: flex; flex-shrink: 0; gap: 6px; }
+    .app-menu { position: sticky; top: 8px; z-index: 5; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); box-shadow: 0 4px 16px #123e2c10; }
+    .menu-button { display: grid; place-items: center; gap: 4px; min-height: 49px; padding: 7px 2px; border: 0; border-radius: 10px; background: transparent; color: #52654e; font-size: clamp(9px, 2.55vw, 12px); font-weight: 700; }
+    .menu-button .icon { width: 17px; height: 17px; }
+    .menu-button:hover, .period-button:hover { background: var(--leaf-light); }
+    .menu-button[aria-pressed="true"], .period-button[aria-pressed="true"] { background: var(--forest); color: var(--paper); }
+    .app-content > .app-view { margin-top: 16px; }
+    .app-view > * + * { margin-top: 16px; }
+    .report-card { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+    .periods { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 3px; margin: 9px 0 13px; padding: 4px; border-radius: 10px; background: var(--canvas); }
+    .period-button { min-height: 38px; padding: 6px 1px; border: 0; border-radius: 7px; background: transparent; color: #52654e; font-size: clamp(9px, 2.6vw, 12px); font-weight: 700; }
+    .report-date { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 7px 12px; }
+    .report-date .control { width: auto; max-width: 100%; min-height: 42px; margin: 0; padding: 8px 10px; }
+    .year-controls { display: flex; align-items: center; gap: 6px; }
+    .year-controls .control { width: 86px; }
+    .year-controls .dialog-close { min-height: 42px; }
+    .chart-card { margin-top: 24px; }
+    .chart-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 12px; color: var(--muted); font-size: 11px; }
+    .chart-legend { display: flex; gap: 12px; }
+    .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .chart-legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--leaf); }
+    .chart-legend span:last-child::before { background: var(--clay); }
+    .chart-columns { display: grid; grid-template-columns: repeat(var(--groups),minmax(0,1fr)); gap: 1px; background: repeating-linear-gradient(to top, transparent 0 25px, var(--line) 25px 26px) left top / 100% 104px no-repeat; }
+    .chart-day { min-width: 0; border: 0; border-radius: 6px; padding: 0 1px 5px; background: transparent; color: var(--ink); font-family: var(--mono); font-size: clamp(7px, 2.1vw, 10px); text-align: center; }
+    .chart-day:hover, .chart-day[aria-pressed="true"] { background: #dfe9d675; }
+    .chart-bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 104px; margin-bottom: 6px; }
+    .chart-bar { width: 35%; max-width: 17px; background: var(--leaf); border-radius: 3px 3px 0 0; }
+    .chart-bar.out { background: var(--clay); }
+    .chart-detail { margin-top: 10px; padding: 9px 11px; border-radius: 8px; background: #f1f4ea; color: var(--ink); font-size: 11px; line-height: 1.7; }
+    .option-group { margin-top: 14px; }
+    .option-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 7px 0 0; padding: 0; }
+    .option-list li { padding: 6px 10px; border-radius: 7px; background: var(--leaf-light); color: var(--forest); font-size: 12px; }
+    .account-dialog { width: min(440px,calc(100% - 32px)); padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink); }
+    .account-dialog::backdrop { background: #0b2e2060; }
+    .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .dialog-close { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--canvas); color: var(--forest); font-size: 12px; }
 
     /* Paper receipt. The serration is decorative; contents remain unmasked. */
     .receipt-shell { filter: drop-shadow(0 8px 12px #233e2010); animation: arrive .6s var(--ease) both; }
@@ -122,11 +161,6 @@
     .receipt-kicker .icon { width: 13px; height: 13px; }
     #tajuk-bil { margin-top: 8px; font-size: 22px; font-weight: 700; letter-spacing: -.8px; line-height: 1.25; }
     #label-tarikh { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
-    .date-control { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; flex-shrink: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: #5e6e5c; font-size: 10px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }
-    .date-control:hover { border-color: #a1b397; background: #f2f4eb; }
-    .date-control:focus-within { outline: 3px solid #8ca977; outline-offset: 3px; }
-    .date-control .icon { width: 14px; height: 14px; }
-    .date-control input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; }
     .receipt-lines { margin-top: 20px; border-top: 1px dashed #c9d2c0; padding-top: 17px; }
     .receipt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .receipt-row + .receipt-row { margin-top: 13px; }
@@ -152,6 +186,15 @@
     .receipt-end { display: flex; align-items: center; justify-content: space-between; margin-top: 17px; opacity: .65; }
     .receipt-end span { font-family: var(--mono); font-size: 7px; letter-spacing: .2em; color: #7b886c; }
     .barcode { width: 52px; height: 13px; background: repeating-linear-gradient(90deg,#7a8767 0 1px,transparent 1px 3px,#7a8767 3px 5px,transparent 5px 7px,#7a8767 7px 8px,transparent 8px 11px,#7a8767 11px 13px,transparent 13px 16px); }
+    .receipt-shell .bil { padding-block: 17px; }
+    .receipt-lines { margin-top: 13px; padding-top: 12px; }
+    .receipt-row + .receipt-row { margin-top: 7px; }
+    .receipt-total { margin-top: 12px; padding-top: 11px; }
+    .receipt-note { margin-top: 10px; }
+    .receipt-end { margin-top: 10px; }
+    .outlet-breakdown { margin-top: 10px; }
+    .outlet-breakdown summary { cursor: pointer; color: var(--leaf); font-size: 11px; font-weight: 700; padding-block: 7px; }
+    #r-outlet { margin-top: 4px; padding-top: 9px; }
 
     /* The original transaction form, given a calmer type scale and touch targets. */
     .entry-card { padding: 26px 27px 27px; border: 1px solid #dde3d5; border-radius: 20px; background: #ffffff; box-shadow: 0 4px 14px #34452a04; animation: arrive .65s .05s var(--ease) both; }
@@ -159,7 +202,7 @@
     .section-icon { display: grid; place-items: center; width: 39px; height: 42px; flex-shrink: 0; border: 1px solid #e0e6d8; border-radius: 11px; background: #f2f5ed; color: #658150; }
     .section-icon .icon { width: 20px; height: 20px; }
     .section-heading { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.55px; }
-    #untuk-outlet, .section-sub { margin-top: 4px; font-size: 11px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
+    #untuk-outlet { margin-top: 4px; font-size: 11px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
     #borang-transaksi { margin-top: 24px; }
     #borang-transaksi > * + * { margin-top: 21px; }
     .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; border: 1px solid #e6e9e0; border-radius: 13px; background: #f3f5ef; }
@@ -213,40 +256,12 @@
     .transaction-detail { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64715b; font-size: 11px; line-height: 1.7; }
     .transaction-amount { max-width: 50%; overflow-wrap: anywhere; flex-shrink: 0; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: -.45px; text-align: right; font-variant-numeric: tabular-nums; }
     .empty-state { padding: 25px 10px; border: 1px dashed #cbd5bf; border-radius: 12px; color: var(--muted); font-size: 12px; line-height: 1.8; text-align: center; }
-    .account-panel { padding: 0 19px; border: 1px solid #d9e0d0; border-radius: 14px; background: #f7f8f1; }
-    .account-panel summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 63px; padding-block: 17px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 600; }
-    .account-panel summary::-webkit-details-marker { display: none; }
-    .account-label { display: flex; align-items: center; gap: 10px; }
-    .account-label .icon { width: 17px; height: 17px; color: #7d8b70; }
-    .account-chevron { width: 15px; height: 15px; color: #849075; transition: transform .2s; }
-    .account-panel[open] .account-chevron { transform: rotate(180deg); }
     #borang-katalaluan { border-top: 1px solid #e1e6d8; padding-top: 17px; padding-bottom: 20px; }
     #borang-katalaluan > * + * { margin-top: 13px; }
     #borang-katalaluan .control { font-size: 16px; }
     .secondary-button { width: 100%; min-height: 48px; padding: 13px 16px; border: 1px solid #a3b790; border-radius: 10px; background: #edf2e5; color: var(--forest); font-size: 12px; font-weight: 700; transition: background .2s; }
     .secondary-button:hover { background: #e1ead5; }
-    .app-view > .page-signature { margin-top: 26px; }
-
-    /* ===== TAB: menu bawah + halaman ===== */
-    .header-tag { flex-shrink: 0; padding: 9px 11px; border: 1px solid #d6e3ce2a; border-radius: 10px; background: #dce7d10a; color: #d3e0c8; font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
-    .tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 50; padding: 7px 12px calc(7px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fffef9f4; box-shadow: 0 -8px 24px -16px #123e2c30; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .25s var(--ease); }
-    .tabbar.tersorok { transform: translateY(105%); }
-    .tabbar-inner { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; max-width: calc(var(--content) + 16px); margin-inline: auto; }
-    .tab-button { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 58px; padding: 6px 4px 7px; border: 0; border-radius: 13px; background: transparent; color: #6f7d69; font-size: 11px; line-height: 1.2; font-weight: 700; transition: color .2s; }
-    .tab-pill { display: grid; place-items: center; width: 58px; height: 30px; border-radius: 15px; transition: background .2s, box-shadow .2s; }
-    .tab-pill .icon { width: 21px; height: 21px; }
-    .tab-button:hover { color: var(--forest); }
-    .tab-button[aria-current="page"] { color: var(--forest); }
-    .tab-button[aria-current="page"] .tab-pill { background: var(--leaf-light); box-shadow: inset 0 0 0 1px #cfdcc3; }
-    .info-list { margin: 20px 0 0; }
-    .info-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 13px 0; border-top: 1px dashed #c9d2c0; font-size: 13px; }
-    .info-row dt { color: var(--muted); }
-    .info-row dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
-    .entry-card #borang-katalaluan { margin-top: 22px; padding: 0; border-top: 0; }
-    .danger-button { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; padding: 13px 16px; border: 1px solid #e3c4bb; border-radius: 12px; background: var(--clay-light); color: var(--clay); font-size: 13px; font-weight: 700; transition: background .2s; }
-    .danger-button:hover { background: #f7e2dc; }
-    .danger-button .icon { width: 17px; height: 17px; }
-    .empty-state .secondary-button { margin-top: 14px; max-width: 260px; }
+    .app-content > .page-signature { margin-top: 26px; }
     #toast { position: fixed; top: max(18px, env(safe-area-inset-top)); left: 16px; right: 16px; z-index: 100; width: max-content; max-width: min(528px, calc(100% - 32px)); margin-inline: auto; padding: 14px 19px; border: 1px solid #ffffff30; border-radius: 13px; color: #fffef6; font-size: 12px; font-weight: 600; line-height: 1.7; box-shadow: 0 10px 32px #0d2f2633; pointer-events: none; transition: transform .35s var(--ease); }
     @keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -268,6 +283,7 @@
       .transaction-amount { font-size: 13px; }
       #nama-outlet { font-size: 16px; }
       #info-akaun { font-size: 11px; }
+      .logout-button { font-size: 11px; min-height: 40px; }
       .payment-chip { font-size: 12px; }
     }
     @media (max-width: 359px) {
@@ -276,10 +292,9 @@
       .login-card { padding: 25px 20px; }
       .bil { padding: 23px 18px 23px; }
       .entry-card { padding: 23px 18px; }
-      .date-control { font-size: 8px; padding-inline: 8px; gap: 4px; }
-      .date-control .icon { width: 12px; }
       .app-identity { gap: 8px; }
       .app-identity .brand-mark { width: 33px; height: 37px; font-size: 14px; }
+      .logout-button { gap: 5px; padding-inline: 8px; }
       #nama-outlet { font-size: 12px; }
       #info-akaun { font-size: 9px; }
       .two-fields { gap: 9px; }
@@ -307,9 +322,7 @@
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></symbol>
     <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.8 7M3 5v6h6M12 7v5l3 2"/></symbol>
     <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M8 12h13"/></symbol>
-    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></symbol>
-    <symbol id="i-add-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
-    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M8 15v-4m5 4V7m5 8v-6"/></symbol>
   </svg>
 
   <!-- ===== SKRIN LOGIN · susunan asal ===== -->
@@ -351,7 +364,7 @@
     </section>
   </main>
 
-  <!-- ===== SKRIN APP · 3 tab: Dashboard, Key in, Akaun ===== -->
+  <!-- ===== SKRIN APP ===== -->
   <div id="skrin-app" hidden>
     <header class="canopy">
       <div class="shell app-header-inner">
@@ -359,52 +372,74 @@
           <span class="brand-mark" aria-hidden="true">BP</span>
           <div class="account-copy"><p id="nama-outlet"></p><p id="info-akaun"></p></div>
         </div>
-        <p id="tab-label" class="header-tag" aria-hidden="true"></p>
+        <div class="header-actions">
+          <button id="btn-akaun" class="logout-button" type="button" aria-label="Tukar kata laluan" title="Tukar kata laluan"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></button>
+          <button id="btn-logout" class="logout-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>Log keluar</button>
+        </div>
       </div>
     </header>
-
     <main class="shell app-content">
-
-      <!-- TAB 1: DASHBOARD -->
-      <div id="pg-dashboard" class="app-view">
-      <div class="receipt-shell">
-        <section class="bil" aria-labelledby="tajuk-bil">
-          <div class="receipt-heading">
-            <div>
-              <p class="receipt-kicker"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg>Ringkasan harian</p>
-              <h2 id="tajuk-bil">Bil hari ini</h2>
-              <p id="label-tarikh"></p>
+      <nav class="app-menu" aria-label="Menu BizProfit Pro">
+        <button class="menu-button" type="button" aria-controls="paparan-dashboard" aria-pressed="true"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
+        <button class="menu-button" type="button" aria-controls="paparan-key-in" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Key In</button>
+        <button class="menu-button" type="button" aria-controls="paparan-dropdown" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Dropdown</button>
+        <button class="menu-button" type="button" aria-controls="paparan-transaksi" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>Transaksi</button>
+      </nav>
+      <div id="paparan-dashboard" class="app-view">
+        <section class="report-card" aria-labelledby="tajuk-tempoh">
+          <h2 id="tajuk-tempoh" class="section-heading">Tempoh laporan</h2>
+          <div class="periods" role="group" aria-label="Tempoh laporan">
+            <button class="period-button" type="button" data-tempoh="harian" aria-pressed="true">Harian</button>
+            <button class="period-button" type="button" data-tempoh="mingguan" aria-pressed="false">Mingguan</button>
+            <button class="period-button" type="button" data-tempoh="bulanan" aria-pressed="false">Bulanan</button>
+            <button class="period-button" type="button" data-tempoh="tahunan" aria-pressed="false">Tahunan</button>
+          </div>
+          <div class="report-date" id="pilih-tarikh">
+            <label id="label-pilih-tarikh" for="tarikh-ringkasan" class="field-label">Pilih tarikh</label>
+            <input id="tarikh-ringkasan" type="date" min="1900-01-01" max="9999-12-31" required class="control">
+          </div>
+          <form class="report-date" id="pilih-tahun" hidden>
+            <label for="tahun-ringkasan" class="field-label">Pilih tahun</label>
+            <div class="year-controls">
+              <input id="tahun-ringkasan" type="number" inputmode="numeric" min="1900" max="9999" step="1" required class="control">
+              <button type="submit" class="dialog-close">Papar</button>
             </div>
-            <label class="date-control">
-              <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>
-              Tukar tarikh
-              <input id="tarikh-ringkasan" type="date" aria-label="Tukar tarikh ringkasan">
-            </label>
-          </div>
-          <div class="receipt-lines">
-            <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark"><svg class="icon" aria-hidden="true"><use href="#i-down-left"/></svg></span>Duit masuk</span><span id="r-masuk" class="receipt-row-value">RM 0.00</span></div>
-            <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark out"><svg class="icon" aria-hidden="true"><use href="#i-up-right"/></svg></span>Duit keluar</span><span id="r-keluar" class="receipt-row-value">RM 0.00</span></div>
-          </div>
-          <div class="receipt-total">
-            <div class="total-line"><span class="total-label">Untung</span><span id="r-untung" class="text-daun">RM 0.00</span></div>
-            <div class="count-line"><p id="r-bil">0 transaksi</p></div>
-          </div>
-          <div id="r-outlet" hidden></div>
-          <p class="receipt-note"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</span></p>
-          <div class="receipt-end" aria-hidden="true"><span>BIZPROFIT PRO</span><div class="barcode"></div></div>
+          </form>
+        </section>
+        <div class="receipt-shell">
+          <section class="bil" aria-labelledby="tajuk-bil">
+            <div class="receipt-heading">
+              <div>
+                <p class="receipt-kicker"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg>Ringkasan untung</p>
+                <h2 id="tajuk-bil">Bil hari ini</h2>
+                <p id="label-tarikh"></p>
+              </div>
+            </div>
+            <div class="receipt-lines">
+              <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark"><svg class="icon" aria-hidden="true"><use href="#i-down-left"/></svg></span>Duit masuk</span><span id="r-masuk" class="receipt-row-value">RM 0.00</span></div>
+              <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark out"><svg class="icon" aria-hidden="true"><use href="#i-up-right"/></svg></span>Duit keluar</span><span id="r-keluar" class="receipt-row-value">RM 0.00</span></div>
+            </div>
+            <div class="receipt-total">
+              <div class="total-line"><span class="total-label">Untung</span><span id="r-untung" class="text-daun">RM 0.00</span></div>
+              <div class="count-line"><p id="r-bil">0 transaksi</p></div>
+            </div>
+            <details id="pecahan-outlet" class="outlet-breakdown" hidden>
+              <summary>Pecahan untung ikut outlet</summary>
+              <div id="r-outlet"></div>
+            </details>
+            <p class="receipt-note"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</span></p>
+            <div class="receipt-end" aria-hidden="true"><span>BIZPROFIT PRO</span><div class="barcode"></div></div>
+          </section>
+        </div>
+        <section class="report-card chart-card" aria-labelledby="tajuk-graf">
+          <h2 id="tajuk-graf" class="section-heading">Graf duit masuk &amp; keluar</h2>
+          <div class="chart-meta"><div class="chart-legend"><span>Duit masuk</span><span>Duit keluar</span></div><span id="graf-skala"></span></div>
+          <div id="graf-baris" class="chart-columns"></div>
+          <p id="graf-detail" class="chart-detail" role="status">Memuatkan laporan…</p>
         </section>
       </div>
 
-      <section aria-labelledby="tajuk-senarai" class="recent-section">
-        <div class="recent-heading"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg><h2 id="tajuk-senarai" class="section-heading">Transaksi terkini</h2></div>
-        <ul id="senarai"></ul>
-      </section>
-        <p class="page-signature" aria-hidden="true">BizProfit Pro · Setiap sen, dalam perhatian.</p>
-      </div>
-
-      <!-- TAB 2: KEY IN -->
-      <div id="pg-keyin" class="app-view" hidden>
-      <section class="entry-card" aria-labelledby="tajuk-rekod">
+      <section id="paparan-key-in" class="entry-card app-view" aria-labelledby="tajuk-rekod" hidden>
         <div class="section-intro">
           <span class="section-icon"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></span>
           <div><h2 id="tajuk-rekod" class="section-heading">Rekod transaksi</h2><p id="untuk-outlet"></p></div>
@@ -434,53 +469,38 @@
           <button id="btn-simpan" type="submit" class="primary-button">Simpan transaksi</button>
         </form>
       </section>
-      </div>
 
-      <!-- TAB 3: AKAUN -->
-      <div id="pg-akaun" class="app-view" hidden>
-        <section class="entry-card" aria-labelledby="tajuk-akaun">
-          <div class="section-intro">
-            <span class="section-icon"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
-            <div><h2 id="tajuk-akaun" class="section-heading">Akaun anda</h2><p id="akaun-emel" class="section-sub"></p></div>
-          </div>
-          <dl class="info-list">
-            <div class="info-row"><dt>Outlet</dt><dd id="akaun-outlet"></dd></div>
-            <div class="info-row"><dt>Peranan</dt><dd id="akaun-peranan"></dd></div>
-          </dl>
-        </section>
+      <section id="paparan-dropdown" class="report-card app-view" aria-labelledby="tajuk-dropdown" hidden>
+        <h2 id="tajuk-dropdown" class="section-heading">Pilihan dropdown</h2>
+        <p class="chart-meta">Kategori dan cara bayaran yang tersedia dalam borang Key In.</p>
+        <div class="option-group"><p class="field-label">Kategori duit masuk</p><ul id="pilihan-masuk" class="option-list"></ul></div>
+        <div class="option-group"><p class="field-label">Kategori duit keluar</p><ul id="pilihan-keluar" class="option-list"></ul></div>
+        <div class="option-group"><p class="field-label">Cara bayaran</p><ul id="pilihan-bayaran" class="option-list"></ul></div>
+      </section>
 
-        <section class="entry-card" aria-labelledby="tajuk-katalaluan">
-          <div class="section-intro">
-            <span class="section-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span>
-            <div><h2 id="tajuk-katalaluan" class="section-heading">Tukar kata laluan</h2><p class="section-sub">Minimum 10 aksara.</p></div>
-          </div>
-          <form id="borang-katalaluan">
-            <div><label for="kl-baru" class="field-label">Kata laluan baru</label><input id="kl-baru" type="password" autocomplete="new-password" placeholder="Minimum 10 aksara" class="control"></div>
-            <div><label for="kl-sahkan" class="field-label">Sahkan kata laluan</label><input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan" class="control"></div>
-            <button id="btn-katalaluan" type="submit" class="secondary-button">Tukar kata laluan</button>
-          </form>
-        </section>
+      <section id="paparan-transaksi" aria-labelledby="tajuk-senarai" class="recent-section app-view" hidden>
+        <div class="recent-heading"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg><h2 id="tajuk-senarai" class="section-heading">Transaksi terkini</h2></div>
+        <ul id="senarai"></ul>
+      </section>
 
-        <button id="btn-logout" class="danger-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>Log keluar</button>
-      </div>
+      <dialog id="dialog-akaun" class="account-dialog" aria-labelledby="tajuk-akaun">
+        <div class="dialog-heading"><h2 id="tajuk-akaun" class="section-heading">Tukar kata laluan</h2><button id="tutup-akaun" class="dialog-close" type="button">Tutup</button></div>
+        <form id="borang-katalaluan">
+          <div><label for="kl-baru" class="field-label">Kata laluan baru</label><input id="kl-baru" type="password" autocomplete="new-password" placeholder="Minimum 10 aksara" class="control"></div>
+          <div><label for="kl-sahkan" class="field-label">Sahkan kata laluan</label><input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan" class="control"></div>
+          <button id="btn-katalaluan" type="submit" class="secondary-button">Tukar kata laluan</button>
+        </form>
+      </dialog>
+      <p class="page-signature" aria-hidden="true">BizProfit Pro · Setiap sen, dalam perhatian.</p>
     </main>
   </div>
 
-  <!-- ===== MENU BAWAH ===== -->
-  <nav id="nav-bawah" class="tabbar" hidden aria-label="Menu utama">
-    <div class="tabbar-inner">
-      <button id="tab-dashboard" type="button" class="tab-button" aria-current="page"><span class="tab-pill"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span>Dashboard</button>
-      <button id="tab-keyin" type="button" class="tab-button" aria-current="false"><span class="tab-pill"><svg class="icon" aria-hidden="true"><use href="#i-add-circle"/></svg></span>Key in</button>
-      <button id="tab-akaun" type="button" class="tab-button" aria-current="false"><span class="tab-pill"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>Akaun</button>
-    </div>
-  </nav>
-
   <div id="toast" role="status" aria-live="polite" aria-atomic="true" class="bg-daun" style="transform: translateY(calc(-100% - 2rem))"></div>
 
-  <!-- Kekalkan config.js sedia ada bersebelahan fail ini. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
-  <script src="config.js"></script>
   <script>
+    const SUPABASE_URL = "https://seducczotbziwhmugkrw.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_Ff4fggsqtIfvuz1umpxqrw_5urTSQK1";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     const angka = new Intl.NumberFormat("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -506,30 +526,6 @@
       clearTimeout(masaToast);
       masaToast = setTimeout(() => { t.style.transform = "translateY(calc(-100% - 2rem))"; }, 3500);
     }
-
-    const SEMUA_TAB = ["dashboard", "keyin", "akaun"];
-    const NAMA_TAB = { dashboard: "Dashboard", keyin: "Key in", akaun: "Akaun" };
-
-    function bukaTab(nama) {
-      SEMUA_TAB.forEach((t) => {
-        $("pg-" + t).hidden = t !== nama;
-        $("tab-" + t).setAttribute("aria-current", t === nama ? "page" : "false");
-      });
-      $("tab-label").textContent = NAMA_TAB[nama];
-      window.scrollTo(0, 0);
-    }
-    SEMUA_TAB.forEach((t) => $("tab-" + t).addEventListener("click", () => bukaTab(t)));
-
-    // Sorok menu bawah bila papan kekunci keluar, supaya tak makan ruang
-    const medan = 'input:not([type="radio"]), select, textarea';
-    document.addEventListener("focusin", (e) => {
-      if (e.target.matches(medan)) $("nav-bawah").classList.add("tersorok");
-    });
-    document.addEventListener("focusout", () => setTimeout(() => {
-      if (!document.activeElement || !document.activeElement.matches(medan)) {
-        $("nav-bawah").classList.remove("tersorok");
-      }
-    }, 100));
 
     function jenisDipilih() {
       return document.querySelector('input[name="jenis"]:checked').value;
@@ -571,41 +567,193 @@
       return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY", { day: "numeric", month: "short" });
     }
 
+    const tajukTempoh = {
+      harian: "Bil", mingguan: "Bil mingguan", bulanan: "Bil bulanan", tahunan: "Bil tahunan"
+    };
+    const bulanRingkas = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
+    let tempohDipilih = "harian";
+    let versiRingkasan = 0;
+
+    function ubahHari(iso, jarak) {
+      const tarikh = new Date(iso + "T00:00:00Z");
+      tarikh.setUTCDate(tarikh.getUTCDate() + jarak);
+      return tarikh.toISOString().split("T")[0];
+    }
+
+    function akhirBulan(iso) {
+      const [tahun, bulan] = iso.split("-").map(Number);
+      return new Date(Date.UTC(tahun, bulan, 0)).toISOString().slice(0, 10);
+    }
+
+    function julatTarikh(mula, akhir) {
+      if (mula === akhir) return tarikhPanjang(mula);
+      const tahunMula = mula.slice(0, 4);
+      const tahunAkhir = akhir.slice(0, 4);
+      return tarikhPendek(mula) + (tahunMula === tahunAkhir ? "" : " " + tahunMula)
+        + " – " + tarikhPendek(akhir) + " " + tahunAkhir;
+    }
+
+    function binaTempoh(tempoh, tarikh, tahun) {
+      let mula = tarikh;
+      let akhir = tarikh;
+      let kumpulan = [];
+      if (tempoh === "tahunan") {
+        mula = tahun + "-01-01";
+        akhir = tahun + "-12-31";
+        kumpulan = bulanRingkas.map((label, i) => {
+          const mula = tahun + "-" + String(i + 1).padStart(2, "0") + "-01";
+          return { label, mula, akhir: akhirBulan(mula) };
+        });
+      } else if (tempoh === "bulanan") {
+        mula = tarikh.slice(0, 7) + "-01";
+        akhir = akhirBulan(mula);
+        for (let hari = 1; hari <= Number(akhir.slice(-2)); hari += 7) {
+          const hujung = Math.min(hari + 6, Number(akhir.slice(-2)));
+          kumpulan.push({
+            label: hari === hujung ? String(hari) : hari + "–" + hujung,
+            mula: ubahHari(mula, hari - 1),
+            akhir: ubahHari(mula, hujung - 1)
+          });
+        }
+      } else {
+        if (tempoh === "mingguan") {
+          const hari = new Date(tarikh + "T00:00:00Z").getUTCDay();
+          mula = ubahHari(tarikh, -((hari + 6) % 7));
+          akhir = ubahHari(mula, 6);
+        }
+        const mulaGraf = tempoh === "harian" ? ubahHari(tarikh, -6) : mula;
+        kumpulan = Array.from({ length: 7 }, (_, i) => {
+          const tarikh = ubahHari(mulaGraf, i);
+          return { label: tarikh.slice(-2), mula: tarikh, akhir: tarikh };
+        });
+      }
+      return { mula, akhir, kumpulan };
+    }
+
+    function jumlahSen(data, medan) {
+      return data.reduce((jumlah, baris) => jumlah + Math.round(Number(baris[medan]) * 100), 0);
+    }
+
+    function paparGraf(kumpulan, data, tarikhFokus) {
+      const graf = $("graf-baris");
+      const detail = $("graf-detail");
+      if (!data.length) {
+        detail.textContent = "Tiada transaksi untuk tempoh graf ini.";
+        return;
+      }
+      const nilai = kumpulan.map((k) => {
+        const baris = data.filter((r) => r.transaction_date >= k.mula && r.transaction_date <= k.akhir);
+        return { ...k, masuk: jumlahSen(baris, "money_in"), keluar: jumlahSen(baris, "money_out") };
+      });
+      const skala = Math.max(1, ...nilai.flatMap((k) => [k.masuk, k.keluar]));
+      $("graf-skala").textContent = "Skala " + rm(skala / 100);
+      graf.style.setProperty("--groups", nilai.length);
+
+      function pilihButang(butang, teks) {
+        for (const item of graf.children) item.setAttribute("aria-pressed", String(item === butang));
+        detail.textContent = teks;
+      }
+
+      const butang = nilai.map((k) => {
+        const butang = document.createElement("button");
+        const teks = julatTarikh(k.mula, k.akhir) + " · Masuk " + rm(k.masuk / 100) + " · Keluar " + rm(k.keluar / 100);
+        butang.type = "button";
+        butang.className = "chart-day";
+        butang.setAttribute("aria-label", teks);
+        const bar = document.createElement("span");
+        bar.className = "chart-bars";
+        bar.setAttribute("aria-hidden", "true");
+        for (const arah of ["masuk", "keluar"]) {
+          const tiang = document.createElement("span");
+          tiang.className = arah === "masuk" ? "chart-bar" : "chart-bar out";
+          tiang.style.height = Math.max(0, k[arah] / skala * 100) + "%";
+          bar.append(tiang);
+        }
+        butang.append(bar, k.label);
+        butang.addEventListener("click", () => pilihButang(butang, teks));
+        return butang;
+      });
+      graf.replaceChildren(...butang);
+      const indeks = nilai.findIndex((k) => tarikhFokus >= k.mula && tarikhFokus <= k.akhir);
+      const fokus = butang[indeks] || butang[butang.length - 1];
+      pilihButang(fokus, fokus.getAttribute("aria-label"));
+    }
+
     async function muatRingkasan() {
-      const tarikh = $("tarikh-ringkasan").value;
-      if (!tarikh) return;
-      $("tajuk-bil").textContent = tarikh === hariIni ? "Bil hari ini" : "Bil";
-      $("label-tarikh").textContent = tarikhPanjang(tarikh);
+      if (!profil) return;
+      const input = $(tempohDipilih === "tahunan" ? "tahun-ringkasan" : "tarikh-ringkasan");
+      if (!input.checkValidity()) { input.reportValidity(); return; }
+      const tarikh = $("tarikh-ringkasan").value || hariIni;
+      const tahun = $("tahun-ringkasan").value;
+      const { mula, akhir, kumpulan } = binaTempoh(tempohDipilih, tarikh, tahun);
+      const versi = ++versiRingkasan;
+      $("tajuk-bil").textContent = tempohDipilih === "harian" && tarikh === hariIni ? "Bil hari ini" : tajukTempoh[tempohDipilih];
+      $("label-tarikh").textContent = julatTarikh(mula, akhir);
+      for (const id of ["r-masuk", "r-keluar", "r-untung"]) $(id).textContent = "—";
+      $("r-bil").textContent = "Memuatkan…";
+      $("pecahan-outlet").hidden = true;
+      $("graf-baris").replaceChildren();
+      $("graf-skala").textContent = "";
+      $("graf-detail").textContent = "Memuatkan laporan…";
 
-      const { data, error } = await sb.from("daily_summary")
-        .select("outlet_name,money_in,money_out,profit,bil_transaksi")
-        .eq("transaction_date", tarikh)
-        .order("outlet_name");
-      if (error) { pesan("Ringkasan tak dapat dibaca. Semak sambungan internet dan cuba lagi."); return; }
+      // Ambil semua baris walaupun laporan tahunan melebihi had satu halaman.
+      const semua = [];
+      const saizHalaman = 500;
+      let bilBaris = Infinity;
+      while (semua.length < bilBaris) {
+        const offset = semua.length;
+        const { data, error, count } = await sb.from("daily_summary")
+          .select("transaction_date,outlet_name,money_in,money_out,profit,bil_transaksi", { count: offset === 0 ? "exact" : undefined })
+          .gte("transaction_date", kumpulan[0].mula)
+          .lte("transaction_date", akhir)
+          .order("transaction_date").order("outlet_name")
+          .range(offset, offset + saizHalaman - 1);
+        if (versi !== versiRingkasan) return;
+        if (error) {
+          $("r-bil").textContent = "Ringkasan tak dapat dibaca";
+          $("graf-detail").textContent = "Laporan tak dapat dimuatkan. Semak internet dan pilih semula tempoh.";
+          return;
+        }
+        if (offset === 0 && count != null) bilBaris = count;
+        if (!data.length) break;
+        semua.push(...data);
+      }
 
-      const sen = (k) => data.reduce((s, r) => s + Math.round(Number(r[k]) * 100), 0) / 100;
-      const untung = sen("profit");
-      $("r-masuk").textContent = rm(sen("money_in"));
-      $("r-keluar").textContent = rm(sen("money_out"));
+      const data = semua.filter((r) => r.transaction_date >= mula);
+      const untung = jumlahSen(data, "profit") / 100;
+      $("r-masuk").textContent = rm(jumlahSen(data, "money_in") / 100);
+      $("r-keluar").textContent = rm(jumlahSen(data, "money_out") / 100);
       $("r-untung").textContent = rm(untung);
       $("r-untung").classList.toggle("text-daun", untung >= 0);
       $("r-untung").classList.toggle("text-sambal", untung < 0);
-      const bil = data.reduce((s, r) => s + Number(r.bil_transaksi), 0);
-      $("r-bil").textContent = bil + " transaksi";
+      $("r-bil").textContent = data.reduce((bil, r) => bil + Number(r.bil_transaksi), 0) + " transaksi";
 
+      const ikutOutlet = new Map();
+      for (const r of data) {
+        ikutOutlet.set(r.outlet_name, (ikutOutlet.get(r.outlet_name) || 0) + Math.round(Number(r.profit) * 100));
+      }
       const kotak = $("r-outlet");
-      kotak.hidden = bilOutlet < 2 || data.length === 0;
-      kotak.replaceChildren(...data.map((r) => {
+      $("pecahan-outlet").hidden = bilOutlet < 2 || ikutOutlet.size === 0;
+      kotak.replaceChildren(...[...ikutOutlet].sort(([a], [b]) => a.localeCompare(b, "ms-MY")).map(([namaOutlet, sen]) => {
         const baris = document.createElement("div");
         baris.className = "outlet-row";
         const nama = document.createElement("span");
         nama.className = "outlet-name";
-        nama.textContent = r.outlet_name;
+        nama.textContent = namaOutlet;
         const nilai = document.createElement("span");
-        nilai.className = "money-inline " + (Number(r.profit) < 0 ? "text-sambal" : "text-dakwat");
-        nilai.textContent = rm(r.profit);
+        nilai.className = "money-inline " + (sen < 0 ? "text-sambal" : "text-dakwat");
+        nilai.textContent = rm(sen / 100);
         baris.append(nama, nilai);
         return baris;
+      }));
+      paparGraf(kumpulan, semua, tarikh);
+    }
+
+    function paparPilihan(id, senarai) {
+      $(id).replaceChildren(...(senarai.length ? senarai : ["Tiada pilihan"]).map((teks) => {
+        const pilihan = document.createElement("li");
+        pilihan.textContent = teks;
+        return pilihan;
       }));
     }
 
@@ -619,14 +767,7 @@
       if (data.length === 0) {
         const li = document.createElement("li");
         li.className = "empty-state";
-        const teks = document.createElement("p");
-        teks.textContent = "Belum ada transaksi lagi.";
-        const butang = document.createElement("button");
-        butang.type = "button";
-        butang.className = "secondary-button";
-        butang.textContent = "Rekod transaksi pertama";
-        butang.addEventListener("click", () => bukaTab("keyin"));
-        li.append(teks, butang);
+        li.textContent = "Belum ada transaksi. Rekod yang pertama di atas.";
         $("senarai").replaceChildren(li);
         return;
       }
@@ -666,8 +807,11 @@
       const { data: { session } } = await sb.auth.getSession();
       $("skrin-login").hidden = !!session;
       $("skrin-app").hidden = !session;
-      $("nav-bawah").hidden = !session;
-      if (!session) return;
+      if (!session) {
+        versiRingkasan++;
+        profil = null;
+        return;
+      }
 
       const { data: p, error: e1 } = await sb.from("staff_profiles")
         .select("role,outlet_id").eq("user_id", session.user.id).maybeSingle();
@@ -685,25 +829,52 @@
       $("nama-outlet").textContent = bilOutlet > 1 ? "Semua outlet" : (sendiri ? sendiri.name : "Outlet");
       $("untuk-outlet").textContent = "Untuk " + (sendiri ? sendiri.name : "outlet anda");
       $("info-akaun").textContent = (namaRole[p.role] || p.role) + ", " + session.user.email;
-      $("akaun-emel").textContent = session.user.email;
-      $("akaun-outlet").textContent = sendiri ? sendiri.name : "Outlet";
-      $("akaun-peranan").textContent = namaRole[p.role] || p.role;
 
-      hariIni = new Date().toLocaleDateString("sv-SE");
+      hariIni = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Kuala_Lumpur" });
       $("tarikh").value = hariIni;
       $("tarikh-ringkasan").value = hariIni;
+      $("tahun-ringkasan").value = hariIni.slice(0, 4);
       isiKategori();
-      isiBayaran(bayar.map((b) => b.name));
-      bukaTab("dashboard");
+      const caraBayaran = bayar.map((b) => b.name);
+      isiBayaran(caraBayaran);
+      paparPilihan("pilihan-masuk", kat.filter((k) => k.type === "In").map((k) => k.name));
+      paparPilihan("pilihan-keluar", kat.filter((k) => k.type === "Out").map((k) => k.name));
+      paparPilihan("pilihan-bayaran", caraBayaran);
       muatRingkasan();
       muatSenarai();
     }
 
     document.querySelectorAll('input[name="jenis"]').forEach((r) => r.addEventListener("change", isiKategori));
     $("tarikh-ringkasan").addEventListener("change", muatRingkasan);
-    $("tarikh-ringkasan").addEventListener("click", (e) => {
-      try { e.target.showPicker(); } catch (err) { /* browser lama: kalendar tetap terbuka */ }
+    $("pilih-tahun").addEventListener("submit", (e) => {
+      e.preventDefault();
+      muatRingkasan();
     });
+
+    const menu = document.querySelectorAll(".menu-button");
+    menu.forEach((butang) => butang.addEventListener("click", () => {
+      for (const item of menu) {
+        item.setAttribute("aria-pressed", String(item === butang));
+        $(item.getAttribute("aria-controls")).hidden = item !== butang;
+      }
+      window.scrollTo(0, 0);
+    }));
+
+    const tempoh = document.querySelectorAll(".period-button");
+    tempoh.forEach((butang) => butang.addEventListener("click", () => {
+      tempohDipilih = butang.dataset.tempoh;
+      for (const item of tempoh) item.setAttribute("aria-pressed", String(item === butang));
+      $("pilih-tarikh").hidden = tempohDipilih === "tahunan";
+      $("pilih-tahun").hidden = tempohDipilih !== "tahunan";
+      $("label-pilih-tarikh").textContent = {
+        harian: "Pilih tarikh", mingguan: "Pilih tarikh dalam minggu", bulanan: "Pilih tarikh dalam bulan"
+      }[tempohDipilih] || "Pilih tarikh";
+      muatRingkasan();
+    }));
+
+    $("btn-akaun").addEventListener("click", () => $("dialog-akaun").showModal());
+    $("tutup-akaun").addEventListener("click", () => $("dialog-akaun").close());
+    $("dialog-akaun").addEventListener("close", () => $("borang-katalaluan").reset());
 
     $("borang-login").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -752,7 +923,7 @@
       $("jumlah").value = "";
       $("keterangan").value = "";
       $("rujukan").value = "";
-      pesan("Transaksi disimpan. Tengok di Dashboard.", "ok");
+      pesan("Transaksi disimpan.", "ok");
       muatRingkasan();
       muatSenarai();
     });
@@ -775,6 +946,7 @@
       }
       $("kl-baru").value = "";
       $("kl-sahkan").value = "";
+      $("dialog-akaun").close();
       pesan("Kata laluan ditukar.", "ok");
     });
 
