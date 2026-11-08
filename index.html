@@ -1,566 +1,679 @@
-<!DOCTYPE html>
-<html lang="ms">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1F6B45">
-  <title>BizProfit Pro</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
-  <style type="text/tailwindcss">
-    @theme {
-      --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-      --color-daun: #1F6B45;
-      --color-daun-tua: #164F33;
-      --color-daun-muda: #E3F0E7;
-      --color-sambal: #B83A26;
-      --color-sambal-muda: #F8E7E3;
-      --color-jubin: #E9EFEA;
-      --color-kertas: #FFFDF8;
-      --color-dakwat: #1B2420;
-      --color-garis: #CFD8D1;
-    }
-  </style>
-  <style>
-    /* Tepi bawah bil bergerigi macam resit kedai */
-    .bil {
-      -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
-              mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
-    }
-  </style>
-</head>
-<body class="min-h-dvh bg-jubin font-sans text-dakwat antialiased">
+DOCTYPE html>
 
-  <!-- ===== SKRIN LOGIN ===== -->
-  <main id="skrin-login" class="min-h-dvh">
-    <section class="bg-daun px-6 pt-12 pb-28 text-white">
-      <div class="mx-auto max-w-md">
-        <div class="flex items-center gap-3">
-          <span class="grid size-11 place-items-center rounded-xl bg-white/15 font-extrabold">BP</span>
-          <span class="text-lg font-semibold">BizProfit Pro</span>
-        </div>
-        <h1 class="mt-10 text-4xl leading-tight font-extrabold tracking-tight">Duit kedai, jelas setiap hari.</h1>
-        <p class="mt-3 max-w-xs text-white/80">Rekod duit masuk dan keluar, dan tengok untung hari ini terus dari phone.</p>
-      </div>
-    </section>
-    <section class="-mt-16 px-4 pb-10">
-      <form id="borang-login" class="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-xl shadow-daun/10">
-        <h2 class="text-xl font-bold">Log masuk</h2>
-        <label for="emel" class="mt-5 block text-sm font-semibold">Emel</label>
-        <input id="emel" type="email" autocomplete="username" required
-          class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
-        <label for="katalaluan" class="mt-4 block text-sm font-semibold">Kata laluan</label>
-        <input id="katalaluan" type="password" autocomplete="current-password" required
-          class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
-        <button id="btn-login" type="submit"
-          class="mt-6 w-full rounded-2xl bg-daun py-4 text-lg font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none disabled:opacity-60">Log masuk</button>
-        <p class="mt-4 text-sm text-dakwat/60">Lupa kata laluan? Minta owner set semula.</p>
-      </form>
-    </section>
-  </main>
+<html lang="ms">  
+<head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">  
+  <meta name="theme-color" content="#123E2C">  
+  <meta name="description" content="BizProfit Pro — duit kedai, jelas setiap hari. Rekod duit masuk dan keluar dalam satu tempat.">  
+  <title>BizProfit Pro</title>  
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%23123E2C'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-family='Arial,sans-serif' font-weight='700' font-size='46' fill='%23F6F5E9'%3EBP%3C/text%3E%3C/svg%3E">  
+  <link rel="preconnect" href="https://fonts.googleapis.com">  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">  
+  <style>  
+    /* BIZPROFIT PRO · Forest & Paper  
+       Semua gaya disimpan di sini. Tiada Tailwind runtime diperlukan.  
+       Susunan borang, ID, nilai input dan sambungan Supabase dikekalkan. */  
+    :root {  
+      color-scheme: light;  
+      --forest: #123e2c;  
+      --forest-deep: #0b2e20;  
+      --leaf: #286547;  
+      --leaf-light: #edf4ee;  
+      --sage: #c9d7b5;  
+      --clay: #ae4935;  
+      --clay-light: #fbefeb;  
+      --paper: #fffef9;  
+      --canvas: #f0f1ea;  
+      --ink: #23362b;  
+      --muted: #6d796f;  
+      --line: #dfe4d9;  
+      --sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;  
+      --mono: "IBM Plex Mono", ui-monospace, monospace;  
+      --serif: "Instrument Serif", Georgia, serif;  
+      --content: 560px;  
+      --ease: cubic-bezier(.2,.75,.25,1);  
+      font-family: var(--sans);  
+      color: var(--ink);  
+      background: var(--canvas);  
+      font-synthesis: none;  
+      -webkit-font-smoothing: antialiased;  
+      -moz-osx-font-smoothing: grayscale;  
+    }  
+    *, *::before, *::after { box-sizing: border-box; }  
+    body { margin: 0; min-width: 280px; min-height: 100dvh; background-image: linear-gradient(90deg, #8a9a8010 1px, transparent 1px); background-size: 80px 100%; }  
+    [hidden] { display: none !important; }  
+    button, input, select { font: inherit; }  
+    button, label, input, select, summary { -webkit-tap-highlight-color: transparent; }  
+    button { cursor: pointer; }  
+    button, input, select { touch-action: manipulation; }  
+    button:disabled { cursor: wait; opacity: .6; }  
+    h1, h2, p { margin: 0; }  
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }  
+    legend { padding: 0; }  
+    a { color: inherit; }  
+    ::selection { background: #d5e3c2; color: var(--forest-deep); }  
+    :focus-visible { outline: 3px solid #8ca977; outline-offset: 4px; }  
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }  
+    .icon { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }  
+    .symbol-library { position: absolute; width: 0; height: 0; overflow: hidden; }  
+    .shell { width: 100%; max-width: calc(var(--content) + 40px); margin-inline: auto; padding-inline: 20px; }  
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }  
+    .overline { color: var(--muted); font-size: 10px; line-height: 1.5; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }  
+    .text-daun { color: var(--forest); }  
+    .text-sambal { color: var(--clay); }  
+    .text-dakwat { color: var(--ink); }  
+    .bg-daun { background-color: var(--forest); }  
+    .bg-sambal { background-color: var(--clay); }  /* The green canopy, shared by both original screens. */  
+.canopy { position: relative; isolation: isolate; overflow: hidden; color: #f5f6ed; background: var(--forest); }  
+.canopy::before { content: ""; position: absolute; z-index: -1; width: 640px; height: 640px; right: calc(50% - 610px); top: -330px; border: 1px solid #e8efd315; border-radius: 50%; box-shadow: 0 0 0 48px #e8efd307, 0 0 0 49px #e8efd30c, 0 0 0 105px #e8efd305, 0 0 0 106px #e8efd30c, 0 0 0 165px #e8efd304, 0 0 0 166px #e8efd308; pointer-events: none; }  
+.canopy::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(110deg, #071f151a, transparent 65%); pointer-events: none; }  
+.brand { display: flex; align-items: center; gap: 12px; }  
+.brand-mark { display: grid; place-items: center; width: 43px; height: 46px; flex: 0 0 auto; border: 1px solid #dfe8ce55; border-radius: 12px 12px 12px 3px; background: #e6edd710; box-shadow: inset 0 1px #ffffff15; color: #e2e8ca; font-size: 18px; font-weight: 800; letter-spacing: -1.6px; padding-right: 2px; }  
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: -.4px; }  
+.brand-note { margin-top: 5px; color: #d0ddc3; font-size: 8px; font-weight: 500; letter-spacing: .24em; text-transform: uppercase; }  
+#skrin-login { min-height: 100dvh; }  
+.login-hero { padding-top: 42px; padding-bottom: 122px; }  
+.login-hero h1 { max-width: 500px; margin-top: 48px; font-size: clamp(36px, 8.8vw, 48px); line-height: 1.13; font-weight: 700; letter-spacing: -2.1px; }  
+.login-hero h1 em { display: block; margin-top: 3px; color: #dce6c3; font-family: var(--serif); font-size: 1.19em; line-height: 1.08; font-weight: 400; letter-spacing: -.9px; }  
+.hero-description { max-width: 350px; margin-top: 22px; color: #d1dfd1; font-size: 13px; line-height: 1.85; }  
+.login-wrap { position: relative; margin-top: -70px; padding-bottom: 38px; }  
+.login-card { position: relative; padding: 32px; border: 1px solid #ffffff; border-radius: 24px; background: var(--paper); box-shadow: 0 16px 48px -24px #123e2c35, 0 3px 8px #243c2305; animation: arrive .65s var(--ease) both; }  
+.login-card::before { content: ""; position: absolute; top: -1px; left: 32px; width: 36px; height: 3px; border-radius: 0 0 3px 3px; background: #9daf7c; }  
+.login-card .section-heading { margin-top: 6px; font-size: 23px; }  
+.login-fields { margin-top: 26px; }  
+.field + .field { margin-top: 19px; }  
+.field-label { display: block; font-size: 12px; line-height: 1.7; font-weight: 700; letter-spacing: -.1px; }  
+.input-wrap { display: flex; align-items: center; gap: 11px; margin-top: 7px; padding-inline: 15px; border: 1px solid var(--line); border-radius: 12px; background: #fff; transition: border-color .2s, box-shadow .2s, background .2s; }  
+.input-wrap > .icon { width: 18px; height: 18px; color: #899485; }  
+.input-wrap:focus-within { border-color: #71916b; box-shadow: 0 0 0 3px #cbdabc55; background: #fff; }  
+.input-wrap input { width: 100%; min-width: 0; padding-block: 15px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 16px; }  
+.input-wrap:focus-within > .icon { color: var(--forest); }  
+.primary-button { position: relative; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 55px; padding: 16px 20px; border: 1px solid #174c35; border-radius: 13px; background: var(--forest); box-shadow: inset 0 1px 0 #ffffff17, 0 4px 8px #123e2c0d; color: #f9faef; font-size: 15px; font-weight: 700; letter-spacing: .05px; transition: background .2s, transform .2s var(--ease), box-shadow .2s; }  
+.primary-button::after { content: ""; position: absolute; width: 7px; height: 7px; right: 23px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: rotate(45deg); opacity: .75; }  
+.primary-button:hover { background: var(--forest-deep); box-shadow: 0 6px 16px #123e2c20; }  
+.primary-button:active { transform: translateY(1px); }  
+.primary-button:disabled::after { width: 13px; height: 13px; border: 1.5px solid #ffffff50; border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }  
+#btn-login { margin-top: 26px; }  
+.login-help { display: flex; align-items: flex-start; justify-content: center; gap: 7px; margin-top: 21px; font-size: 11px; line-height: 1.9; color: var(--muted); text-align: center; }  
+.login-help .icon { width: 13px; height: 13px; margin-top: 3px; }  
+.page-signature { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 25px; color: #778372; font-size: 9px; line-height: 1.8; font-weight: 600; letter-spacing: .14em; text-align: center; text-transform: uppercase; }  
+.page-signature::before, .page-signature::after { content: ""; width: 20px; height: 1px; background: #cbd3c4; }  
 
-  <!-- ===== SKRIN APP (3 tab) ===== -->
-  <div id="skrin-app" hidden class="min-h-dvh pb-32">
+/* App header: the same outlet + account + log-out arrangement. */  
+#skrin-app { min-height: 100dvh; padding-bottom: max(38px, env(safe-area-inset-bottom)); }  
+.app-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 30px; padding-bottom: 132px; }  
+.app-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }  
+.app-identity .brand-mark { width: 39px; height: 42px; font-size: 16px; border-radius: 10px 10px 10px 3px; }  
+.account-copy { min-width: 0; }  
+#nama-outlet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: -.3px; }  
+#info-akaun { margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c8d8c9; font-size: 11px; }  
+.logout-button { display: flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0; min-height: 42px; border: 1px solid #d6e3ce2a; border-radius: 10px; padding: 8px 11px; background: #dce7d10a; color: #e6eedf; font-size: 11px; font-weight: 600; transition: background .2s, border-color .2s; }  
+.logout-button .icon { width: 14px; height: 14px; }  
+.logout-button:hover { background: #dce7d11c; border-color: #d6e3ce66; }  
+.app-content { position: relative; margin-top: -101px; }  
+.app-content > * + * { margin-top: 27px; }  
 
-    <!-- TAB 1: DASHBOARD -->
-    <div id="pg-dashboard">
-      <header class="bg-daun text-white">
-        <div class="mx-auto flex max-w-md items-center gap-3 px-4 pt-5 pb-24">
-          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 text-sm font-extrabold">BP</span>
-          <div class="min-w-0">
-            <h1 id="nama-outlet" class="truncate leading-tight font-bold"></h1>
-            <p id="peranan" class="text-sm text-white/75"></p>
-          </div>
-        </div>
-      </header>
+/* Paper receipt. The serration is decorative; contents remain unmasked. */  
+.receipt-shell { filter: drop-shadow(0 8px 12px #233e2010); animation: arrive .6s var(--ease) both; }  
+.bil { position: relative; overflow: visible; padding: 27px 28px 25px; border-radius: 17px 17px 0 0; background: var(--paper); }  
+.bil::after { content: ""; position: absolute; top: calc(100% - 1px); left: 0; right: 0; height: 9px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 0H16L8 9Z' fill='%23fffef9'/%3E%3C/svg%3E") left top / 16px 9px repeat-x; pointer-events: none; }  
+.receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }  
+.receipt-kicker { display: flex; align-items: center; gap: 6px; color: #69805e; font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: .17em; text-transform: uppercase; }  
+.receipt-kicker .icon { width: 13px; height: 13px; }  
+#tajuk-bil { margin-top: 8px; font-size: 22px; font-weight: 700; letter-spacing: -.8px; line-height: 1.25; }  
+#label-tarikh { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }  
+.date-control { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; flex-shrink: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: #5e6e5c; font-size: 10px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }  
+.date-control:hover { border-color: #a1b397; background: #f2f4eb; }  
+.date-control:focus-within { outline: 3px solid #8ca977; outline-offset: 3px; }  
+.date-control .icon { width: 14px; height: 14px; }  
+.date-control input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; }  
+.receipt-lines { margin-top: 20px; border-top: 1px dashed #c9d2c0; padding-top: 17px; }  
+.receipt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }  
+.receipt-row + .receipt-row { margin-top: 13px; }  
+.receipt-row-label { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #596750; }  
+.direction-mark { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #d9e3d1; border-radius: 6px; color: #6e875c; background: #edf2e6; }  
+.direction-mark.out { background: #f7f0e8; border-color: #ecded0; color: #a97d64; }  
+.direction-mark .icon { width: 12px; height: 12px; }  
+.receipt-row-value { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: -.5px; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }  
+.receipt-total { position: relative; margin-top: 18px; padding-top: 17px; border-top: 1px dashed #c9d2c0; }  
+.total-line { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }  
+.total-label { font-size: 13px; font-weight: 700; }  
+#r-untung { margin-left: auto; max-width: 100%; overflow-wrap: anywhere; font-family: var(--mono); font-size: clamp(25px, 7.2vw, 37px); line-height: 1.3; font-weight: 500; letter-spacing: -1.8px; font-variant-numeric: tabular-nums; }  
+.count-line { display: flex; justify-content: flex-end; margin-top: 7px; }  
+#r-bil { display: flex; align-items: center; gap: 5px; color: #68735f; font-size: 11px; }  
+#r-bil::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #9bab7b; }  
+#r-outlet { margin-top: 17px; border-top: 1px dashed #c9d2c0; padding-top: 14px; }  
+.outlet-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 11px; line-height: 1.7; }  
+.outlet-row + .outlet-row { margin-top: 8px; }  
+.outlet-name { color: #596750; overflow-wrap: anywhere; }  
+.money-inline { flex-shrink: 0; font-family: var(--mono); font-size: 12px; letter-spacing: -.2px; }  
+.receipt-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 18px; padding: 10px 11px; border: 1px solid #e6e8dc; border-radius: 8px; background: #f5f5ec; color: #66715a; font-size: 11px; line-height: 1.7; }  
+.receipt-note .icon { width: 12px; height: 12px; margin-top: 2px; }  
+.receipt-end { display: flex; align-items: center; justify-content: space-between; margin-top: 17px; opacity: .65; }  
+.receipt-end span { font-family: var(--mono); font-size: 7px; letter-spacing: .2em; color: #7b886c; }  
+.barcode { width: 52px; height: 13px; background: repeating-linear-gradient(90deg,#7a8767 0 1px,transparent 1px 3px,#7a8767 3px 5px,transparent 5px 7px,#7a8767 7px 8px,transparent 8px 11px,#7a8767 11px 13px,transparent 13px 16px); }  
 
-      <div class="mx-auto -mt-20 max-w-md space-y-6 px-4">
-        <section class="bil rounded-t-2xl bg-kertas px-5 pt-5 pb-9 shadow-lg shadow-daun/10" aria-labelledby="tajuk-bil">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h2 id="tajuk-bil" class="font-bold">Bil hari ini</h2>
-              <p id="label-tarikh" class="text-sm text-dakwat/60"></p>
-            </div>
-            <label class="relative shrink-0 cursor-pointer rounded-full border border-garis bg-white px-3 py-1.5 text-sm font-semibold transition hover:border-daun has-focus-visible:ring-2 has-focus-visible:ring-daun/40">
-              Tukar tarikh
-              <input id="tarikh-ringkasan" type="date" class="absolute inset-0 size-full cursor-pointer opacity-0">
-            </label>
-          </div>
+/* The original transaction form, given a calmer type scale and touch targets. */  
+.entry-card { padding: 26px 27px 27px; border: 1px solid #dde3d5; border-radius: 20px; background: #ffffff; box-shadow: 0 4px 14px #34452a04; animation: arrive .65s .05s var(--ease) both; }  
+.section-intro { display: flex; align-items: center; gap: 11px; }  
+.section-icon { display: grid; place-items: center; width: 39px; height: 42px; flex-shrink: 0; border: 1px solid #e0e6d8; border-radius: 11px; background: #f2f5ed; color: #658150; }  
+.section-icon .icon { width: 20px; height: 20px; }  
+.section-heading { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.55px; }  
+#untuk-outlet { margin-top: 4px; font-size: 11px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }  
+#borang-transaksi { margin-top: 24px; }  
+#borang-transaksi > * + * { margin-top: 21px; }  
+.type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; border: 1px solid #e6e9e0; border-radius: 13px; background: #f3f5ef; }  
+.type-option { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 43px; padding: 12px 8px; border: 1px solid transparent; border-radius: 9px; color: #66725b; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }  
+.type-option .icon { width: 15px; height: 15px; }  
+.type-option:hover { color: var(--forest); }  
+.type-option:has(input:checked) { border-color: #164c34; background: var(--forest); box-shadow: 0 2px 4px #123e2c15, inset 0 1px #ffffff15; color: #f4f7ee; }  
+.type-option.type-out:has(input:checked) { border-color: #a94634; background: var(--clay); color: #fff9f1; }  
+.type-option:has(input:focus-visible), .payment-chip:has(input:focus-visible) { outline: 3px solid #9bb487; outline-offset: 2px; }  
+.amount-wrap { display: flex; align-items: center; gap: 12px; min-height: 81px; margin-top: 7px; padding: 14px 18px; border: 1px solid #dde3d4; border-radius: 12px; background: #f8f9f4; transition: border-color .2s, box-shadow .2s; }  
+.amount-wrap:focus-within { border-color: #7f9e6b; box-shadow: 0 0 0 3px #dfe8d17a; background: #fbfcf8; }  
+.currency-label { color: #829071; font-family: var(--mono); font-size: 17px; }  
+#jumlah { width: 100%; min-width: 0; margin: 0; border: 0; outline: 0; background: transparent; color: var(--forest); font-family: var(--mono); font-size: 35px; line-height: 1.3; font-weight: 500; letter-spacing: -1.5px; }  
+#jumlah::placeholder { color: #a3ae96; opacity: 1; }  
+.entry-card:has(.type-out input:checked) #jumlah { color: var(--clay); }  
+#jumlah::-webkit-inner-spin-button, #jumlah::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }  
+#jumlah { appearance: textfield; -moz-appearance: textfield; }  
+.select-wrap { position: relative; margin-top: 7px; }  
+.select-wrap .icon { position: absolute; top: 50%; right: 15px; width: 15px; height: 15px; transform: translateY(-50%); color: #77856d; pointer-events: none; }  
+.control { display: block; width: 100%; min-width: 0; min-height: 49px; margin-top: 7px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: white; color: var(--ink); font-size: 16px; line-height: 1.4; transition: border-color .2s, box-shadow .2s, background .2s; }  
+.control:hover { border-color: #b7c2ac; }  
+.control:focus { border-color: #7b9b6c; box-shadow: 0 0 0 3px #dfe8d17a; }  
+.control::placeholder { color: #899281; opacity: 1; }  
+select.control { appearance: none; margin-top: 0; padding-right: 40px; cursor: pointer; }  
+#bayaran { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }  
+.payment-chip { position: relative; display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: white; color: #66725b; font-size: 12px; line-height: 1.5; font-weight: 600; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }  
+.payment-chip::before { content: ""; width: 11px; height: 11px; border: 1px solid #c4ceba; border-radius: 50%; background: #fff; }  
+.payment-chip:hover { border-color: #a5b797; }  
+.payment-chip:has(input:checked) { border-color: #a5ba91; background: #edf3e7; color: #33552d; }  
+.payment-chip:has(input:checked)::before { border: 3px solid #607e46; background: #f8faef; }  
+.two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }  
+.two-fields input { width: 100%; max-width: 100%; }  
+input[type="date"].control { min-width: 0; padding-inline: 10px; font-size: 13px; min-height: 49px; }  
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; width: 15px; padding: 0; margin-left: 0; cursor: pointer; }  
+input[type="date"]::-webkit-date-and-time-value { min-height: 1.4em; text-align: left; }  
+.field-optional { color: #8b9581; font-weight: 400; }  
+#btn-simpan { margin-top: 26px; }  
 
-          <div class="mt-4 space-y-2 border-t border-dashed border-garis pt-4 font-mono text-[15px]">
-            <div class="flex justify-between gap-3"><span>Duit masuk</span><span id="r-masuk">RM 0.00</span></div>
-            <div class="flex justify-between gap-3"><span>Duit keluar</span><span id="r-keluar">RM 0.00</span></div>
-          </div>
+/* Latest entries and account remain below the form. */  
+.recent-section { padding: 5px 5px 0; animation: arrive .7s .1s var(--ease) both; }  
+.recent-heading { display: flex; align-items: center; gap: 8px; }  
+.recent-heading .icon { width: 16px; height: 16px; color: #78866c; }  
+.recent-heading .section-heading { font-size: 15px; }  
+#senarai { list-style: none; margin: 11px 0 0; padding: 0; }  
+.transaction-row { display: flex; align-items: center; gap: 11px; padding: 16px 0; border-bottom: 1px solid #dce1d4; }  
+.transaction-row:last-child { border-bottom: 0; padding-bottom: 4px; }  
+.transaction-icon { display: grid; place-items: center; width: 35px; height: 35px; flex: 0 0 auto; border: 1px solid #d8e3cd; border-radius: 10px; background: #e7eede; color: #597448; font-size: 18px; line-height: 1; font-weight: 400; }  
+.transaction-icon.expense { border-color: #eadbd0; background: #f5eade; color: #ac7155; }  
+.transaction-copy { min-width: 0; flex: 1; }  
+.transaction-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.7; font-weight: 600; }  
+.transaction-detail { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64715b; font-size: 11px; line-height: 1.7; }  
+.transaction-amount { max-width: 50%; overflow-wrap: anywhere; flex-shrink: 0; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: -.45px; text-align: right; font-variant-numeric: tabular-nums; }  
+.empty-state { padding: 25px 10px; border: 1px dashed #cbd5bf; border-radius: 12px; color: var(--muted); font-size: 12px; line-height: 1.8; text-align: center; }  
+.account-panel { padding: 0 19px; border: 1px solid #d9e0d0; border-radius: 14px; background: #f7f8f1; }  
+.account-panel summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 63px; padding-block: 17px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 600; }  
+.account-panel summary::-webkit-details-marker { display: none; }  
+.account-label { display: flex; align-items: center; gap: 10px; }  
+.account-label .icon { width: 17px; height: 17px; color: #7d8b70; }  
+.account-chevron { width: 15px; height: 15px; color: #849075; transition: transform .2s; }  
+.account-panel[open] .account-chevron { transform: rotate(180deg); }  
+#borang-katalaluan { border-top: 1px solid #e1e6d8; padding-top: 17px; padding-bottom: 20px; }  
+#borang-katalaluan > * + * { margin-top: 13px; }  
+#borang-katalaluan .control { font-size: 16px; }  
+.secondary-button { width: 100%; min-height: 48px; padding: 13px 16px; border: 1px solid #a3b790; border-radius: 10px; background: #edf2e5; color: var(--forest); font-size: 12px; font-weight: 700; transition: background .2s; }  
+.secondary-button:hover { background: #e1ead5; }  
+.app-content > .page-signature { margin-top: 26px; }  
+#toast { position: fixed; top: max(18px, env(safe-area-inset-top)); left: 16px; right: 16px; z-index: 100; width: max-content; max-width: min(528px, calc(100% - 32px)); margin-inline: auto; padding: 14px 19px; border: 1px solid #ffffff30; border-radius: 13px; color: #fffef6; font-size: 12px; font-weight: 600; line-height: 1.7; box-shadow: 0 10px 32px #0d2f2633; pointer-events: none; transition: transform .35s var(--ease); }  
+@keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }  
+@keyframes spin { to { transform: rotate(360deg); } }  
+@media (min-width: 640px) {  
+  .login-hero { padding-top: 54px; padding-bottom: 133px; }  
+  .login-hero h1 { margin-top: 49px; font-size: 48px; }  
+  .hero-description { font-size: 14px; max-width: 390px; }  
+  .login-card { padding: 35px 38px; }  
+  .login-card::before { left: 38px; }  
+  .app-header-inner { padding-top: 39px; padding-bottom: 134px; }  
+  .bil { padding: 31px 34px 26px; }  
+  .entry-card { padding: 29px 33px 32px; }  
+  .control { font-size: 13px; }  
+  .recent-section { padding-inline: 13px; }  
+  .receipt-row-label { font-size: 13px; }  
+  .receipt-row-value { font-size: 16px; }  
+  .transaction-title { font-size: 13px; }  
+  .transaction-detail { font-size: 11px; }  
+  .transaction-amount { font-size: 13px; }  
+  #nama-outlet { font-size: 16px; }  
+  #info-akaun { font-size: 11px; }  
+  .logout-button { font-size: 11px; min-height: 40px; }  
+  .payment-chip { font-size: 12px; }  
+}  
+@media (max-width: 359px) {  
+  .shell { padding-inline: 13px; }  
+  .login-hero h1 { font-size: 34px; }  
+  .login-card { padding: 25px 20px; }  
+  .bil { padding: 23px 18px 23px; }  
+  .entry-card { padding: 23px 18px; }  
+  .date-control { font-size: 8px; padding-inline: 8px; gap: 4px; }  
+  .date-control .icon { width: 12px; }  
+  .app-identity { gap: 8px; }  
+  .app-identity .brand-mark { width: 33px; height: 37px; font-size: 14px; }  
+  .logout-button { gap: 5px; padding-inline: 8px; }  
+  #nama-outlet { font-size: 12px; }  
+  #info-akaun { font-size: 9px; }  
+  .two-fields { gap: 9px; }  
+  input[type="date"].control { font-size: 11px; padding-inline: 8px; }  
+  .transaction-row { gap: 8px; }  
+  .transaction-amount { font-size: 11px; }  
+}  
+@media (prefers-reduced-motion: reduce) {  
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }  
+}
 
-          <div class="mt-4 border-t border-dashed border-garis pt-4">
-            <div class="flex items-baseline justify-between gap-3">
-              <span class="font-bold">Untung</span>
-              <span id="r-untung" class="font-mono text-3xl font-semibold text-daun">RM 0.00</span>
-            </div>
-            <p id="r-bil" class="mt-1 text-right text-sm text-dakwat/60">0 transaksi</p>
-          </div>
+  </style>  
+</head>  
+<body>  
+  <svg class="symbol-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">  
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>  
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>  
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3.5-2-3.5 2-3.5-2L5 21V3Z"/><path d="M9 7h6M9 11h6M9 15h3"/></symbol>  
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></symbol>  
+    <symbol id="i-down-left" viewBox="0 0 24 24"><path d="M18 6 6 18M6 7v11h11"/></symbol>  
+    <symbol id="i-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M7 6h11v11"/></symbol>  
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>  
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>  
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>  
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l5-1L20 8a2.8 2.8 0 0 0-4-4L5 15l-1 5Z"/></symbol>  
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></symbol>  
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.8 7M3 5v6h6M12 7v5l3 2"/></symbol>  
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M8 12h13"/></symbol>  
+  </svg>    <!-- ===== SKRIN LOGIN · susunan asal ===== -->    <main id="skrin-login">  
+    <section class="canopy login-hero">  
+      <div class="shell">  
+        <div class="brand">  
+          <span class="brand-mark" aria-hidden="true">BP</span>  
+          <div><p class="brand-name">BizProfit Pro</p><p class="brand-note">Catatan bisnes anda</p></div>  
+        </div>  
+        <h1>Duit kedai,<em>jelas setiap hari.</em></h1>  
+        <p class="hero-description">Rekod duit masuk dan keluar, dan tengok untung hari ini terus dari phone.</p>  
+      </div>  
+    </section>  
+    <section class="shell login-wrap">  
+      <form id="borang-login" class="login-card">  
+        <p class="overline">Selamat datang kembali</p>  
+        <h2 class="section-heading">Log masuk</h2>  
+        <div class="login-fields">  
+          <div class="field">  
+            <label for="emel" class="field-label">Emel</label>  
+            <div class="input-wrap">  
+              <svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>  
+              <input id="emel" type="email" autocomplete="username" required>  
+            </div>  
+          </div>  
+          <div class="field">  
+            <label for="katalaluan" class="field-label">Kata laluan</label>  
+            <div class="input-wrap">  
+              <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>  
+              <input id="katalaluan" type="password" autocomplete="current-password" required>  
+            </div>  
+          </div>  
+        </div>  
+        <button id="btn-login" class="primary-button" type="submit">Log masuk</button>  
+        <p class="login-help"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Lupa kata laluan? Minta owner set semula.</span></p>  
+      </form>  
+      <p class="page-signature" aria-hidden="true">Kecil catatannya. Besar bezanya.</p>  
+    </section>  
+  </main>    <!-- ===== SKRIN APP · ringkasan → borang → transaksi → akaun ===== -->    <div id="skrin-app" hidden>  
+    <header class="canopy">  
+      <div class="shell app-header-inner">  
+        <div class="app-identity">  
+          <span class="brand-mark" aria-hidden="true">BP</span>  
+          <div class="account-copy"><p id="nama-outlet"></p><p id="info-akaun"></p></div>  
+        </div>  
+        <button id="btn-logout" class="logout-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>Log keluar</button>  
+      </div>  
+    </header>  
+    <main class="shell app-content">  
+      <div class="receipt-shell">  
+        <section class="bil" aria-labelledby="tajuk-bil">  
+          <div class="receipt-heading">  
+            <div>  
+              <p class="receipt-kicker"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg>Ringkasan harian</p>  
+              <h2 id="tajuk-bil">Bil hari ini</h2>  
+              <p id="label-tarikh"></p>  
+            </div>  
+            <label class="date-control">  
+              <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>  
+              Tukar tarikh  
+              <input id="tarikh-ringkasan" type="date" aria-label="Tukar tarikh ringkasan">  
+            </label>  
+          </div>  
+          <div class="receipt-lines">  
+            <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark"><svg class="icon" aria-hidden="true"><use href="#i-down-left"/></svg></span>Duit masuk</span><span id="r-masuk" class="receipt-row-value">RM 0.00</span></div>  
+            <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark out"><svg class="icon" aria-hidden="true"><use href="#i-up-right"/></svg></span>Duit keluar</span><span id="r-keluar" class="receipt-row-value">RM 0.00</span></div>  
+          </div>  
+          <div class="receipt-total">  
+            <div class="total-line"><span class="total-label">Untung</span><span id="r-untung" class="text-daun">RM 0.00</span></div>  
+            <div class="count-line"><p id="r-bil">0 transaksi</p></div>  
+          </div>  
+          <div id="r-outlet" hidden></div>  
+          <p class="receipt-note"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</span></p>  
+          <div class="receipt-end" aria-hidden="true"><span>BIZPROFIT PRO</span><div class="barcode"></div></div>  
+        </section>  
+      </div>  <section class="entry-card" aria-labelledby="tajuk-rekod">  
+    <div class="section-intro">  
+      <span class="section-icon"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></span>  
+      <div><h2 id="tajuk-rekod" class="section-heading">Rekod transaksi</h2><p id="untuk-outlet"></p></div>  
+    </div>  
+    <form id="borang-transaksi" novalidate>  
+      <fieldset>  
+        <legend class="sr-only">Jenis transaksi</legend>  
+        <div class="type-switch">  
+          <label class="type-option"><input type="radio" name="jenis" value="In" class="sr-only" checked><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Duit masuk</label>  
+          <label class="type-option type-out"><input type="radio" name="jenis" value="Out" class="sr-only"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg>Duit keluar</label>  
+        </div>  
+      </fieldset>  
+      <div>  
+        <label for="jumlah" class="field-label">Jumlah</label>  
+        <div class="amount-wrap"><span class="currency-label">RM</span><input id="jumlah" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></div>  
+      </div>  
+      <div>  
+        <label for="kategori" class="field-label">Kategori</label>  
+        <div class="select-wrap"><select id="kategori" class="control"></select><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></div>  
+      </div>  
+      <fieldset><legend class="field-label">Cara bayaran</legend><div id="bayaran"></div></fieldset>  
+      <div><label for="keterangan" class="field-label">Keterangan</label><input id="keterangan" type="text" maxlength="200" placeholder="Contoh: Jualan sarapan pagi" class="control"></div>  
+      <div class="two-fields">  
+        <div><label for="tarikh" class="field-label">Tarikh</label><input id="tarikh" type="date" class="control"></div>  
+        <div><label for="rujukan" class="field-label">No. rujukan</label><input id="rujukan" type="text" maxlength="50" placeholder="Pilihan" class="control"></div>  
+      </div>  
+      <button id="btn-simpan" type="submit" class="primary-button">Simpan transaksi</button>  
+    </form>  
+  </section>  
 
-          <div id="r-outlet" hidden class="mt-4 space-y-1.5 border-t border-dashed border-garis pt-4 text-sm"></div>
+  <section aria-labelledby="tajuk-senarai" class="recent-section">  
+    <div class="recent-heading"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg><h2 id="tajuk-senarai" class="section-heading">Transaksi terkini</h2></div>  
+    <ul id="senarai"></ul>  
+  </section>  
 
-          <p class="mt-4 text-xs leading-relaxed text-dakwat/55">Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</p>
-        </section>
+  <details class="account-panel">  
+    <summary><span class="account-label"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>Tukar kata laluan</span><svg class="icon account-chevron" aria-hidden="true"><use href="#i-chevron"/></svg></summary>  
+    <form id="borang-katalaluan">  
+      <div><label for="kl-baru" class="field-label">Kata laluan baru</label><input id="kl-baru" type="password" autocomplete="new-password" placeholder="Minimum 10 aksara" class="control"></div>  
+      <div><label for="kl-sahkan" class="field-label">Sahkan kata laluan</label><input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan" class="control"></div>  
+      <button id="btn-katalaluan" type="submit" class="secondary-button">Tukar kata laluan</button>  
+    </form>  
+  </details>  
+  <p class="page-signature" aria-hidden="true">BizProfit Pro · Setiap sen, dalam perhatian.</p>  
+</main>
 
-        <section aria-labelledby="tajuk-senarai" class="px-1">
-          <h2 id="tajuk-senarai" class="text-lg font-bold">Transaksi terkini</h2>
-          <ul id="senarai" class="mt-2 divide-y divide-garis"></ul>
-        </section>
-      </div>
-    </div>
-
-    <!-- TAB 2: KEY IN -->
-    <div id="pg-keyin" hidden>
-      <header class="bg-daun text-white">
-        <div class="mx-auto max-w-md px-4 pt-6 pb-16">
-          <h1 class="text-2xl font-extrabold tracking-tight">Rekod transaksi</h1>
-          <p id="untuk-outlet" class="mt-1 text-white/80"></p>
-        </div>
-      </header>
-
-      <div class="mx-auto -mt-10 max-w-md px-4">
-        <section class="rounded-3xl bg-white p-5 shadow-lg shadow-daun/10 ring-1 ring-garis/60">
-          <form id="borang-transaksi" class="space-y-5" novalidate>
-
-            <fieldset>
-              <legend class="sr-only">Jenis transaksi</legend>
-              <div class="grid grid-cols-2 gap-1 rounded-2xl bg-jubin p-1">
-                <label class="cursor-pointer rounded-xl py-3 text-center font-semibold text-dakwat/70 transition has-checked:bg-daun has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-daun/40">
-                  <input type="radio" name="jenis" value="In" class="sr-only" checked>Duit masuk
-                </label>
-                <label class="cursor-pointer rounded-xl py-3 text-center font-semibold text-dakwat/70 transition has-checked:bg-sambal has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-sambal/40">
-                  <input type="radio" name="jenis" value="Out" class="sr-only">Duit keluar
-                </label>
-              </div>
-            </fieldset>
-
-            <div>
-              <label for="jumlah" class="text-sm font-semibold">Jumlah</label>
-              <div class="mt-1 flex items-center rounded-2xl border border-garis px-4 focus-within:border-daun focus-within:ring-4 focus-within:ring-daun/15">
-                <span class="font-mono text-xl text-dakwat/45">RM</span>
-                <input id="jumlah" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"
-                  class="w-full min-w-0 bg-transparent py-3 pl-3 font-mono text-3xl font-semibold outline-none placeholder:text-dakwat/25">
-              </div>
-            </div>
-
-            <div>
-              <label for="kategori" class="text-sm font-semibold">Kategori</label>
-              <div class="relative mt-1">
-                <select id="kategori"
-                  class="w-full appearance-none rounded-2xl border border-garis bg-white py-3.5 pr-10 pl-4 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15"></select>
-                <svg class="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-dakwat/50" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z"/></svg>
-              </div>
-            </div>
-
-            <fieldset>
-              <legend class="text-sm font-semibold">Cara bayaran</legend>
-              <div id="bayaran" class="mt-2 flex flex-wrap gap-2"></div>
-            </fieldset>
-
-            <div>
-              <label for="keterangan" class="text-sm font-semibold">Keterangan</label>
-              <input id="keterangan" type="text" maxlength="200" placeholder="Contoh: Jualan sarapan pagi"
-                class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none placeholder:text-dakwat/35 focus:border-daun focus:ring-4 focus:ring-daun/15">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="tarikh" class="text-sm font-semibold">Tarikh</label>
-                <input id="tarikh" type="date"
-                  class="mt-1 w-full rounded-2xl border border-garis px-3 py-3 text-sm outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
-              </div>
-              <div>
-                <label for="rujukan" class="text-sm font-semibold">No. rujukan</label>
-                <input id="rujukan" type="text" maxlength="50" placeholder="Pilihan"
-                  class="mt-1 w-full rounded-2xl border border-garis px-3 py-3 text-sm outline-none placeholder:text-dakwat/35 focus:border-daun focus:ring-4 focus:ring-daun/15">
-              </div>
-            </div>
-
-            <button id="btn-simpan" type="submit"
-              class="w-full rounded-2xl bg-daun py-4 text-lg font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none active:scale-[.99] disabled:opacity-60">Simpan transaksi</button>
-          </form>
-        </section>
-      </div>
-    </div>
-
-    <!-- TAB 3: AKAUN -->
-    <div id="pg-akaun" hidden>
-      <header class="bg-daun text-white">
-        <div class="mx-auto max-w-md px-4 pt-6 pb-16">
-          <h1 class="text-2xl font-extrabold tracking-tight">Akaun</h1>
-          <p id="akaun-emel" class="mt-1 truncate text-white/80"></p>
-        </div>
-      </header>
-
-      <div class="mx-auto -mt-10 max-w-md space-y-5 px-4">
-        <section class="rounded-3xl bg-white p-5 shadow-lg shadow-daun/10 ring-1 ring-garis/60">
-          <dl class="divide-y divide-garis">
-            <div class="flex justify-between gap-4 pb-3"><dt class="text-dakwat/60">Outlet</dt><dd id="akaun-outlet" class="text-right font-semibold"></dd></div>
-            <div class="flex justify-between gap-4 pt-3"><dt class="text-dakwat/60">Peranan</dt><dd id="akaun-peranan" class="font-semibold"></dd></div>
-          </dl>
-        </section>
-
-        <section class="rounded-3xl bg-white p-5 ring-1 ring-garis/60">
-          <h2 class="font-bold">Tukar kata laluan</h2>
-          <form id="borang-katalaluan" class="mt-3 space-y-3">
-            <input id="kl-baru" type="password" autocomplete="new-password" placeholder="Kata laluan baru (min. 10 aksara)"
-              class="w-full rounded-2xl border border-garis bg-white px-4 py-3.5 outline-none placeholder:text-dakwat/40 focus:border-daun focus:ring-4 focus:ring-daun/15">
-            <input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan baru"
-              class="w-full rounded-2xl border border-garis bg-white px-4 py-3.5 outline-none placeholder:text-dakwat/40 focus:border-daun focus:ring-4 focus:ring-daun/15">
-            <button id="btn-katalaluan" type="submit"
-              class="w-full rounded-2xl border-2 border-daun py-3 font-bold text-daun transition hover:bg-daun-muda focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none disabled:opacity-60">Tukar kata laluan</button>
-          </form>
-        </section>
-
-        <button id="btn-logout" type="button"
-          class="w-full rounded-2xl border-2 border-sambal py-3 font-bold text-sambal transition hover:bg-sambal-muda focus-visible:ring-4 focus-visible:ring-sambal/30 focus-visible:outline-none">Log keluar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== NAVIGASI BAWAH ===== -->
-  <nav id="nav-bawah" hidden aria-label="Menu utama"
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-garis bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur transition-transform duration-200 motion-reduce:transition-none">
-    <div class="mx-auto grid max-w-md grid-cols-3">
-      <button id="tab-dashboard" data-tab="dashboard" type="button" aria-current="page"
-        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
-        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
-        </span>Dashboard
-      </button>
-      <button id="tab-keyin" data-tab="keyin" type="button" aria-current="false"
-        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
-        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-        </span>Key in
-      </button>
-      <button id="tab-akaun" data-tab="akaun" type="button" aria-current="false"
-        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
-        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
-        </span>Akaun
-      </button>
-    </div>
-  </nav>
-
-  <!-- Notifikasi -->
-  <div id="toast" role="status" aria-live="polite"
-    class="pointer-events-none fixed inset-x-4 top-4 z-50 mx-auto max-w-md rounded-2xl bg-daun px-4 py-3 font-semibold text-white shadow-lg transition-transform duration-300 motion-reduce:transition-none"
-    style="transform: translateY(calc(-100% - 2rem))"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
-  <script src="config.js"></script>
-  <script>
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const $ = (id) => document.getElementById(id);
-    const angka = new Intl.NumberFormat("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const namaRole = { owner: "Owner", manager: "Manager", staff: "Staff" };
-    const SEMUA_TAB = ["dashboard", "keyin", "akaun"];
-
-    let profil = null;
-    let semuaKategori = [];
-    let bilOutlet = 1;
-    let hariIni = "";
-    let masaToast;
-
-    function rm(nilai) {
-      const n = Number(nilai);
-      return (n < 0 ? "−" : "") + "RM " + angka.format(Math.abs(n));
-    }
-
-    function pesan(teks, jenis) {
-      const t = $("toast");
-      t.textContent = teks;
-      t.classList.toggle("bg-daun", jenis === "ok");
-      t.classList.toggle("bg-sambal", jenis !== "ok");
-      t.style.transform = "translateY(0)";
-      clearTimeout(masaToast);
-      masaToast = setTimeout(() => { t.style.transform = "translateY(calc(-100% - 2rem))"; }, 3500);
-    }
-
-    /* ---------- Tab ---------- */
-    function bukaTab(nama) {
-      SEMUA_TAB.forEach((t) => {
-        $("pg-" + t).hidden = t !== nama;
-        $("tab-" + t).setAttribute("aria-current", t === nama ? "page" : "false");
-      });
-      window.scrollTo(0, 0);
-    }
-    SEMUA_TAB.forEach((t) => $("tab-" + t).addEventListener("click", () => bukaTab(t)));
-
-    // Sorok menu bawah bila papan kekunci keluar, supaya tak makan ruang
-    const medan = 'input:not([type="radio"]), select, textarea';
-    document.addEventListener("focusin", (e) => {
-      if (e.target.matches(medan)) $("nav-bawah").classList.add("translate-y-full");
-    });
-    document.addEventListener("focusout", () => setTimeout(() => {
-      if (!document.activeElement || !document.activeElement.matches(medan)) {
-        $("nav-bawah").classList.remove("translate-y-full");
-      }
-    }, 100));
-
-    /* ---------- Borang ---------- */
-    function jenisDipilih() {
-      return document.querySelector('input[name="jenis"]:checked').value;
-    }
-
-    function isiKategori() {
-      const jenis = jenisDipilih();
-      $("kategori").replaceChildren(...semuaKategori
-        .filter((k) => k.type === jenis)
-        .map((k) => {
-          const o = document.createElement("option");
-          o.value = k.name;
-          o.textContent = k.name;
-          return o;
-        }));
-    }
-
-    function isiBayaran(senarai) {
-      $("bayaran").replaceChildren(...senarai.map((nama, i) => {
-        const label = document.createElement("label");
-        label.className = "cursor-pointer rounded-full border border-garis bg-white px-4 py-2 text-sm font-semibold text-dakwat/75 transition has-checked:border-daun has-checked:bg-daun-muda has-checked:text-daun-tua has-focus-visible:ring-2 has-focus-visible:ring-daun/40";
-        const input = document.createElement("input");
-        input.type = "radio";
-        input.name = "bayaran";
-        input.value = nama;
-        input.className = "sr-only";
-        input.checked = i === 0;
-        label.append(input, nama);
-        return label;
-      }));
-    }
-
-    function tarikhPanjang(iso) {
-      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY",
-        { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    }
-
-    function tarikhPendek(iso) {
-      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY", { day: "numeric", month: "short" });
-    }
-
-    /* ---------- Dashboard ---------- */
-    async function muatRingkasan() {
-      const tarikh = $("tarikh-ringkasan").value;
-      if (!tarikh) return;
-      $("tajuk-bil").textContent = tarikh === hariIni ? "Bil hari ini" : "Bil";
-      $("label-tarikh").textContent = tarikhPanjang(tarikh);
-
-      const { data, error } = await sb.from("daily_summary")
-        .select("outlet_name,money_in,money_out,profit,bil_transaksi")
-        .eq("transaction_date", tarikh)
-        .order("outlet_name");
-      if (error) { pesan("Ringkasan tak dapat dibaca. Semak sambungan internet dan cuba lagi."); return; }
-
-      const sen = (k) => data.reduce((s, r) => s + Math.round(Number(r[k]) * 100), 0) / 100;
-      const untung = sen("profit");
-      $("r-masuk").textContent = rm(sen("money_in"));
-      $("r-keluar").textContent = rm(sen("money_out"));
-      $("r-untung").textContent = rm(untung);
-      $("r-untung").classList.toggle("text-daun", untung >= 0);
-      $("r-untung").classList.toggle("text-sambal", untung < 0);
-      const bil = data.reduce((s, r) => s + Number(r.bil_transaksi), 0);
-      $("r-bil").textContent = bil + " transaksi";
-
-      const kotak = $("r-outlet");
-      kotak.hidden = bilOutlet < 2 || data.length === 0;
-      kotak.replaceChildren(...data.map((r) => {
-        const baris = document.createElement("div");
-        baris.className = "flex justify-between gap-3";
-        const nama = document.createElement("span");
-        nama.className = "text-dakwat/70";
-        nama.textContent = r.outlet_name;
-        const nilai = document.createElement("span");
-        nilai.className = "font-mono " + (Number(r.profit) < 0 ? "text-sambal" : "text-dakwat");
-        nilai.textContent = rm(r.profit);
-        baris.append(nama, nilai);
-        return baris;
-      }));
-    }
-
-    async function muatSenarai() {
-      const { data, error } = await sb.from("transactions")
-        .select("transaction_date,type,category,amount,description,outlets(name)")
-        .order("created_at", { ascending: false })
-        .limit(8);
-      if (error) { pesan("Senarai transaksi tak dapat dibaca. Cuba lagi."); return; }
-
-      if (data.length === 0) {
-        const li = document.createElement("li");
-        li.className = "py-4";
-        const teks = document.createElement("p");
-        teks.className = "text-sm text-dakwat/60";
-        teks.textContent = "Belum ada transaksi.";
-        const butang = document.createElement("button");
-        butang.type = "button";
-        butang.className = "mt-3 rounded-xl bg-daun px-4 py-2.5 text-sm font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none";
-        butang.textContent = "Rekod transaksi pertama";
-        butang.addEventListener("click", () => bukaTab("keyin"));
-        li.append(teks, butang);
-        $("senarai").replaceChildren(li);
-        return;
-      }
-
-      $("senarai").replaceChildren(...data.map((t) => {
-        const masuk = t.type === "In";
-        const li = document.createElement("li");
-        li.className = "flex items-center gap-3 py-3";
-
-        const ikon = document.createElement("span");
-        ikon.className = "grid size-9 shrink-0 place-items-center rounded-full text-lg font-bold " +
-          (masuk ? "bg-daun-muda text-daun" : "bg-sambal-muda text-sambal");
-        ikon.textContent = masuk ? "+" : "−";
-        ikon.setAttribute("aria-hidden", "true");
-
-        const tengah = document.createElement("div");
-        tengah.className = "min-w-0 flex-1";
-        const atas = document.createElement("p");
-        atas.className = "truncate text-sm font-semibold";
-        atas.textContent = t.description || t.category;
-        const bawah = document.createElement("p");
-        bawah.className = "truncate text-xs text-dakwat/55";
-        const bahagian = [tarikhPendek(t.transaction_date), t.category];
-        if (bilOutlet > 1 && t.outlets) bahagian.push(t.outlets.name);
-        bawah.textContent = bahagian.join(", ");
-        tengah.append(atas, bawah);
-
-        const nilai = document.createElement("span");
-        nilai.className = "shrink-0 font-mono text-sm font-semibold " + (masuk ? "text-daun" : "text-sambal");
-        nilai.textContent = (masuk ? "+" : "−") + rm(t.amount);
-
-        li.append(ikon, tengah, nilai);
-        return li;
-      }));
-    }
-
-    /* ---------- Mula ---------- */
-    async function papar() {
-      const { data: { session } } = await sb.auth.getSession();
-      $("skrin-login").hidden = !!session;
-      $("skrin-app").hidden = !session;
-      $("nav-bawah").hidden = !session;
-      if (!session) return;
-
-      const { data: p, error: e1 } = await sb.from("staff_profiles")
-        .select("role,outlet_id").eq("user_id", session.user.id).maybeSingle();
-      const { data: outlet, error: e2 } = await sb.from("outlets").select("id,name");
-      const { data: kat, error: e3 } = await sb.from("categories").select("key,name,type").order("key");
-      const { data: bayar, error: e4 } = await sb.from("payment_methods").select("name");
-      if (e1 || e2 || e3 || e4) { pesan("Data tak dapat dibaca. Semak sambungan internet dan muat semula."); return; }
-      if (!p) { pesan("Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner."); return; }
-
-      profil = p;
-      semuaKategori = kat;
-      bilOutlet = outlet.length;
-      const sendiri = outlet.find((o) => o.id === p.outlet_id);
-      const namaOutlet = sendiri ? sendiri.name : "Outlet";
-      const peranan = namaRole[p.role] || p.role;
-
-      $("nama-outlet").textContent = bilOutlet > 1 ? "Semua outlet" : namaOutlet;
-      $("peranan").textContent = peranan;
-      $("untuk-outlet").textContent = "Untuk " + namaOutlet;
-      $("akaun-emel").textContent = session.user.email;
-      $("akaun-outlet").textContent = namaOutlet;
-      $("akaun-peranan").textContent = peranan;
-
-      hariIni = new Date().toLocaleDateString("sv-SE");
-      $("tarikh").value = hariIni;
-      $("tarikh-ringkasan").value = hariIni;
-      isiKategori();
-      isiBayaran(bayar.map((b) => b.name));
-      bukaTab("dashboard");
-      muatRingkasan();
-      muatSenarai();
-    }
-
-    document.querySelectorAll('input[name="jenis"]').forEach((r) => r.addEventListener("change", isiKategori));
-    $("tarikh-ringkasan").addEventListener("change", muatRingkasan);
-    $("tarikh-ringkasan").addEventListener("click", (e) => {
-      try { e.target.showPicker(); } catch (err) { /* browser lama: kalendar tetap terbuka */ }
-    });
-
-    $("borang-login").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      $("btn-login").disabled = true;
-      const { error } = await sb.auth.signInWithPassword({
-        email: $("emel").value.trim(),
-        password: $("katalaluan").value
-      });
-      $("btn-login").disabled = false;
-      if (error) { pesan("Emel atau kata laluan salah. Cuba lagi."); return; }
-      $("katalaluan").value = "";
-      papar();
-    });
-
-    $("btn-logout").addEventListener("click", async () => {
-      await sb.auth.signOut();
-      profil = null;
-      papar();
-    });
-
-    $("borang-transaksi").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const jumlah = Number($("jumlah").value);
-      const keterangan = $("keterangan").value.trim();
-      if (!(jumlah > 0)) { pesan("Masukkan jumlah lebih dari RM 0."); $("jumlah").focus(); return; }
-      if (!keterangan) { pesan("Isi keterangan supaya senang disemak nanti."); $("keterangan").focus(); return; }
-      if (!$("tarikh").value) { pesan("Pilih tarikh transaksi."); return; }
-
-      const butang = $("btn-simpan");
-      butang.disabled = true;
-      butang.textContent = "Menyimpan...";
-      const { error } = await sb.from("transactions").insert({
-        transaction_date: $("tarikh").value,
-        type: jenisDipilih(),
-        category: $("kategori").value,
-        amount: Math.round(jumlah * 100) / 100,
-        description: keterangan,
-        payment_method: document.querySelector('input[name="bayaran"]:checked').value,
-        reference_no: $("rujukan").value.trim() || null,
-        outlet_id: profil.outlet_id
-      });
-      butang.disabled = false;
-      butang.textContent = "Simpan transaksi";
-
-      if (error) { pesan("Transaksi tak disimpan: " + error.message); return; }
-      $("jumlah").value = "";
-      $("keterangan").value = "";
-      $("rujukan").value = "";
-      pesan("Transaksi disimpan. Tengok di Dashboard.", "ok");
-      muatRingkasan();
-      muatSenarai();
-    });
-
-    $("borang-katalaluan").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const baru = $("kl-baru").value;
-      if (baru.length < 10) { pesan("Kata laluan baru mesti 10 aksara atau lebih."); return; }
-      if (baru !== $("kl-sahkan").value) { pesan("Dua kata laluan tak sama. Taip semula."); return; }
-
-      $("btn-katalaluan").disabled = true;
-      const { error } = await sb.auth.updateUser({ password: baru });
-      $("btn-katalaluan").disabled = false;
-
-      if (error) {
-        if (error.code === "same_password") pesan("Kata laluan baru mesti lain daripada yang lama.");
-        else if (error.code === "weak_password") pesan("Kata laluan terlalu lemah. Campur huruf besar, kecil dan nombor.");
-        else pesan("Kata laluan tak ditukar: " + error.message);
-        return;
-      }
-      $("kl-baru").value = "";
-      $("kl-sahkan").value = "";
-      pesan("Kata laluan ditukar.", "ok");
-    });
-
-    papar();
-  </script>
-</body>
+  </div>    <div id="toast" role="status" aria-live="polite" aria-atomic="true" class="bg-daun" style="transform: translateY(calc(-100% - 2rem))"></div>    <!-- Kekalkan config.js sedia ada bersebelahan fail ini. -->    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>    <script src="config.js"></script>    <script>  
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);  
+    const $ = (id) => document.getElementById(id);  
+    const angka = new Intl.NumberFormat("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });  
+    const namaRole = { owner: "Owner", manager: "Manager", staff: "Staff" };  
+  
+    let profil = null;  
+    let semuaKategori = [];  
+    let bilOutlet = 1;  
+    let hariIni = "";  
+    let masaToast;  
+  
+    function rm(nilai) {  
+      const n = Number(nilai);  
+      return (n < 0 ? "−" : "") + "RM " + angka.format(Math.abs(n));  
+    }  
+  
+    function pesan(teks, jenis) {  
+      const t = $("toast");  
+      t.textContent = teks;  
+      t.classList.toggle("bg-daun", jenis === "ok");  
+      t.classList.toggle("bg-sambal", jenis !== "ok");  
+      t.style.transform = "translateY(0)";  
+      clearTimeout(masaToast);  
+      masaToast = setTimeout(() => { t.style.transform = "translateY(calc(-100% - 2rem))"; }, 3500);  
+    }  
+  
+    function jenisDipilih() {  
+      return document.querySelector('input[name="jenis"]:checked').value;  
+    }  
+  
+    function isiKategori() {  
+      const jenis = jenisDipilih();  
+      $("kategori").replaceChildren(...semuaKategori  
+        .filter((k) => k.type === jenis)  
+        .map((k) => {  
+          const o = document.createElement("option");  
+          o.value = k.name;  
+          o.textContent = k.name;  
+          return o;  
+        }));  
+    }  
+  
+    function isiBayaran(senarai) {  
+      $("bayaran").replaceChildren(...senarai.map((nama, i) => {  
+        const label = document.createElement("label");  
+        label.className = "payment-chip";  
+        const input = document.createElement("input");  
+        input.type = "radio";  
+        input.name = "bayaran";  
+        input.value = nama;  
+        input.className = "sr-only";  
+        input.checked = i === 0;  
+        label.append(input, nama);  
+        return label;  
+      }));  
+    }  
+  
+    function tarikhPanjang(iso) {  
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY",  
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" });  
+    }  
+  
+    function tarikhPendek(iso) {  
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY", { day: "numeric", month: "short" });  
+    }  
+  
+    async function muatRingkasan() {  
+      const tarikh = $("tarikh-ringkasan").value;  
+      if (!tarikh) return;  
+      $("tajuk-bil").textContent = tarikh === hariIni ? "Bil hari ini" : "Bil";  
+      $("label-tarikh").textContent = tarikhPanjang(tarikh);  
+  
+      const { data, error } = await sb.from("daily_summary")  
+        .select("outlet_name,money_in,money_out,profit,bil_transaksi")  
+        .eq("transaction_date", tarikh)  
+        .order("outlet_name");  
+      if (error) { pesan("Ringkasan tak dapat dibaca. Semak sambungan internet dan cuba lagi."); return; }  
+  
+      const sen = (k) => data.reduce((s, r) => s + Math.round(Number(r[k]) * 100), 0) / 100;  
+      const untung = sen("profit");  
+      $("r-masuk").textContent = rm(sen("money_in"));  
+      $("r-keluar").textContent = rm(sen("money_out"));  
+      $("r-untung").textContent = rm(untung);  
+      $("r-untung").classList.toggle("text-daun", untung >= 0);  
+      $("r-untung").classList.toggle("text-sambal", untung < 0);  
+      const bil = data.reduce((s, r) => s + Number(r.bil_transaksi), 0);  
+      $("r-bil").textContent = bil + " transaksi";  
+  
+      const kotak = $("r-outlet");  
+      kotak.hidden = bilOutlet < 2 || data.length === 0;  
+      kotak.replaceChildren(...data.map((r) => {  
+        const baris = document.createElement("div");  
+        baris.className = "outlet-row";  
+        const nama = document.createElement("span");  
+        nama.className = "outlet-name";  
+        nama.textContent = r.outlet_name;  
+        const nilai = document.createElement("span");  
+        nilai.className = "money-inline " + (Number(r.profit) < 0 ? "text-sambal" : "text-dakwat");  
+        nilai.textContent = rm(r.profit);  
+        baris.append(nama, nilai);  
+        return baris;  
+      }));  
+    }  
+  
+    async function muatSenarai() {  
+      const { data, error } = await sb.from("transactions")  
+        .select("transaction_date,type,category,amount,description,outlets(name)")  
+        .order("created_at", { ascending: false })  
+        .limit(8);  
+      if (error) { pesan("Senarai transaksi tak dapat dibaca. Cuba lagi."); return; }  
+  
+      if (data.length === 0) {  
+        const li = document.createElement("li");  
+        li.className = "empty-state";  
+        li.textContent = "Belum ada transaksi. Rekod yang pertama di atas.";  
+        $("senarai").replaceChildren(li);  
+        return;  
+      }  
+  
+      $("senarai").replaceChildren(...data.map((t) => {  
+        const masuk = t.type === "In";  
+        const li = document.createElement("li");  
+        li.className = "transaction-row";  
+  
+        const ikon = document.createElement("span");  
+        ikon.className = "transaction-icon" + (masuk ? "" : " expense");  
+        ikon.textContent = masuk ? "+" : "−";  
+        ikon.setAttribute("aria-hidden", "true");  
+  
+        const tengah = document.createElement("div");  
+        tengah.className = "transaction-copy";  
+        const atas = document.createElement("p");  
+        atas.className = "transaction-title";  
+        atas.textContent = t.description || t.category;  
+        const bawah = document.createElement("p");  
+        bawah.className = "transaction-detail";  
+        const bahagian = [tarikhPendek(t.transaction_date), t.category];  
+        if (bilOutlet > 1 && t.outlets) bahagian.push(t.outlets.name);  
+        bawah.textContent = bahagian.join(", ");  
+        tengah.append(atas, bawah);  
+  
+        const nilai = document.createElement("span");  
+        nilai.className = "transaction-amount " + (masuk ? "text-daun" : "text-sambal");  
+        nilai.textContent = (masuk ? "+" : "−") + rm(t.amount);  
+  
+        li.append(ikon, tengah, nilai);  
+        return li;  
+      }));  
+    }  
+  
+    async function papar() {  
+      const { data: { session } } = await sb.auth.getSession();  
+      $("skrin-login").hidden = !!session;  
+      $("skrin-app").hidden = !session;  
+      if (!session) return;  
+  
+      const { data: p, error: e1 } = await sb.from("staff_profiles")  
+        .select("role,outlet_id").eq("user_id", session.user.id).maybeSingle();  
+      const { data: outlet, error: e2 } = await sb.from("outlets").select("id,name");  
+      const { data: kat, error: e3 } = await sb.from("categories").select("key,name,type").order("key");  
+      const { data: bayar, error: e4 } = await sb.from("payment_methods").select("name");  
+      if (e1 || e2 || e3 || e4) { pesan("Data tak dapat dibaca. Semak sambungan internet dan muat semula."); return; }  
+      if (!p) { pesan("Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner."); return; }  
+  
+      profil = p;  
+      semuaKategori = kat;  
+      bilOutlet = outlet.length;  
+      const sendiri = outlet.find((o) => o.id === p.outlet_id);  
+  
+      $("nama-outlet").textContent = bilOutlet > 1 ? "Semua outlet" : (sendiri ? sendiri.name : "Outlet");  
+      $("untuk-outlet").textContent = "Untuk " + (sendiri ? sendiri.name : "outlet anda");  
+      $("info-akaun").textContent = (namaRole[p.role] || p.role) + ", " + session.user.email;  
+  
+      hariIni = new Date().toLocaleDateString("sv-SE");  
+      $("tarikh").value = hariIni;  
+      $("tarikh-ringkasan").value = hariIni;  
+      isiKategori();  
+      isiBayaran(bayar.map((b) => b.name));  
+      muatRingkasan();  
+      muatSenarai();  
+    }  
+  
+    document.querySelectorAll('input[name="jenis"]').forEach((r) => r.addEventListener("change", isiKategori));  
+    $("tarikh-ringkasan").addEventListener("change", muatRingkasan);  
+    $("tarikh-ringkasan").addEventListener("click", (e) => {  
+      try { e.target.showPicker(); } catch (err) { /* browser lama: kalendar tetap terbuka */ }  
+    });  
+  
+    $("borang-login").addEventListener("submit", async (e) => {  
+      e.preventDefault();  
+      $("btn-login").disabled = true;  
+      const { error } = await sb.auth.signInWithPassword({  
+        email: $("emel").value.trim(),  
+        password: $("katalaluan").value  
+      });  
+      $("btn-login").disabled = false;  
+      if (error) { pesan("Emel atau kata laluan salah. Cuba lagi."); return; }  
+      $("katalaluan").value = "";  
+      papar();  
+    });  
+  
+    $("btn-logout").addEventListener("click", async () => {  
+      await sb.auth.signOut();  
+      profil = null;  
+      papar();  
+    });  
+  
+    $("borang-transaksi").addEventListener("submit", async (e) => {  
+      e.preventDefault();  
+      const jumlah = Number($("jumlah").value);  
+      const keterangan = $("keterangan").value.trim();  
+      if (!(jumlah > 0)) { pesan("Masukkan jumlah lebih dari RM 0."); $("jumlah").focus(); return; }  
+      if (!keterangan) { pesan("Isi keterangan supaya senang disemak nanti."); $("keterangan").focus(); return; }  
+      if (!$("tarikh").value) { pesan("Pilih tarikh transaksi."); return; }  
+  
+      const butang = $("btn-simpan");  
+      butang.disabled = true;  
+      butang.textContent = "Menyimpan...";  
+      const { error } = await sb.from("transactions").insert({  
+        transaction_date: $("tarikh").value,  
+        type: jenisDipilih(),  
+        category: $("kategori").value,  
+        amount: Math.round(jumlah * 100) / 100,  
+        description: keterangan,  
+        payment_method: document.querySelector('input[name="bayaran"]:checked').value,  
+        reference_no: $("rujukan").value.trim() || null,  
+        outlet_id: profil.outlet_id  
+      });  
+      butang.disabled = false;  
+      butang.textContent = "Simpan transaksi";  
+  
+      if (error) { pesan("Transaksi tak disimpan: " + error.message); return; }  
+      $("jumlah").value = "";  
+      $("keterangan").value = "";  
+      $("rujukan").value = "";  
+      pesan("Transaksi disimpan.", "ok");  
+      muatRingkasan();  
+      muatSenarai();  
+    });  
+  
+    $("borang-katalaluan").addEventListener("submit", async (e) => {  
+      e.preventDefault();  
+      const baru = $("kl-baru").value;  
+      if (baru.length < 10) { pesan("Kata laluan baru mesti 10 aksara atau lebih."); return; }  
+      if (baru !== $("kl-sahkan").value) { pesan("Dua kata laluan tak sama. Taip semula."); return; }  
+  
+      $("btn-katalaluan").disabled = true;  
+      const { error } = await sb.auth.updateUser({ password: baru });  
+      $("btn-katalaluan").disabled = false;  
+  
+      if (error) {  
+        if (error.code === "same_password") pesan("Kata laluan baru mesti lain daripada yang lama.");  
+        else if (error.code === "weak_password") pesan("Kata laluan terlalu lemah. Campur huruf besar, kecil dan nombor.");  
+        else pesan("Kata laluan tak ditukar: " + error.message);  
+        return;  
+      }  
+      $("kl-baru").value = "";  
+      $("kl-sahkan").value = "";  
+      $("borang-katalaluan").closest("details").open = false;  
+      pesan("Kata laluan ditukar.", "ok");  
+    });  
+  
+    papar();  
+  </script>  </body>  
 </html>
