@@ -3,148 +3,450 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1F6B45">
   <title>BizProfit Pro</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+      --color-daun: #1F6B45;
+      --color-daun-tua: #164F33;
+      --color-daun-muda: #E3F0E7;
+      --color-sambal: #B83A26;
+      --color-sambal-muda: #F8E7E3;
+      --color-jubin: #E9EFEA;
+      --color-kertas: #FFFDF8;
+      --color-dakwat: #1B2420;
+      --color-garis: #CFD8D1;
+    }
+  </style>
   <style>
-    body { font-family: sans-serif; max-width: 420px; margin: 0 auto; padding: 16px; }
-    label { display: block; margin-top: 10px; font-size: 14px; color: #444; }
-    input, select, button { width: 100%; padding: 12px; margin: 4px 0; font-size: 16px; box-sizing: border-box; }
-    #mesej { font-weight: bold; }
-    ul { padding-left: 18px; }
-    li { margin-bottom: 8px; font-size: 14px; }
-    #ringkasan p { font-size: 14px; margin: 8px 0; }
+    /* Tepi bawah bil bergerigi macam resit kedai */
+    .bil {
+      -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
+              mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%;
+    }
   </style>
 </head>
-<body>
-  <h1>BizProfit Pro</h1>
+<body class="min-h-dvh bg-jubin font-sans text-dakwat antialiased">
 
-  <div id="skrin-login">
-    <input id="emel" type="email" placeholder="Emel" autocomplete="username">
-    <input id="katalaluan" type="password" placeholder="Kata laluan" autocomplete="current-password">
-    <button id="btn-login">Log masuk</button>
+  <!-- ===== SKRIN LOGIN ===== -->
+  <main id="skrin-login" class="min-h-dvh">
+    <section class="bg-daun px-6 pt-12 pb-28 text-white">
+      <div class="mx-auto max-w-md">
+        <div class="flex items-center gap-3">
+          <span class="grid size-11 place-items-center rounded-xl bg-white/15 font-extrabold">BP</span>
+          <span class="text-lg font-semibold">BizProfit Pro</span>
+        </div>
+        <h1 class="mt-10 text-4xl leading-tight font-extrabold tracking-tight">Duit kedai, jelas setiap hari.</h1>
+        <p class="mt-3 max-w-xs text-white/80">Rekod duit masuk dan keluar, dan tengok untung hari ini terus dari phone.</p>
+      </div>
+    </section>
+    <section class="-mt-16 px-4 pb-10">
+      <form id="borang-login" class="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-xl shadow-daun/10">
+        <h2 class="text-xl font-bold">Log masuk</h2>
+        <label for="emel" class="mt-5 block text-sm font-semibold">Emel</label>
+        <input id="emel" type="email" autocomplete="username" required
+          class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
+        <label for="katalaluan" class="mt-4 block text-sm font-semibold">Kata laluan</label>
+        <input id="katalaluan" type="password" autocomplete="current-password" required
+          class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
+        <button id="btn-login" type="submit"
+          class="mt-6 w-full rounded-2xl bg-daun py-4 text-lg font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none disabled:opacity-60">Log masuk</button>
+        <p class="mt-4 text-sm text-dakwat/60">Lupa kata laluan? Minta owner set semula.</p>
+      </form>
+    </section>
+  </main>
+
+  <!-- ===== SKRIN APP (3 tab) ===== -->
+  <div id="skrin-app" hidden class="min-h-dvh pb-32">
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="pg-dashboard">
+      <header class="bg-daun text-white">
+        <div class="mx-auto flex max-w-md items-center gap-3 px-4 pt-5 pb-24">
+          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 text-sm font-extrabold">BP</span>
+          <div class="min-w-0">
+            <h1 id="nama-outlet" class="truncate leading-tight font-bold"></h1>
+            <p id="peranan" class="text-sm text-white/75"></p>
+          </div>
+        </div>
+      </header>
+
+      <div class="mx-auto -mt-20 max-w-md space-y-6 px-4">
+        <section class="bil rounded-t-2xl bg-kertas px-5 pt-5 pb-9 shadow-lg shadow-daun/10" aria-labelledby="tajuk-bil">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="tajuk-bil" class="font-bold">Bil hari ini</h2>
+              <p id="label-tarikh" class="text-sm text-dakwat/60"></p>
+            </div>
+            <label class="relative shrink-0 cursor-pointer rounded-full border border-garis bg-white px-3 py-1.5 text-sm font-semibold transition hover:border-daun has-focus-visible:ring-2 has-focus-visible:ring-daun/40">
+              Tukar tarikh
+              <input id="tarikh-ringkasan" type="date" class="absolute inset-0 size-full cursor-pointer opacity-0">
+            </label>
+          </div>
+
+          <div class="mt-4 space-y-2 border-t border-dashed border-garis pt-4 font-mono text-[15px]">
+            <div class="flex justify-between gap-3"><span>Duit masuk</span><span id="r-masuk">RM 0.00</span></div>
+            <div class="flex justify-between gap-3"><span>Duit keluar</span><span id="r-keluar">RM 0.00</span></div>
+          </div>
+
+          <div class="mt-4 border-t border-dashed border-garis pt-4">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="font-bold">Untung</span>
+              <span id="r-untung" class="font-mono text-3xl font-semibold text-daun">RM 0.00</span>
+            </div>
+            <p id="r-bil" class="mt-1 text-right text-sm text-dakwat/60">0 transaksi</p>
+          </div>
+
+          <div id="r-outlet" hidden class="mt-4 space-y-1.5 border-t border-dashed border-garis pt-4 text-sm"></div>
+
+          <p class="mt-4 text-xs leading-relaxed text-dakwat/55">Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</p>
+        </section>
+
+        <section aria-labelledby="tajuk-senarai" class="px-1">
+          <h2 id="tajuk-senarai" class="text-lg font-bold">Transaksi terkini</h2>
+          <ul id="senarai" class="mt-2 divide-y divide-garis"></ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 2: KEY IN -->
+    <div id="pg-keyin" hidden>
+      <header class="bg-daun text-white">
+        <div class="mx-auto max-w-md px-4 pt-6 pb-16">
+          <h1 class="text-2xl font-extrabold tracking-tight">Rekod transaksi</h1>
+          <p id="untuk-outlet" class="mt-1 text-white/80"></p>
+        </div>
+      </header>
+
+      <div class="mx-auto -mt-10 max-w-md px-4">
+        <section class="rounded-3xl bg-white p-5 shadow-lg shadow-daun/10 ring-1 ring-garis/60">
+          <form id="borang-transaksi" class="space-y-5" novalidate>
+
+            <fieldset>
+              <legend class="sr-only">Jenis transaksi</legend>
+              <div class="grid grid-cols-2 gap-1 rounded-2xl bg-jubin p-1">
+                <label class="cursor-pointer rounded-xl py-3 text-center font-semibold text-dakwat/70 transition has-checked:bg-daun has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-daun/40">
+                  <input type="radio" name="jenis" value="In" class="sr-only" checked>Duit masuk
+                </label>
+                <label class="cursor-pointer rounded-xl py-3 text-center font-semibold text-dakwat/70 transition has-checked:bg-sambal has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-sambal/40">
+                  <input type="radio" name="jenis" value="Out" class="sr-only">Duit keluar
+                </label>
+              </div>
+            </fieldset>
+
+            <div>
+              <label for="jumlah" class="text-sm font-semibold">Jumlah</label>
+              <div class="mt-1 flex items-center rounded-2xl border border-garis px-4 focus-within:border-daun focus-within:ring-4 focus-within:ring-daun/15">
+                <span class="font-mono text-xl text-dakwat/45">RM</span>
+                <input id="jumlah" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"
+                  class="w-full min-w-0 bg-transparent py-3 pl-3 font-mono text-3xl font-semibold outline-none placeholder:text-dakwat/25">
+              </div>
+            </div>
+
+            <div>
+              <label for="kategori" class="text-sm font-semibold">Kategori</label>
+              <div class="relative mt-1">
+                <select id="kategori"
+                  class="w-full appearance-none rounded-2xl border border-garis bg-white py-3.5 pr-10 pl-4 outline-none focus:border-daun focus:ring-4 focus:ring-daun/15"></select>
+                <svg class="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-dakwat/50" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z"/></svg>
+              </div>
+            </div>
+
+            <fieldset>
+              <legend class="text-sm font-semibold">Cara bayaran</legend>
+              <div id="bayaran" class="mt-2 flex flex-wrap gap-2"></div>
+            </fieldset>
+
+            <div>
+              <label for="keterangan" class="text-sm font-semibold">Keterangan</label>
+              <input id="keterangan" type="text" maxlength="200" placeholder="Contoh: Jualan sarapan pagi"
+                class="mt-1 w-full rounded-2xl border border-garis px-4 py-3.5 outline-none placeholder:text-dakwat/35 focus:border-daun focus:ring-4 focus:ring-daun/15">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="tarikh" class="text-sm font-semibold">Tarikh</label>
+                <input id="tarikh" type="date"
+                  class="mt-1 w-full rounded-2xl border border-garis px-3 py-3 text-sm outline-none focus:border-daun focus:ring-4 focus:ring-daun/15">
+              </div>
+              <div>
+                <label for="rujukan" class="text-sm font-semibold">No. rujukan</label>
+                <input id="rujukan" type="text" maxlength="50" placeholder="Pilihan"
+                  class="mt-1 w-full rounded-2xl border border-garis px-3 py-3 text-sm outline-none placeholder:text-dakwat/35 focus:border-daun focus:ring-4 focus:ring-daun/15">
+              </div>
+            </div>
+
+            <button id="btn-simpan" type="submit"
+              class="w-full rounded-2xl bg-daun py-4 text-lg font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none active:scale-[.99] disabled:opacity-60">Simpan transaksi</button>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 3: AKAUN -->
+    <div id="pg-akaun" hidden>
+      <header class="bg-daun text-white">
+        <div class="mx-auto max-w-md px-4 pt-6 pb-16">
+          <h1 class="text-2xl font-extrabold tracking-tight">Akaun</h1>
+          <p id="akaun-emel" class="mt-1 truncate text-white/80"></p>
+        </div>
+      </header>
+
+      <div class="mx-auto -mt-10 max-w-md space-y-5 px-4">
+        <section class="rounded-3xl bg-white p-5 shadow-lg shadow-daun/10 ring-1 ring-garis/60">
+          <dl class="divide-y divide-garis">
+            <div class="flex justify-between gap-4 pb-3"><dt class="text-dakwat/60">Outlet</dt><dd id="akaun-outlet" class="text-right font-semibold"></dd></div>
+            <div class="flex justify-between gap-4 pt-3"><dt class="text-dakwat/60">Peranan</dt><dd id="akaun-peranan" class="font-semibold"></dd></div>
+          </dl>
+        </section>
+
+        <section class="rounded-3xl bg-white p-5 ring-1 ring-garis/60">
+          <h2 class="font-bold">Tukar kata laluan</h2>
+          <form id="borang-katalaluan" class="mt-3 space-y-3">
+            <input id="kl-baru" type="password" autocomplete="new-password" placeholder="Kata laluan baru (min. 10 aksara)"
+              class="w-full rounded-2xl border border-garis bg-white px-4 py-3.5 outline-none placeholder:text-dakwat/40 focus:border-daun focus:ring-4 focus:ring-daun/15">
+            <input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan baru"
+              class="w-full rounded-2xl border border-garis bg-white px-4 py-3.5 outline-none placeholder:text-dakwat/40 focus:border-daun focus:ring-4 focus:ring-daun/15">
+            <button id="btn-katalaluan" type="submit"
+              class="w-full rounded-2xl border-2 border-daun py-3 font-bold text-daun transition hover:bg-daun-muda focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none disabled:opacity-60">Tukar kata laluan</button>
+          </form>
+        </section>
+
+        <button id="btn-logout" type="button"
+          class="w-full rounded-2xl border-2 border-sambal py-3 font-bold text-sambal transition hover:bg-sambal-muda focus-visible:ring-4 focus-visible:ring-sambal/30 focus-visible:outline-none">Log keluar</button>
+      </div>
+    </div>
   </div>
 
-  <div id="skrin-app" hidden>
-    <p id="status"></p>
-    <button id="btn-logout">Log keluar</button>
+  <!-- ===== NAVIGASI BAWAH ===== -->
+  <nav id="nav-bawah" hidden aria-label="Menu utama"
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-garis bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur transition-transform duration-200 motion-reduce:transition-none">
+    <div class="mx-auto grid max-w-md grid-cols-3">
+      <button id="tab-dashboard" data-tab="dashboard" type="button" aria-current="page"
+        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
+        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
+        </span>Dashboard
+      </button>
+      <button id="tab-keyin" data-tab="keyin" type="button" aria-current="false"
+        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
+        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        </span>Key in
+      </button>
+      <button id="tab-akaun" data-tab="akaun" type="button" aria-current="false"
+        class="group flex flex-col items-center gap-0.5 pt-2 pb-2.5 text-xs font-semibold text-dakwat/50 transition aria-[current=page]:text-daun focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-daun">
+        <span class="grid h-8 w-16 place-items-center rounded-full transition group-aria-[current=page]:bg-daun-muda">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+        </span>Akaun
+      </button>
+    </div>
+  </nav>
 
-    <h2>Tambah transaksi</h2>
-    <p id="outlet-nama"></p>
-
-    <label for="tarikh">Tarikh</label>
-    <input id="tarikh" type="date">
-
-    <label for="jenis">Jenis</label>
-    <select id="jenis">
-      <option value="In">Duit masuk (In)</option>
-      <option value="Out">Duit keluar (Out)</option>
-    </select>
-
-    <label for="kategori">Kategori</label>
-    <select id="kategori"></select>
-
-    <label for="jumlah">Jumlah (RM)</label>
-    <input id="jumlah" type="number" inputmode="decimal" step="0.01" min="0.01">
-
-    <label for="bayaran">Cara bayaran</label>
-    <select id="bayaran"></select>
-
-    <label for="keterangan">Keterangan</label>
-    <input id="keterangan" type="text" maxlength="200">
-
-    <label for="rujukan">No. rujukan (pilihan)</label>
-    <input id="rujukan" type="text" maxlength="50">
-
-    <button id="btn-simpan">Simpan transaksi</button>
-
-    <h2>Ringkasan harian</h2>
-    <label for="tarikh-ringkasan">Tarikh</label>
-    <input id="tarikh-ringkasan" type="date">
-    <div id="ringkasan"></div>
-
-    <h2>5 transaksi terkini</h2>
-    <ul id="senarai"></ul>
-  </div>
-
-  <p id="mesej"></p>
+  <!-- Notifikasi -->
+  <div id="toast" role="status" aria-live="polite"
+    class="pointer-events-none fixed inset-x-4 top-4 z-50 mx-auto max-w-md rounded-2xl bg-daun px-4 py-3 font-semibold text-white shadow-lg transition-transform duration-300 motion-reduce:transition-none"
+    style="transform: translateY(calc(-100% - 2rem))"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <script>
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
+    const angka = new Intl.NumberFormat("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const namaRole = { owner: "Owner", manager: "Manager", staff: "Staff" };
+    const SEMUA_TAB = ["dashboard", "keyin", "akaun"];
 
     let profil = null;
     let semuaKategori = [];
+    let bilOutlet = 1;
+    let hariIni = "";
+    let masaToast;
 
-    function pesan(teks, ok) {
-      $("mesej").textContent = teks;
-      $("mesej").style.color = ok ? "#0a7d2c" : "#b00020";
+    function rm(nilai) {
+      const n = Number(nilai);
+      return (n < 0 ? "−" : "") + "RM " + angka.format(Math.abs(n));
     }
 
-    function isiPilihan(pilihan, senarai) {
-      pilihan.replaceChildren(...senarai.map((nama) => {
-        const o = document.createElement("option");
-        o.value = nama;
-        o.textContent = nama;
-        return o;
-      }));
+    function pesan(teks, jenis) {
+      const t = $("toast");
+      t.textContent = teks;
+      t.classList.toggle("bg-daun", jenis === "ok");
+      t.classList.toggle("bg-sambal", jenis !== "ok");
+      t.style.transform = "translateY(0)";
+      clearTimeout(masaToast);
+      masaToast = setTimeout(() => { t.style.transform = "translateY(calc(-100% - 2rem))"; }, 3500);
+    }
+
+    /* ---------- Tab ---------- */
+    function bukaTab(nama) {
+      SEMUA_TAB.forEach((t) => {
+        $("pg-" + t).hidden = t !== nama;
+        $("tab-" + t).setAttribute("aria-current", t === nama ? "page" : "false");
+      });
+      window.scrollTo(0, 0);
+    }
+    SEMUA_TAB.forEach((t) => $("tab-" + t).addEventListener("click", () => bukaTab(t)));
+
+    // Sorok menu bawah bila papan kekunci keluar, supaya tak makan ruang
+    const medan = 'input:not([type="radio"]), select, textarea';
+    document.addEventListener("focusin", (e) => {
+      if (e.target.matches(medan)) $("nav-bawah").classList.add("translate-y-full");
+    });
+    document.addEventListener("focusout", () => setTimeout(() => {
+      if (!document.activeElement || !document.activeElement.matches(medan)) {
+        $("nav-bawah").classList.remove("translate-y-full");
+      }
+    }, 100));
+
+    /* ---------- Borang ---------- */
+    function jenisDipilih() {
+      return document.querySelector('input[name="jenis"]:checked').value;
     }
 
     function isiKategori() {
-      const jenis = $("jenis").value;
-      isiPilihan($("kategori"), semuaKategori.filter((k) => k.type === jenis).map((k) => k.name));
+      const jenis = jenisDipilih();
+      $("kategori").replaceChildren(...semuaKategori
+        .filter((k) => k.type === jenis)
+        .map((k) => {
+          const o = document.createElement("option");
+          o.value = k.name;
+          o.textContent = k.name;
+          return o;
+        }));
     }
 
-    async function muatSenarai() {
-      const { data, error } = await sb.from("transactions")
-        .select("transaction_date,type,category,amount,description")
-        .eq("outlet_id", profil.outlet_id)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) { pesan("Gagal baca senarai transaksi."); return; }
-      $("senarai").replaceChildren(...data.map((t) => {
-        const li = document.createElement("li");
-        li.textContent = t.transaction_date + " | " + t.type + " | " + t.category +
-          " | RM " + Number(t.amount).toFixed(2) + " | " + t.description;
-        return li;
+    function isiBayaran(senarai) {
+      $("bayaran").replaceChildren(...senarai.map((nama, i) => {
+        const label = document.createElement("label");
+        label.className = "cursor-pointer rounded-full border border-garis bg-white px-4 py-2 text-sm font-semibold text-dakwat/75 transition has-checked:border-daun has-checked:bg-daun-muda has-checked:text-daun-tua has-focus-visible:ring-2 has-focus-visible:ring-daun/40";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "bayaran";
+        input.value = nama;
+        input.className = "sr-only";
+        input.checked = i === 0;
+        label.append(input, nama);
+        return label;
       }));
     }
 
+    function tarikhPanjang(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY",
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function tarikhPendek(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY", { day: "numeric", month: "short" });
+    }
+
+    /* ---------- Dashboard ---------- */
     async function muatRingkasan() {
       const tarikh = $("tarikh-ringkasan").value;
       if (!tarikh) return;
+      $("tajuk-bil").textContent = tarikh === hariIni ? "Bil hari ini" : "Bil";
+      $("label-tarikh").textContent = tarikhPanjang(tarikh);
+
       const { data, error } = await sb.from("daily_summary")
         .select("outlet_name,money_in,money_out,profit,bil_transaksi")
         .eq("transaction_date", tarikh)
         .order("outlet_name");
-      if (error) { pesan("Gagal baca ringkasan."); return; }
-      if (data.length === 0) {
-        $("ringkasan").textContent = "Tiada transaksi pada tarikh ini.";
-        return;
-      }
-      const baris = data.map((r) => {
-        const p = document.createElement("p");
-        p.textContent = r.outlet_name +
-          ": Masuk RM " + Number(r.money_in).toFixed(2) +
-          " | Keluar RM " + Number(r.money_out).toFixed(2) +
-          " | Untung RM " + Number(r.profit).toFixed(2) +
-          " (" + r.bil_transaksi + " transaksi)";
-        return p;
-      });
-      if (data.length > 1) {
-        const jumlah = data.reduce((s, r) => s + Math.round(Number(r.profit) * 100), 0) / 100;
-        const p = document.createElement("p");
-        p.textContent = "Untung semua outlet: RM " + jumlah.toFixed(2);
-        p.style.fontWeight = "bold";
-        baris.push(p);
-      }
-      $("ringkasan").replaceChildren(...baris);
+      if (error) { pesan("Ringkasan tak dapat dibaca. Semak sambungan internet dan cuba lagi."); return; }
+
+      const sen = (k) => data.reduce((s, r) => s + Math.round(Number(r[k]) * 100), 0) / 100;
+      const untung = sen("profit");
+      $("r-masuk").textContent = rm(sen("money_in"));
+      $("r-keluar").textContent = rm(sen("money_out"));
+      $("r-untung").textContent = rm(untung);
+      $("r-untung").classList.toggle("text-daun", untung >= 0);
+      $("r-untung").classList.toggle("text-sambal", untung < 0);
+      const bil = data.reduce((s, r) => s + Number(r.bil_transaksi), 0);
+      $("r-bil").textContent = bil + " transaksi";
+
+      const kotak = $("r-outlet");
+      kotak.hidden = bilOutlet < 2 || data.length === 0;
+      kotak.replaceChildren(...data.map((r) => {
+        const baris = document.createElement("div");
+        baris.className = "flex justify-between gap-3";
+        const nama = document.createElement("span");
+        nama.className = "text-dakwat/70";
+        nama.textContent = r.outlet_name;
+        const nilai = document.createElement("span");
+        nilai.className = "font-mono " + (Number(r.profit) < 0 ? "text-sambal" : "text-dakwat");
+        nilai.textContent = rm(r.profit);
+        baris.append(nama, nilai);
+        return baris;
+      }));
     }
 
+    async function muatSenarai() {
+      const { data, error } = await sb.from("transactions")
+        .select("transaction_date,type,category,amount,description,outlets(name)")
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (error) { pesan("Senarai transaksi tak dapat dibaca. Cuba lagi."); return; }
+
+      if (data.length === 0) {
+        const li = document.createElement("li");
+        li.className = "py-4";
+        const teks = document.createElement("p");
+        teks.className = "text-sm text-dakwat/60";
+        teks.textContent = "Belum ada transaksi.";
+        const butang = document.createElement("button");
+        butang.type = "button";
+        butang.className = "mt-3 rounded-xl bg-daun px-4 py-2.5 text-sm font-bold text-white transition hover:bg-daun-tua focus-visible:ring-4 focus-visible:ring-daun/30 focus-visible:outline-none";
+        butang.textContent = "Rekod transaksi pertama";
+        butang.addEventListener("click", () => bukaTab("keyin"));
+        li.append(teks, butang);
+        $("senarai").replaceChildren(li);
+        return;
+      }
+
+      $("senarai").replaceChildren(...data.map((t) => {
+        const masuk = t.type === "In";
+        const li = document.createElement("li");
+        li.className = "flex items-center gap-3 py-3";
+
+        const ikon = document.createElement("span");
+        ikon.className = "grid size-9 shrink-0 place-items-center rounded-full text-lg font-bold " +
+          (masuk ? "bg-daun-muda text-daun" : "bg-sambal-muda text-sambal");
+        ikon.textContent = masuk ? "+" : "−";
+        ikon.setAttribute("aria-hidden", "true");
+
+        const tengah = document.createElement("div");
+        tengah.className = "min-w-0 flex-1";
+        const atas = document.createElement("p");
+        atas.className = "truncate text-sm font-semibold";
+        atas.textContent = t.description || t.category;
+        const bawah = document.createElement("p");
+        bawah.className = "truncate text-xs text-dakwat/55";
+        const bahagian = [tarikhPendek(t.transaction_date), t.category];
+        if (bilOutlet > 1 && t.outlets) bahagian.push(t.outlets.name);
+        bawah.textContent = bahagian.join(", ");
+        tengah.append(atas, bawah);
+
+        const nilai = document.createElement("span");
+        nilai.className = "shrink-0 font-mono text-sm font-semibold " + (masuk ? "text-daun" : "text-sambal");
+        nilai.textContent = (masuk ? "+" : "−") + rm(t.amount);
+
+        li.append(ikon, tengah, nilai);
+        return li;
+      }));
+    }
+
+    /* ---------- Mula ---------- */
     async function papar() {
       const { data: { session } } = await sb.auth.getSession();
       $("skrin-login").hidden = !!session;
       $("skrin-app").hidden = !session;
+      $("nav-bawah").hidden = !session;
       if (!session) return;
 
       const { data: p, error: e1 } = await sb.from("staff_profiles")
@@ -152,75 +454,111 @@
       const { data: outlet, error: e2 } = await sb.from("outlets").select("id,name");
       const { data: kat, error: e3 } = await sb.from("categories").select("key,name,type").order("key");
       const { data: bayar, error: e4 } = await sb.from("payment_methods").select("name");
-      if (e1 || e2 || e3 || e4) { pesan("Gagal baca data."); return; }
-      if (!p) { pesan("Akaun ini belum didaftar sebagai staff."); return; }
+      if (e1 || e2 || e3 || e4) { pesan("Data tak dapat dibaca. Semak sambungan internet dan muat semula."); return; }
+      if (!p) { pesan("Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner."); return; }
 
       profil = p;
       semuaKategori = kat;
+      bilOutlet = outlet.length;
       const sendiri = outlet.find((o) => o.id === p.outlet_id);
+      const namaOutlet = sendiri ? sendiri.name : "Outlet";
+      const peranan = namaRole[p.role] || p.role;
 
-      $("status").textContent = "Log masuk: " + session.user.email +
-        " | Role: " + p.role + " | Outlet nampak: " + outlet.length;
-      $("outlet-nama").textContent = "Outlet: " + (sendiri ? sendiri.name : "tidak diketahui");
-      const hariIni = new Date().toLocaleDateString("sv-SE");
+      $("nama-outlet").textContent = bilOutlet > 1 ? "Semua outlet" : namaOutlet;
+      $("peranan").textContent = peranan;
+      $("untuk-outlet").textContent = "Untuk " + namaOutlet;
+      $("akaun-emel").textContent = session.user.email;
+      $("akaun-outlet").textContent = namaOutlet;
+      $("akaun-peranan").textContent = peranan;
+
+      hariIni = new Date().toLocaleDateString("sv-SE");
       $("tarikh").value = hariIni;
       $("tarikh-ringkasan").value = hariIni;
       isiKategori();
-      isiPilihan($("bayaran"), bayar.map((b) => b.name));
-      muatSenarai();
+      isiBayaran(bayar.map((b) => b.name));
+      bukaTab("dashboard");
       muatRingkasan();
+      muatSenarai();
     }
 
-    $("jenis").onchange = isiKategori;
-    $("tarikh-ringkasan").onchange = muatRingkasan;
+    document.querySelectorAll('input[name="jenis"]').forEach((r) => r.addEventListener("change", isiKategori));
+    $("tarikh-ringkasan").addEventListener("change", muatRingkasan);
+    $("tarikh-ringkasan").addEventListener("click", (e) => {
+      try { e.target.showPicker(); } catch (err) { /* browser lama: kalendar tetap terbuka */ }
+    });
 
-    $("btn-login").onclick = async () => {
-      pesan("");
+    $("borang-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("btn-login").disabled = true;
       const { error } = await sb.auth.signInWithPassword({
         email: $("emel").value.trim(),
         password: $("katalaluan").value
       });
-      if (error) { pesan("Emel atau kata laluan salah."); return; }
+      $("btn-login").disabled = false;
+      if (error) { pesan("Emel atau kata laluan salah. Cuba lagi."); return; }
       $("katalaluan").value = "";
       papar();
-    };
+    });
 
-    $("btn-logout").onclick = async () => {
+    $("btn-logout").addEventListener("click", async () => {
       await sb.auth.signOut();
       profil = null;
-      pesan("");
       papar();
-    };
+    });
 
-    $("btn-simpan").onclick = async () => {
-      pesan("");
+    $("borang-transaksi").addEventListener("submit", async (e) => {
+      e.preventDefault();
       const jumlah = Number($("jumlah").value);
       const keterangan = $("keterangan").value.trim();
-      if (!$("tarikh").value) { pesan("Pilih tarikh."); return; }
-      if (!(jumlah > 0)) { pesan("Jumlah mesti lebih dari 0."); return; }
-      if (!keterangan) { pesan("Isi keterangan."); return; }
+      if (!(jumlah > 0)) { pesan("Masukkan jumlah lebih dari RM 0."); $("jumlah").focus(); return; }
+      if (!keterangan) { pesan("Isi keterangan supaya senang disemak nanti."); $("keterangan").focus(); return; }
+      if (!$("tarikh").value) { pesan("Pilih tarikh transaksi."); return; }
 
-      $("btn-simpan").disabled = true;
+      const butang = $("btn-simpan");
+      butang.disabled = true;
+      butang.textContent = "Menyimpan...";
       const { error } = await sb.from("transactions").insert({
         transaction_date: $("tarikh").value,
-        type: $("jenis").value,
+        type: jenisDipilih(),
         category: $("kategori").value,
         amount: Math.round(jumlah * 100) / 100,
         description: keterangan,
-        payment_method: $("bayaran").value,
+        payment_method: document.querySelector('input[name="bayaran"]:checked').value,
         reference_no: $("rujukan").value.trim() || null,
         outlet_id: profil.outlet_id
       });
-      $("btn-simpan").disabled = false;
+      butang.disabled = false;
+      butang.textContent = "Simpan transaksi";
 
-      if (error) { pesan("Gagal simpan: " + error.message); return; }
+      if (error) { pesan("Transaksi tak disimpan: " + error.message); return; }
       $("jumlah").value = "";
       $("keterangan").value = "";
       $("rujukan").value = "";
-      pesan("Transaksi disimpan.", true);
-      muatSenarai();
+      pesan("Transaksi disimpan. Tengok di Dashboard.", "ok");
       muatRingkasan();
-    };
+      muatSenarai();
+    });
+
+    $("borang-katalaluan").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const baru = $("kl-baru").value;
+      if (baru.length < 10) { pesan("Kata laluan baru mesti 10 aksara atau lebih."); return; }
+      if (baru !== $("kl-sahkan").value) { pesan("Dua kata laluan tak sama. Taip semula."); return; }
+
+      $("btn-katalaluan").disabled = true;
+      const { error } = await sb.auth.updateUser({ password: baru });
+      $("btn-katalaluan").disabled = false;
+
+      if (error) {
+        if (error.code === "same_password") pesan("Kata laluan baru mesti lain daripada yang lama.");
+        else if (error.code === "weak_password") pesan("Kata laluan terlalu lemah. Campur huruf besar, kecil dan nombor.");
+        else pesan("Kata laluan tak ditukar: " + error.message);
+        return;
+      }
+      $("kl-baru").value = "";
+      $("kl-sahkan").value = "";
+      pesan("Kata laluan ditukar.", "ok");
+    });
 
     papar();
   </script>
