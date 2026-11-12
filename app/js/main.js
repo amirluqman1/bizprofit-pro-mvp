@@ -85,6 +85,7 @@ window.addEventListener('bp:logout', async () => {
 
 $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));
 onOutletChange(() => { rerender(); refreshBell(); });
+window.addEventListener('bp:stock-changed', refreshBell);
 
 $('bellBtn').addEventListener('click', () => {
   if (!lowStock) { toast('Tiada notifikasi. Semua stok mencukupi.'); return; }

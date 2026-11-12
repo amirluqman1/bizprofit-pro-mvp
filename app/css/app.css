@@ -233,3 +233,106 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
   .tile { padding: 12px 8px; }
   .short { font-size: 14px; gap: 8px; padding: 10px; }
 }
+
+/* ===== Komponen bersama (Fasa 4) ===== */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.center { text-align: center; } .right { text-align: right; } .small { font-size: 12px; }
+.neg { color: var(--red); } .pos { color: var(--mint); }
+.note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.note-line { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.note-line svg { width: 16px; height: 16px; }
+.btn.white { background: #fff; color: #062016; border-radius: 999px; padding: 10px 16px; }
+.alert { padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; background: #4d3d1c; color: var(--amber); }
+.alert.danger { background: var(--red-bg); color: #ffc2b8; }
+.empty { padding: 22px; border: 1px dashed var(--line); border-radius: 20px; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.field.plain { border: 0; margin: 0; padding: 0; }
+.field.plain legend { padding: 0; margin-bottom: 7px; }
+
+/* Suis segmen (tab dalam halaman, jenis transaksi, tempoh) */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: #082419; border: 1px solid var(--line); }
+.seg.four { grid-auto-columns: minmax(0, 1fr); }
+.seg-opt {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 8px 6px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--muted); font-weight: 700; font-size: 14px; text-decoration: none; cursor: pointer;
+}
+.seg-opt svg { width: 18px; height: 18px; }
+.seg-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.seg-opt.on, .seg-opt:has(input:checked) { background: #15513a; color: var(--mint); box-shadow: inset 0 0 0 1px var(--line-glow); }
+.seg-opt.out:has(input:checked) { background: var(--red-bg); color: #ffb4a9; box-shadow: inset 0 0 0 1px #7a3730; }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--mint); }
+.seg.four .seg-opt { font-size: clamp(11px, 3.2vw, 14px); }
+
+/* Key In */
+.amount { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 14px; background: #082419; }
+.amount span { color: var(--muted); font-weight: 700; }
+.amount input { border: 0 !important; padding: 8px 0 !important; background: transparent !important; font-size: 28px !important; font-weight: 800; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font-size: 14px; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip:has(input:checked) { background: #15513a; border-color: var(--line-glow); color: var(--mint); }
+.chip:has(input:focus-visible) { outline: 2px solid var(--mint); }
+
+/* Senarai transaksi */
+.tx-list { list-style: none; margin: 0; padding: 0; }
+.tx { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #ffffff12; }
+.tx:last-child { border-bottom: 0; }
+.tx-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 12px; font-size: 20px; font-weight: 700; }
+.tx-icon.in { background: #15513a; color: var(--mint); } .tx-icon.out { background: var(--red-bg); color: var(--red); }
+.tx-copy { flex: 1; min-width: 0; }
+.tx-title, .tx-detail { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-title { font-size: 14px; font-weight: 600; }
+.tx-detail { margin-top: 2px; font-size: 12px; color: var(--muted); }
+.tx-amount { flex: 0 0 auto; font-weight: 700; font-size: 14px; }
+.tx-amount.in { color: var(--mint); } .tx-amount.out { color: var(--red); }
+
+/* Stok */
+.section-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.section-title { margin: 0; font-size: 17px; }
+.tools { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
+.tools .btn { border-radius: 999px; padding: 11px 16px; font-size: 14px; }
+.item { background: linear-gradient(160deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); border-radius: 22px; padding: 16px 16px 14px; }
+.item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.item-name { background: none; border: 0; padding: 0; color: inherit; text-align: left; min-width: 0; }
+.item-name h3 { margin: 0; font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.item .sub { display: block; margin-top: 5px; font-size: 13px; color: var(--muted); }
+.pill { flex: 0 0 auto; font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
+.pill.habis, .pill.rendah { color: var(--red); background: var(--red-bg); }
+.pill.ok { color: var(--mint); background: #1b5a3c; }
+.item-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; }
+.qty { background: none; border: 0; padding: 0; color: var(--text); font-size: 38px; font-weight: 800; line-height: 1; text-align: left; }
+.qty small { font-size: 15px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+.saving { display: block; margin-top: 4px; min-height: 14px; font-size: 11px; color: var(--muted); }
+.steppers { display: flex; gap: 10px; }
+.step { width: 58px; height: 46px; border-radius: 999px; font-size: 24px; line-height: 1; display: grid; place-items: center; }
+.step.minus { background: transparent; border: 1.5px solid var(--line-glow); color: var(--text); }
+.step.plus { background: #fff; border: 0; color: #062016; }
+#stokItems { display: grid; gap: 12px; }
+.log { padding: 10px 0; border-bottom: 1px solid #ffffff14; font-size: 14px; line-height: 1.5; }
+.log:last-child { border-bottom: 0; }
+.log span { font-size: 12px; color: var(--muted); }
+
+/* Laporan */
+.receipt h2 { margin: 4px 0 2px; font-size: 21px; }
+.overline { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.overline svg { width: 15px; height: 15px; }
+.kv-list { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); display: grid; gap: 9px; }
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.kv span { color: var(--muted); }
+.kv b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kv.total { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.kv.total span { color: var(--text); font-weight: 700; }
+.kv.total b { font-size: clamp(24px, 7vw, 32px); }
+.breakdown { margin: 10px 0; }
+.breakdown summary { cursor: pointer; color: var(--mint-soft); font-size: 13px; font-weight: 700; padding: 6px 0; }
+.breakdown .kv { padding: 4px 0; font-size: 13px; }
+.legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; background: var(--mint); }
+.legend i.out { background: var(--red); margin-left: 6px; }
+.bar-chart { display: grid; grid-template-columns: repeat(var(--groups, 7), minmax(0, 1fr)); gap: 2px; min-height: 140px; }
+.bar-group { display: grid; gap: 6px; padding: 4px 1px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: clamp(9px, 2.4vw, 11px); }
+.bar-group[aria-pressed="true"] { background: #ffffff0f; color: var(--text); }
+.bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 110px; }
+.bar { width: 38%; max-width: 14px; min-height: 0; border-radius: 3px 3px 0 0; background: var(--mint); }
+.bar.out { background: var(--red); }
+.bar-label { white-space: nowrap; overflow: hidden; }
+@media (max-width: 370px) { .step { width: 48px; height: 42px; } .qty { font-size: 32px; } .two { grid-template-columns: 1fr; } }
