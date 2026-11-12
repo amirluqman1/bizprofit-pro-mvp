@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123E2C">
+  <meta name="description" content="BizProfit Pro — duit kedai, jelas setiap hari. Rekod duit masuk dan keluar dalam satu tempat.">
+  <title>BizProfit Pro</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%23123E2C'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-family='Arial,sans-serif' font-weight='700' font-size='46' fill='%23F6F5E9'%3EBP%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* BIZPROFIT PRO · Forest & Paper
+       Semua gaya disimpan di sini. Tiada Tailwind runtime diperlukan.
+       Borang dan laporan menggunakan sambungan Supabase yang sama. */
+    :root {
+      color-scheme: light;
+      --forest: #123e2c;
+      --forest-deep: #0b2e20;
+      --leaf: #286547;
+      --leaf-light: #edf4ee;
+      --sage: #c9d7b5;
+      --clay: #ae4935;
+      --clay-light: #fbefeb;
+      --paper: #fffef9;
+      --canvas: #f0f1ea;
+      --ink: #23362b;
+      --muted: #6d796f;
+      --line: #dfe4d9;
+      --sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+      --serif: "Instrument Serif", Georgia, serif;
+      --content: 560px;
+      --ease: cubic-bezier(.2,.75,.25,1);
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--canvas);
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-width: 280px; min-height: 100dvh; background-image: linear-gradient(90deg, #8a9a8010 1px, transparent 1px); background-size: 80px 100%; }
+    [hidden] { display: none !important; }
+    button, input, select { font: inherit; }
+    button, label, input, select, summary { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    button, input, select { touch-action: manipulation; }
+    button:disabled { cursor: wait; opacity: .6; }
+    h1, h2, p { margin: 0; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { padding: 0; }
+    a { color: inherit; }
+    ::selection { background: #d5e3c2; color: var(--forest-deep); }
+    :focus-visible { outline: 3px solid #8ca977; outline-offset: 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .icon { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+    .symbol-library { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .shell { width: 100%; max-width: calc(var(--content) + 40px); margin-inline: auto; padding-inline: 20px; }
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    .overline { color: var(--muted); font-size: 10px; line-height: 1.5; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
+    .text-daun { color: var(--forest); }
+    .text-sambal { color: var(--clay); }
+    .text-dakwat { color: var(--ink); }
+    .bg-daun { background-color: var(--forest); }
+    .bg-sambal { background-color: var(--clay); }
+
+    /* The green canopy, shared by both original screens. */
+    .canopy { position: relative; isolation: isolate; overflow: hidden; color: #f5f6ed; background: var(--forest); }
+    .canopy::before { content: ""; position: absolute; z-index: -1; width: 640px; height: 640px; right: calc(50% - 610px); top: -330px; border: 1px solid #e8efd315; border-radius: 50%; box-shadow: 0 0 0 48px #e8efd307, 0 0 0 49px #e8efd30c, 0 0 0 105px #e8efd305, 0 0 0 106px #e8efd30c, 0 0 0 165px #e8efd304, 0 0 0 166px #e8efd308; pointer-events: none; }
+    .canopy::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(110deg, #071f151a, transparent 65%); pointer-events: none; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { display: grid; place-items: center; width: 43px; height: 46px; flex: 0 0 auto; border: 1px solid #dfe8ce55; border-radius: 12px 12px 12px 3px; background: #e6edd710; box-shadow: inset 0 1px #ffffff15; color: #e2e8ca; font-size: 18px; font-weight: 800; letter-spacing: -1.6px; padding-right: 2px; }
+    .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -.4px; }
+    .brand-note { margin-top: 5px; color: #d0ddc3; font-size: 8px; font-weight: 500; letter-spacing: .24em; text-transform: uppercase; }
+    #skrin-login { min-height: 100dvh; }
+    .login-hero { padding-top: 42px; padding-bottom: 122px; }
+    .login-hero h1 { max-width: 500px; margin-top: 48px; font-size: clamp(36px, 8.8vw, 48px); line-height: 1.13; font-weight: 700; letter-spacing: -2.1px; }
+    .login-hero h1 em { display: block; margin-top: 3px; color: #dce6c3; font-family: var(--serif); font-size: 1.19em; line-height: 1.08; font-weight: 400; letter-spacing: -.9px; }
+    .hero-description { max-width: 350px; margin-top: 22px; color: #d1dfd1; font-size: 13px; line-height: 1.85; }
+    .login-wrap { position: relative; margin-top: -70px; padding-bottom: 38px; }
+    .login-card { position: relative; padding: 32px; border: 1px solid #ffffff; border-radius: 24px; background: var(--paper); box-shadow: 0 16px 48px -24px #123e2c35, 0 3px 8px #243c2305; animation: arrive .65s var(--ease) both; }
+    .login-card::before { content: ""; position: absolute; top: -1px; left: 32px; width: 36px; height: 3px; border-radius: 0 0 3px 3px; background: #9daf7c; }
+    .login-card .section-heading { margin-top: 6px; font-size: 23px; }
+    .login-fields { margin-top: 26px; }
+    .field + .field { margin-top: 19px; }
+    .field-label { display: block; font-size: 12px; line-height: 1.7; font-weight: 700; letter-spacing: -.1px; }
+    .input-wrap { display: flex; align-items: center; gap: 11px; margin-top: 7px; padding-inline: 15px; border: 1px solid var(--line); border-radius: 12px; background: #fff; transition: border-color .2s, box-shadow .2s, background .2s; }
+    .input-wrap > .icon { width: 18px; height: 18px; color: #899485; }
+    .input-wrap:focus-within { border-color: #71916b; box-shadow: 0 0 0 3px #cbdabc55; background: #fff; }
+    .input-wrap input { width: 100%; min-width: 0; padding-block: 15px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 16px; }
+    .input-wrap:focus-within > .icon { color: var(--forest); }
+    .primary-button { position: relative; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 55px; padding: 16px 20px; border: 1px solid #174c35; border-radius: 13px; background: var(--forest); box-shadow: inset 0 1px 0 #ffffff17, 0 4px 8px #123e2c0d; color: #f9faef; font-size: 15px; font-weight: 700; letter-spacing: .05px; transition: background .2s, transform .2s var(--ease), box-shadow .2s; }
+    .primary-button::after { content: ""; position: absolute; width: 7px; height: 7px; right: 23px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: rotate(45deg); opacity: .75; }
+    .primary-button:hover { background: var(--forest-deep); box-shadow: 0 6px 16px #123e2c20; }
+    .primary-button:active { transform: translateY(1px); }
+    .primary-button:disabled::after { width: 13px; height: 13px; border: 1.5px solid #ffffff50; border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }
+    #btn-login { margin-top: 26px; }
+    .login-help { display: flex; align-items: flex-start; justify-content: center; gap: 7px; margin-top: 21px; font-size: 11px; line-height: 1.9; color: var(--muted); text-align: center; }
+    .login-help .icon { width: 13px; height: 13px; margin-top: 3px; }
+    .page-signature { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 25px; color: #778372; font-size: 9px; line-height: 1.8; font-weight: 600; letter-spacing: .14em; text-align: center; text-transform: uppercase; }
+    .page-signature::before, .page-signature::after { content: ""; width: 20px; height: 1px; background: #cbd3c4; }
+
+    /* App header: the same outlet + account + log-out arrangement. */
+    #skrin-app { min-height: 100dvh; padding-bottom: max(38px, env(safe-area-inset-bottom)); }
+    .app-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 30px; padding-bottom: 132px; }
+    .app-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .app-identity .brand-mark { width: 39px; height: 42px; font-size: 16px; border-radius: 10px 10px 10px 3px; }
+    .account-copy { min-width: 0; }
+    #nama-outlet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: -.3px; }
+    #info-akaun { margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c8d8c9; font-size: 11px; }
+    .logout-button { display: flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0; min-height: 42px; border: 1px solid #d6e3ce2a; border-radius: 10px; padding: 8px 11px; background: #dce7d10a; color: #e6eedf; font-size: 11px; font-weight: 600; transition: background .2s, border-color .2s; }
+    .logout-button .icon { width: 14px; height: 14px; }
+    .logout-button:hover { background: #dce7d11c; border-color: #d6e3ce66; }
+    .app-content { position: relative; margin-top: -101px; }
+    .app-content > * + * { margin-top: 27px; }
+    .header-actions { display: flex; flex-shrink: 0; gap: 6px; }
+    .app-menu { position: sticky; top: 8px; z-index: 5; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); box-shadow: 0 4px 16px #123e2c10; }
+    .menu-button { display: grid; place-items: center; gap: 4px; min-height: 49px; padding: 7px 2px; border: 0; border-radius: 10px; background: transparent; color: #52654e; font-size: clamp(9px, 2.55vw, 12px); font-weight: 700; }
+    .menu-button .icon { width: 17px; height: 17px; }
+    .menu-button:hover, .period-button:hover { background: var(--leaf-light); }
+    .menu-button[aria-pressed="true"], .period-button[aria-pressed="true"] { background: var(--forest); color: var(--paper); }
+    .app-content > .app-view { margin-top: 16px; }
+    .app-view > * + * { margin-top: 16px; }
+    .report-card { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+    .periods { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 3px; margin: 9px 0 13px; padding: 4px; border-radius: 10px; background: var(--canvas); }
+    .period-button { min-height: 38px; padding: 6px 1px; border: 0; border-radius: 7px; background: transparent; color: #52654e; font-size: clamp(9px, 2.6vw, 12px); font-weight: 700; }
+    .report-date { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 7px 12px; }
+    .report-date .control { width: auto; max-width: 100%; min-height: 42px; margin: 0; padding: 8px 10px; }
+    .year-controls { display: flex; align-items: center; gap: 6px; }
+    .year-controls .control { width: 86px; }
+    .year-controls .dialog-close { min-height: 42px; }
+    .chart-card { margin-top: 24px; }
+    .chart-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 12px; color: var(--muted); font-size: 11px; }
+    .chart-legend { display: flex; gap: 12px; }
+    .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .chart-legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--leaf); }
+    .chart-legend span:last-child::before { background: var(--clay); }
+    .chart-columns { display: grid; grid-template-columns: repeat(var(--groups),minmax(0,1fr)); gap: 1px; background: repeating-linear-gradient(to top, transparent 0 25px, var(--line) 25px 26px) left top / 100% 104px no-repeat; }
+    .chart-day { min-width: 0; border: 0; border-radius: 6px; padding: 0 1px 5px; background: transparent; color: var(--ink); font-family: var(--mono); font-size: clamp(7px, 2.1vw, 10px); text-align: center; }
+    .chart-day:hover, .chart-day[aria-pressed="true"] { background: #dfe9d675; }
+    .chart-bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 104px; margin-bottom: 6px; }
+    .chart-bar { width: 35%; max-width: 17px; background: var(--leaf); border-radius: 3px 3px 0 0; }
+    .chart-bar.out { background: var(--clay); }
+    .chart-detail { margin-top: 10px; padding: 9px 11px; border-radius: 8px; background: #f1f4ea; color: var(--ink); font-size: 11px; line-height: 1.7; }
+    .option-group { margin-top: 14px; }
+    .option-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 7px 0 0; padding: 0; }
+    .option-list li { padding: 6px 10px; border-radius: 7px; background: var(--leaf-light); color: var(--forest); font-size: 12px; }
+    .account-dialog { width: min(440px,calc(100% - 32px)); padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink); }
+    .account-dialog::backdrop { background: #0b2e2060; }
+    .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .dialog-close { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--canvas); color: var(--forest); font-size: 12px; }
+
+    /* Paper receipt. The serration is decorative; contents remain unmasked. */
+    .receipt-shell { filter: drop-shadow(0 8px 12px #233e2010); animation: arrive .6s var(--ease) both; }
+    .bil { position: relative; overflow: visible; padding: 27px 28px 25px; border-radius: 17px 17px 0 0; background: var(--paper); }
+    .bil::after { content: ""; position: absolute; top: calc(100% - 1px); left: 0; right: 0; height: 9px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpath d='M0 0H16L8 9Z' fill='%23fffef9'/%3E%3C/svg%3E") left top / 16px 9px repeat-x; pointer-events: none; }
+    .receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .receipt-kicker { display: flex; align-items: center; gap: 6px; color: #69805e; font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: .17em; text-transform: uppercase; }
+    .receipt-kicker .icon { width: 13px; height: 13px; }
+    #tajuk-bil { margin-top: 8px; font-size: 22px; font-weight: 700; letter-spacing: -.8px; line-height: 1.25; }
+    #label-tarikh { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .receipt-lines { margin-top: 20px; border-top: 1px dashed #c9d2c0; padding-top: 17px; }
+    .receipt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .receipt-row + .receipt-row { margin-top: 13px; }
+    .receipt-row-label { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #596750; }
+    .direction-mark { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #d9e3d1; border-radius: 6px; color: #6e875c; background: #edf2e6; }
+    .direction-mark.out { background: #f7f0e8; border-color: #ecded0; color: #a97d64; }
+    .direction-mark .icon { width: 12px; height: 12px; }
+    .receipt-row-value { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: -.5px; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+    .receipt-total { position: relative; margin-top: 18px; padding-top: 17px; border-top: 1px dashed #c9d2c0; }
+    .total-line { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+    .total-label { font-size: 13px; font-weight: 700; }
+    #r-untung { margin-left: auto; max-width: 100%; overflow-wrap: anywhere; font-family: var(--mono); font-size: clamp(25px, 7.2vw, 37px); line-height: 1.3; font-weight: 500; letter-spacing: -1.8px; font-variant-numeric: tabular-nums; }
+    .count-line { display: flex; justify-content: flex-end; margin-top: 7px; }
+    #r-bil { display: flex; align-items: center; gap: 5px; color: #68735f; font-size: 11px; }
+    #r-bil::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #9bab7b; }
+    #r-outlet { margin-top: 17px; border-top: 1px dashed #c9d2c0; padding-top: 14px; }
+    .outlet-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 11px; line-height: 1.7; }
+    .outlet-row + .outlet-row { margin-top: 8px; }
+    .outlet-name { color: #596750; overflow-wrap: anywhere; }
+    .money-inline { flex-shrink: 0; font-family: var(--mono); font-size: 12px; letter-spacing: -.2px; }
+    .receipt-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 18px; padding: 10px 11px; border: 1px solid #e6e8dc; border-radius: 8px; background: #f5f5ec; color: #66715a; font-size: 11px; line-height: 1.7; }
+    .receipt-note .icon { width: 12px; height: 12px; margin-top: 2px; }
+    .receipt-end { display: flex; align-items: center; justify-content: space-between; margin-top: 17px; opacity: .65; }
+    .receipt-end span { font-family: var(--mono); font-size: 7px; letter-spacing: .2em; color: #7b886c; }
+    .barcode { width: 52px; height: 13px; background: repeating-linear-gradient(90deg,#7a8767 0 1px,transparent 1px 3px,#7a8767 3px 5px,transparent 5px 7px,#7a8767 7px 8px,transparent 8px 11px,#7a8767 11px 13px,transparent 13px 16px); }
+    .receipt-shell .bil { padding-block: 17px; }
+    .receipt-lines { margin-top: 13px; padding-top: 12px; }
+    .receipt-row + .receipt-row { margin-top: 7px; }
+    .receipt-total { margin-top: 12px; padding-top: 11px; }
+    .receipt-note { margin-top: 10px; }
+    .receipt-end { margin-top: 10px; }
+    .outlet-breakdown { margin-top: 10px; }
+    .outlet-breakdown summary { cursor: pointer; color: var(--leaf); font-size: 11px; font-weight: 700; padding-block: 7px; }
+    #r-outlet { margin-top: 4px; padding-top: 9px; }
+
+    /* The original transaction form, given a calmer type scale and touch targets. */
+    .entry-card { padding: 26px 27px 27px; border: 1px solid #dde3d5; border-radius: 20px; background: #ffffff; box-shadow: 0 4px 14px #34452a04; animation: arrive .65s .05s var(--ease) both; }
+    .section-intro { display: flex; align-items: center; gap: 11px; }
+    .section-icon { display: grid; place-items: center; width: 39px; height: 42px; flex-shrink: 0; border: 1px solid #e0e6d8; border-radius: 11px; background: #f2f5ed; color: #658150; }
+    .section-icon .icon { width: 20px; height: 20px; }
+    .section-heading { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.55px; }
+    #untuk-outlet { margin-top: 4px; font-size: 11px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
+    #borang-transaksi { margin-top: 24px; }
+    #borang-transaksi > * + * { margin-top: 21px; }
+    .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; border: 1px solid #e6e9e0; border-radius: 13px; background: #f3f5ef; }
+    .type-option { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 43px; padding: 12px 8px; border: 1px solid transparent; border-radius: 9px; color: #66725b; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+    .type-option .icon { width: 15px; height: 15px; }
+    .type-option:hover { color: var(--forest); }
+    .type-option:has(input:checked) { border-color: #164c34; background: var(--forest); box-shadow: 0 2px 4px #123e2c15, inset 0 1px #ffffff15; color: #f4f7ee; }
+    .type-option.type-out:has(input:checked) { border-color: #a94634; background: var(--clay); color: #fff9f1; }
+    .type-option:has(input:focus-visible), .payment-chip:has(input:focus-visible) { outline: 3px solid #9bb487; outline-offset: 2px; }
+    .amount-wrap { display: flex; align-items: center; gap: 12px; min-height: 81px; margin-top: 7px; padding: 14px 18px; border: 1px solid #dde3d4; border-radius: 12px; background: #f8f9f4; transition: border-color .2s, box-shadow .2s; }
+    .amount-wrap:focus-within { border-color: #7f9e6b; box-shadow: 0 0 0 3px #dfe8d17a; background: #fbfcf8; }
+    .currency-label { color: #829071; font-family: var(--mono); font-size: 17px; }
+    #jumlah { width: 100%; min-width: 0; margin: 0; border: 0; outline: 0; background: transparent; color: var(--forest); font-family: var(--mono); font-size: 35px; line-height: 1.3; font-weight: 500; letter-spacing: -1.5px; }
+    #jumlah::placeholder { color: #a3ae96; opacity: 1; }
+    .entry-card:has(.type-out input:checked) #jumlah { color: var(--clay); }
+    #jumlah::-webkit-inner-spin-button, #jumlah::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    #jumlah { appearance: textfield; -moz-appearance: textfield; }
+    .select-wrap { position: relative; margin-top: 7px; }
+    .select-wrap .icon { position: absolute; top: 50%; right: 15px; width: 15px; height: 15px; transform: translateY(-50%); color: #77856d; pointer-events: none; }
+    .control { display: block; width: 100%; min-width: 0; min-height: 49px; margin-top: 7px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: white; color: var(--ink); font-size: 16px; line-height: 1.4; transition: border-color .2s, box-shadow .2s, background .2s; }
+    .control:hover { border-color: #b7c2ac; }
+    .control:focus { border-color: #7b9b6c; box-shadow: 0 0 0 3px #dfe8d17a; }
+    .control::placeholder { color: #899281; opacity: 1; }
+    select.control { appearance: none; margin-top: 0; padding-right: 40px; cursor: pointer; }
+    #bayaran { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+    .payment-chip { position: relative; display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: white; color: #66725b; font-size: 12px; line-height: 1.5; font-weight: 600; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+    .payment-chip::before { content: ""; width: 11px; height: 11px; border: 1px solid #c4ceba; border-radius: 50%; background: #fff; }
+    .payment-chip:hover { border-color: #a5b797; }
+    .payment-chip:has(input:checked) { border-color: #a5ba91; background: #edf3e7; color: #33552d; }
+    .payment-chip:has(input:checked)::before { border: 3px solid #607e46; background: #f8faef; }
+    .two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .two-fields input { width: 100%; max-width: 100%; }
+    input[type="date"].control { min-width: 0; padding-inline: 10px; font-size: 13px; min-height: 49px; }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; width: 15px; padding: 0; margin-left: 0; cursor: pointer; }
+    input[type="date"]::-webkit-date-and-time-value { min-height: 1.4em; text-align: left; }
+    .field-optional { color: #8b9581; font-weight: 400; }
+    #btn-simpan { margin-top: 26px; }
+
+    /* Latest entries and account remain below the form. */
+    .recent-section { padding: 5px 5px 0; animation: arrive .7s .1s var(--ease) both; }
+    .recent-heading { display: flex; align-items: center; gap: 8px; }
+    .recent-heading .icon { width: 16px; height: 16px; color: #78866c; }
+    .recent-heading .section-heading { font-size: 15px; }
+    #senarai { list-style: none; margin: 11px 0 0; padding: 0; }
+    .transaction-row { display: flex; align-items: center; gap: 11px; padding: 16px 0; border-bottom: 1px solid #dce1d4; }
+    .transaction-row:last-child { border-bottom: 0; padding-bottom: 4px; }
+    .transaction-icon { display: grid; place-items: center; width: 35px; height: 35px; flex: 0 0 auto; border: 1px solid #d8e3cd; border-radius: 10px; background: #e7eede; color: #597448; font-size: 18px; line-height: 1; font-weight: 400; }
+    .transaction-icon.expense { border-color: #eadbd0; background: #f5eade; color: #ac7155; }
+    .transaction-copy { min-width: 0; flex: 1; }
+    .transaction-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.7; font-weight: 600; }
+    .transaction-detail { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64715b; font-size: 11px; line-height: 1.7; }
+    .transaction-amount { max-width: 50%; overflow-wrap: anywhere; flex-shrink: 0; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: -.45px; text-align: right; font-variant-numeric: tabular-nums; }
+    .empty-state { padding: 25px 10px; border: 1px dashed #cbd5bf; border-radius: 12px; color: var(--muted); font-size: 12px; line-height: 1.8; text-align: center; }
+    #borang-katalaluan { border-top: 1px solid #e1e6d8; padding-top: 17px; padding-bottom: 20px; }
+    #borang-katalaluan > * + * { margin-top: 13px; }
+    #borang-katalaluan .control { font-size: 16px; }
+    .secondary-button { width: 100%; min-height: 48px; padding: 13px 16px; border: 1px solid #a3b790; border-radius: 10px; background: #edf2e5; color: var(--forest); font-size: 12px; font-weight: 700; transition: background .2s; }
+    .secondary-button:hover { background: #e1ead5; }
+    .app-content > .page-signature { margin-top: 26px; }
+    #toast { position: fixed; top: max(18px, env(safe-area-inset-top)); left: 16px; right: 16px; z-index: 100; width: max-content; max-width: min(528px, calc(100% - 32px)); margin-inline: auto; padding: 14px 19px; border: 1px solid #ffffff30; border-radius: 13px; color: #fffef6; font-size: 12px; font-weight: 600; line-height: 1.7; box-shadow: 0 10px 32px #0d2f2633; pointer-events: none; transition: transform .35s var(--ease); }
+    @keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (min-width: 640px) {
+      .login-hero { padding-top: 54px; padding-bottom: 133px; }
+      .login-hero h1 { margin-top: 49px; font-size: 48px; }
+      .hero-description { font-size: 14px; max-width: 390px; }
+      .login-card { padding: 35px 38px; }
+      .login-card::before { left: 38px; }
+      .app-header-inner { padding-top: 39px; padding-bottom: 134px; }
+      .bil { padding: 31px 34px 26px; }
+      .entry-card { padding: 29px 33px 32px; }
+      .control { font-size: 13px; }
+      .recent-section { padding-inline: 13px; }
+      .receipt-row-label { font-size: 13px; }
+      .receipt-row-value { font-size: 16px; }
+      .transaction-title { font-size: 13px; }
+      .transaction-detail { font-size: 11px; }
+      .transaction-amount { font-size: 13px; }
+      #nama-outlet { font-size: 16px; }
+      #info-akaun { font-size: 11px; }
+      .logout-button { font-size: 11px; min-height: 40px; }
+      .payment-chip { font-size: 12px; }
+    }
+    @media (max-width: 359px) {
+      .shell { padding-inline: 13px; }
+      .login-hero h1 { font-size: 34px; }
+      .login-card { padding: 25px 20px; }
+      .bil { padding: 23px 18px 23px; }
+      .entry-card { padding: 23px 18px; }
+      .app-identity { gap: 8px; }
+      .app-identity .brand-mark { width: 33px; height: 37px; font-size: 14px; }
+      .logout-button { gap: 5px; padding-inline: 8px; }
+      #nama-outlet { font-size: 12px; }
+      #info-akaun { font-size: 9px; }
+      .two-fields { gap: 9px; }
+      input[type="date"].control { font-size: 11px; padding-inline: 8px; }
+      .transaction-row { gap: 8px; }
+      .transaction-amount { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="symbol-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3.5-2-3.5 2-3.5-2L5 21V3Z"/><path d="M9 7h6M9 11h6M9 15h3"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 17h2"/></symbol>
+    <symbol id="i-down-left" viewBox="0 0 24 24"><path d="M18 6 6 18M6 7v11h11"/></symbol>
+    <symbol id="i-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M7 6h11v11"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l5-1L20 8a2.8 2.8 0 0 0-4-4L5 15l-1 5Z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.8 7M3 5v6h6M12 7v5l3 2"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M8 12h13"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M8 15v-4m5 4V7m5 8v-6"/></symbol>
+  </svg>
+
+  <!-- ===== SKRIN LOGIN · susunan asal ===== -->
+  <main id="skrin-login">
+    <section class="canopy login-hero">
+      <div class="shell">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">BP</span>
+          <div><p class="brand-name">BizProfit Pro</p><p class="brand-note">Catatan bisnes anda</p></div>
+        </div>
+        <h1>Duit kedai,<em>jelas setiap hari.</em></h1>
+        <p class="hero-description">Rekod duit masuk dan keluar, dan tengok untung hari ini terus dari phone.</p>
+      </div>
+    </section>
+    <section class="shell login-wrap">
+      <form id="borang-login" class="login-card">
+        <p class="overline">Selamat datang kembali</p>
+        <h2 class="section-heading">Log masuk</h2>
+        <div class="login-fields">
+          <div class="field">
+            <label for="emel" class="field-label">Emel</label>
+            <div class="input-wrap">
+              <svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>
+              <input id="emel" type="email" autocomplete="username" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="katalaluan" class="field-label">Kata laluan</label>
+            <div class="input-wrap">
+              <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+              <input id="katalaluan" type="password" autocomplete="current-password" required>
+            </div>
+          </div>
+        </div>
+        <button id="btn-login" class="primary-button" type="submit">Log masuk</button>
+        <p class="login-help"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Lupa kata laluan? Minta owner set semula.</span></p>
+      </form>
+      <p class="page-signature" aria-hidden="true">Kecil catatannya. Besar bezanya.</p>
+    </section>
+  </main>
+
+  <!-- ===== SKRIN APP ===== -->
+  <div id="skrin-app" hidden>
+    <header class="canopy">
+      <div class="shell app-header-inner">
+        <div class="app-identity">
+          <span class="brand-mark" aria-hidden="true">BP</span>
+          <div class="account-copy"><p id="nama-outlet"></p><p id="info-akaun"></p></div>
+        </div>
+        <div class="header-actions">
+          <button id="btn-akaun" class="logout-button" type="button" aria-label="Tukar kata laluan" title="Tukar kata laluan"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></button>
+          <button id="btn-logout" class="logout-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>Log keluar</button>
+        </div>
+      </div>
+    </header>
+    <main class="shell app-content">
+      <nav class="app-menu" aria-label="Menu BizProfit Pro">
+        <button class="menu-button" type="button" aria-controls="paparan-dashboard" aria-pressed="true"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
+        <button class="menu-button" type="button" aria-controls="paparan-key-in" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Key In</button>
+        <button class="menu-button" type="button" aria-controls="paparan-dropdown" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Dropdown</button>
+        <button class="menu-button" type="button" aria-controls="paparan-transaksi" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>Transaksi</button>
+      </nav>
+      <div id="paparan-dashboard" class="app-view">
+        <section class="report-card" aria-labelledby="tajuk-tempoh">
+          <h2 id="tajuk-tempoh" class="section-heading">Tempoh laporan</h2>
+          <div class="periods" role="group" aria-label="Tempoh laporan">
+            <button class="period-button" type="button" data-tempoh="harian" aria-pressed="true">Harian</button>
+            <button class="period-button" type="button" data-tempoh="mingguan" aria-pressed="false">Mingguan</button>
+            <button class="period-button" type="button" data-tempoh="bulanan" aria-pressed="false">Bulanan</button>
+            <button class="period-button" type="button" data-tempoh="tahunan" aria-pressed="false">Tahunan</button>
+          </div>
+          <div class="report-date" id="pilih-tarikh">
+            <label id="label-pilih-tarikh" for="tarikh-ringkasan" class="field-label">Pilih tarikh</label>
+            <input id="tarikh-ringkasan" type="date" min="1900-01-01" max="9999-12-31" required class="control">
+          </div>
+          <form class="report-date" id="pilih-tahun" hidden>
+            <label for="tahun-ringkasan" class="field-label">Pilih tahun</label>
+            <div class="year-controls">
+              <input id="tahun-ringkasan" type="number" inputmode="numeric" min="1900" max="9999" step="1" required class="control">
+              <button type="submit" class="dialog-close">Papar</button>
+            </div>
+          </form>
+        </section>
+        <div class="receipt-shell">
+          <section class="bil" aria-labelledby="tajuk-bil">
+            <div class="receipt-heading">
+              <div>
+                <p class="receipt-kicker"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg>Ringkasan untung</p>
+                <h2 id="tajuk-bil">Bil hari ini</h2>
+                <p id="label-tarikh"></p>
+              </div>
+            </div>
+            <div class="receipt-lines">
+              <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark"><svg class="icon" aria-hidden="true"><use href="#i-down-left"/></svg></span>Duit masuk</span><span id="r-masuk" class="receipt-row-value">RM 0.00</span></div>
+              <div class="receipt-row"><span class="receipt-row-label"><span class="direction-mark out"><svg class="icon" aria-hidden="true"><use href="#i-up-right"/></svg></span>Duit keluar</span><span id="r-keluar" class="receipt-row-value">RM 0.00</span></div>
+            </div>
+            <div class="receipt-total">
+              <div class="total-line"><span class="total-label">Untung</span><span id="r-untung" class="text-daun">RM 0.00</span></div>
+              <div class="count-line"><p id="r-bil">0 transaksi</p></div>
+            </div>
+            <details id="pecahan-outlet" class="outlet-breakdown" hidden>
+              <summary>Pecahan untung ikut outlet</summary>
+              <div id="r-outlet"></div>
+            </details>
+            <p class="receipt-note"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Duit owner, pinjaman, cukai dan beli aset tidak dikira dalam untung.</span></p>
+            <div class="receipt-end" aria-hidden="true"><span>BIZPROFIT PRO</span><div class="barcode"></div></div>
+          </section>
+        </div>
+        <section class="report-card chart-card" aria-labelledby="tajuk-graf">
+          <h2 id="tajuk-graf" class="section-heading">Graf duit masuk &amp; keluar</h2>
+          <div class="chart-meta"><div class="chart-legend"><span>Duit masuk</span><span>Duit keluar</span></div><span id="graf-skala"></span></div>
+          <div id="graf-baris" class="chart-columns"></div>
+          <p id="graf-detail" class="chart-detail" role="status">Memuatkan laporan…</p>
+        </section>
+      </div>
+
+      <section id="paparan-key-in" class="entry-card app-view" aria-labelledby="tajuk-rekod" hidden>
+        <div class="section-intro">
+          <span class="section-icon"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></span>
+          <div><h2 id="tajuk-rekod" class="section-heading">Rekod transaksi</h2><p id="untuk-outlet"></p></div>
+        </div>
+        <form id="borang-transaksi" novalidate>
+          <fieldset>
+            <legend class="sr-only">Jenis transaksi</legend>
+            <div class="type-switch">
+              <label class="type-option"><input type="radio" name="jenis" value="In" class="sr-only" checked><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Duit masuk</label>
+              <label class="type-option type-out"><input type="radio" name="jenis" value="Out" class="sr-only"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg>Duit keluar</label>
+            </div>
+          </fieldset>
+          <div>
+            <label for="jumlah" class="field-label">Jumlah</label>
+            <div class="amount-wrap"><span class="currency-label">RM</span><input id="jumlah" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></div>
+          </div>
+          <div>
+            <label for="kategori" class="field-label">Kategori</label>
+            <div class="select-wrap"><select id="kategori" class="control"></select><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></div>
+          </div>
+          <fieldset><legend class="field-label">Cara bayaran</legend><div id="bayaran"></div></fieldset>
+          <div><label for="keterangan" class="field-label">Keterangan</label><input id="keterangan" type="text" maxlength="200" placeholder="Contoh: Jualan sarapan pagi" class="control"></div>
+          <div class="two-fields">
+            <div><label for="tarikh" class="field-label">Tarikh</label><input id="tarikh" type="date" class="control"></div>
+            <div><label for="rujukan" class="field-label">No. rujukan</label><input id="rujukan" type="text" maxlength="50" placeholder="Pilihan" class="control"></div>
+          </div>
+          <button id="btn-simpan" type="submit" class="primary-button">Simpan transaksi</button>
+        </form>
+      </section>
+
+      <section id="paparan-dropdown" class="report-card app-view" aria-labelledby="tajuk-dropdown" hidden>
+        <h2 id="tajuk-dropdown" class="section-heading">Pilihan dropdown</h2>
+        <p class="chart-meta">Kategori dan cara bayaran yang tersedia dalam borang Key In.</p>
+        <div class="option-group"><p class="field-label">Kategori duit masuk</p><ul id="pilihan-masuk" class="option-list"></ul></div>
+        <div class="option-group"><p class="field-label">Kategori duit keluar</p><ul id="pilihan-keluar" class="option-list"></ul></div>
+        <div class="option-group"><p class="field-label">Cara bayaran</p><ul id="pilihan-bayaran" class="option-list"></ul></div>
+      </section>
+
+      <section id="paparan-transaksi" aria-labelledby="tajuk-senarai" class="recent-section app-view" hidden>
+        <div class="recent-heading"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg><h2 id="tajuk-senarai" class="section-heading">Transaksi terkini</h2></div>
+        <ul id="senarai"></ul>
+      </section>
+
+      <dialog id="dialog-akaun" class="account-dialog" aria-labelledby="tajuk-akaun">
+        <div class="dialog-heading"><h2 id="tajuk-akaun" class="section-heading">Tukar kata laluan</h2><button id="tutup-akaun" class="dialog-close" type="button">Tutup</button></div>
+        <form id="borang-katalaluan">
+          <div><label for="kl-baru" class="field-label">Kata laluan baru</label><input id="kl-baru" type="password" autocomplete="new-password" placeholder="Minimum 10 aksara" class="control"></div>
+          <div><label for="kl-sahkan" class="field-label">Sahkan kata laluan</label><input id="kl-sahkan" type="password" autocomplete="new-password" placeholder="Taip semula kata laluan" class="control"></div>
+          <button id="btn-katalaluan" type="submit" class="secondary-button">Tukar kata laluan</button>
+        </form>
+      </dialog>
+      <p class="page-signature" aria-hidden="true">BizProfit Pro · Setiap sen, dalam perhatian.</p>
+    </main>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true" class="bg-daun" style="transform: translateY(calc(-100% - 2rem))"></div>
+
+  <script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
+  <script>
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const angka = new Intl.NumberFormat("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const namaRole = { owner: "Owner", manager: "Manager", staff: "Staff" };
+
+    let profil = null;
+    let semuaKategori = [];
+    let bilOutlet = 1;
+    let hariIni = "";
+    let masaToast;
+
+    function rm(nilai) {
+      const n = Number(nilai);
+      return (n < 0 ? "−" : "") + "RM " + angka.format(Math.abs(n));
+    }
+
+    function pesan(teks, jenis) {
+      const t = $("toast");
+      t.textContent = teks;
+      t.classList.toggle("bg-daun", jenis === "ok");
+      t.classList.toggle("bg-sambal", jenis !== "ok");
+      t.style.transform = "translateY(0)";
+      clearTimeout(masaToast);
+      masaToast = setTimeout(() => { t.style.transform = "translateY(calc(-100% - 2rem))"; }, 3500);
+    }
+
+    function jenisDipilih() {
+      return document.querySelector('input[name="jenis"]:checked').value;
+    }
+
+    function isiKategori() {
+      const jenis = jenisDipilih();
+      $("kategori").replaceChildren(...semuaKategori
+        .filter((k) => k.type === jenis)
+        .map((k) => {
+          const o = document.createElement("option");
+          o.value = k.name;
+          o.textContent = k.name;
+          return o;
+        }));
+    }
+
+    function isiBayaran(senarai) {
+      $("bayaran").replaceChildren(...senarai.map((nama, i) => {
+        const label = document.createElement("label");
+        label.className = "payment-chip";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "bayaran";
+        input.value = nama;
+        input.className = "sr-only";
+        input.checked = i === 0;
+        label.append(input, nama);
+        return label;
+      }));
+    }
+
+    function tarikhPanjang(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY",
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function tarikhPendek(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("ms-MY", { day: "numeric", month: "short" });
+    }
+
+    const tajukTempoh = {
+      harian: "Bil", mingguan: "Bil mingguan", bulanan: "Bil bulanan", tahunan: "Bil tahunan"
+    };
+    const bulanRingkas = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
+    let tempohDipilih = "harian";
+    let versiRingkasan = 0;
+
+    function ubahHari(iso, jarak) {
+      const tarikh = new Date(iso + "T00:00:00Z");
+      tarikh.setUTCDate(tarikh.getUTCDate() + jarak);
+      return tarikh.toISOString().split("T")[0];
+    }
+
+    function akhirBulan(iso) {
+      const [tahun, bulan] = iso.split("-").map(Number);
+      return new Date(Date.UTC(tahun, bulan, 0)).toISOString().slice(0, 10);
+    }
+
+    function julatTarikh(mula, akhir) {
+      if (mula === akhir) return tarikhPanjang(mula);
+      const tahunMula = mula.slice(0, 4);
+      const tahunAkhir = akhir.slice(0, 4);
+      return tarikhPendek(mula) + (tahunMula === tahunAkhir ? "" : " " + tahunMula)
+        + " – " + tarikhPendek(akhir) + " " + tahunAkhir;
+    }
+
+    function binaTempoh(tempoh, tarikh, tahun) {
+      let mula = tarikh;
+      let akhir = tarikh;
+      let kumpulan = [];
+      if (tempoh === "tahunan") {
+        mula = tahun + "-01-01";
+        akhir = tahun + "-12-31";
+        kumpulan = bulanRingkas.map((label, i) => {
+          const mula = tahun + "-" + String(i + 1).padStart(2, "0") + "-01";
+          return { label, mula, akhir: akhirBulan(mula) };
+        });
+      } else if (tempoh === "bulanan") {
+        mula = tarikh.slice(0, 7) + "-01";
+        akhir = akhirBulan(mula);
+        for (let hari = 1; hari <= Number(akhir.slice(-2)); hari += 7) {
+          const hujung = Math.min(hari + 6, Number(akhir.slice(-2)));
+          kumpulan.push({
+            label: hari === hujung ? String(hari) : hari + "–" + hujung,
+            mula: ubahHari(mula, hari - 1),
+            akhir: ubahHari(mula, hujung - 1)
+          });
+        }
+      } else {
+        if (tempoh === "mingguan") {
+          const hari = new Date(tarikh + "T00:00:00Z").getUTCDay();
+          mula = ubahHari(tarikh, -((hari + 6) % 7));
+          akhir = ubahHari(mula, 6);
+        }
+        const mulaGraf = tempoh === "harian" ? ubahHari(tarikh, -6) : mula;
+        kumpulan = Array.from({ length: 7 }, (_, i) => {
+          const tarikh = ubahHari(mulaGraf, i);
+          return { label: tarikh.slice(-2), mula: tarikh, akhir: tarikh };
+        });
+      }
+      return { mula, akhir, kumpulan };
+    }
+
+    function jumlahSen(data, medan) {
+      return data.reduce((jumlah, baris) => jumlah + Math.round(Number(baris[medan]) * 100), 0);
+    }
+
+    function paparGraf(kumpulan, data, tarikhFokus) {
+      const graf = $("graf-baris");
+      const detail = $("graf-detail");
+      if (!data.length) {
+        detail.textContent = "Tiada transaksi untuk tempoh graf ini.";
+        return;
+      }
+      const nilai = kumpulan.map((k) => {
+        const baris = data.filter((r) => r.transaction_date >= k.mula && r.transaction_date <= k.akhir);
+        return { ...k, masuk: jumlahSen(baris, "money_in"), keluar: jumlahSen(baris, "money_out") };
+      });
+      const skala = Math.max(1, ...nilai.flatMap((k) => [k.masuk, k.keluar]));
+      $("graf-skala").textContent = "Skala " + rm(skala / 100);
+      graf.style.setProperty("--groups", nilai.length);
+
+      function pilihButang(butang, teks) {
+        for (const item of graf.children) item.setAttribute("aria-pressed", String(item === butang));
+        detail.textContent = teks;
+      }
+
+      const butang = nilai.map((k) => {
+        const butang = document.createElement("button");
+        const teks = julatTarikh(k.mula, k.akhir) + " · Masuk " + rm(k.masuk / 100) + " · Keluar " + rm(k.keluar / 100);
+        butang.type = "button";
+        butang.className = "chart-day";
+        butang.setAttribute("aria-label", teks);
+        const bar = document.createElement("span");
+        bar.className = "chart-bars";
+        bar.setAttribute("aria-hidden", "true");
+        for (const arah of ["masuk", "keluar"]) {
+          const tiang = document.createElement("span");
+          tiang.className = arah === "masuk" ? "chart-bar" : "chart-bar out";
+          tiang.style.height = Math.max(0, k[arah] / skala * 100) + "%";
+          bar.append(tiang);
+        }
+        butang.append(bar, k.label);
+        butang.addEventListener("click", () => pilihButang(butang, teks));
+        return butang;
+      });
+      graf.replaceChildren(...butang);
+      const indeks = nilai.findIndex((k) => tarikhFokus >= k.mula && tarikhFokus <= k.akhir);
+      const fokus = butang[indeks] || butang[butang.length - 1];
+      pilihButang(fokus, fokus.getAttribute("aria-label"));
+    }
+
+    async function muatRingkasan() {
+      if (!profil) return;
+      const input = $(tempohDipilih === "tahunan" ? "tahun-ringkasan" : "tarikh-ringkasan");
+      if (!input.checkValidity()) { input.reportValidity(); return; }
+      const tarikh = $("tarikh-ringkasan").value || hariIni;
+      const tahun = $("tahun-ringkasan").value;
+      const { mula, akhir, kumpulan } = binaTempoh(tempohDipilih, tarikh, tahun);
+      const versi = ++versiRingkasan;
+      $("tajuk-bil").textContent = tempohDipilih === "harian" && tarikh === hariIni ? "Bil hari ini" : tajukTempoh[tempohDipilih];
+      $("label-tarikh").textContent = julatTarikh(mula, akhir);
+      for (const id of ["r-masuk", "r-keluar", "r-untung"]) $(id).textContent = "—";
+      $("r-bil").textContent = "Memuatkan…";
+      $("pecahan-outlet").hidden = true;
+      $("graf-baris").replaceChildren();
+      $("graf-skala").textContent = "";
+      $("graf-detail").textContent = "Memuatkan laporan…";
+
+      // Ambil semua baris walaupun laporan tahunan melebihi had satu halaman.
+      const semua = [];
+      const saizHalaman = 500;
+      let bilBaris = Infinity;
+      while (semua.length < bilBaris) {
+        const offset = semua.length;
+        const { data, error, count } = await sb.from("daily_summary")
+          .select("transaction_date,outlet_name,money_in,money_out,profit,bil_transaksi", { count: offset === 0 ? "exact" : undefined })
+          .gte("transaction_date", kumpulan[0].mula)
+          .lte("transaction_date", akhir)
+          .order("transaction_date").order("outlet_name")
+          .range(offset, offset + saizHalaman - 1);
+        if (versi !== versiRingkasan) return;
+        if (error) {
+          $("r-bil").textContent = "Ringkasan tak dapat dibaca";
+          $("graf-detail").textContent = "Laporan tak dapat dimuatkan. Semak internet dan pilih semula tempoh.";
+          return;
+        }
+        if (offset === 0 && count != null) bilBaris = count;
+        if (!data.length) break;
+        semua.push(...data);
+      }
+
+      const data = semua.filter((r) => r.transaction_date >= mula);
+      const untung = jumlahSen(data, "profit") / 100;
+      $("r-masuk").textContent = rm(jumlahSen(data, "money_in") / 100);
+      $("r-keluar").textContent = rm(jumlahSen(data, "money_out") / 100);
+      $("r-untung").textContent = rm(untung);
+      $("r-untung").classList.toggle("text-daun", untung >= 0);
+      $("r-untung").classList.toggle("text-sambal", untung < 0);
+      $("r-bil").textContent = data.reduce((bil, r) => bil + Number(r.bil_transaksi), 0) + " transaksi";
+
+      const ikutOutlet = new Map();
+      for (const r of data) {
+        ikutOutlet.set(r.outlet_name, (ikutOutlet.get(r.outlet_name) || 0) + Math.round(Number(r.profit) * 100));
+      }
+      const kotak = $("r-outlet");
+      $("pecahan-outlet").hidden = bilOutlet < 2 || ikutOutlet.size === 0;
+      kotak.replaceChildren(...[...ikutOutlet].sort(([a], [b]) => a.localeCompare(b, "ms-MY")).map(([namaOutlet, sen]) => {
+        const baris = document.createElement("div");
+        baris.className = "outlet-row";
+        const nama = document.createElement("span");
+        nama.className = "outlet-name";
+        nama.textContent = namaOutlet;
+        const nilai = document.createElement("span");
+        nilai.className = "money-inline " + (sen < 0 ? "text-sambal" : "text-dakwat");
+        nilai.textContent = rm(sen / 100);
+        baris.append(nama, nilai);
+        return baris;
+      }));
+      paparGraf(kumpulan, semua, tarikh);
+    }
+
+    function paparPilihan(id, senarai) {
+      $(id).replaceChildren(...(senarai.length ? senarai : ["Tiada pilihan"]).map((teks) => {
+        const pilihan = document.createElement("li");
+        pilihan.textContent = teks;
+        return pilihan;
+      }));
+    }
+
+    async function muatSenarai() {
+      const { data, error } = await sb.from("transactions")
+        .select("transaction_date,type,category,amount,description,outlets(name)")
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (error) { pesan("Senarai transaksi tak dapat dibaca. Cuba lagi."); return; }
+
+      if (data.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty-state";
+        li.textContent = "Belum ada transaksi. Rekod yang pertama di atas.";
+        $("senarai").replaceChildren(li);
+        return;
+      }
+
+      $("senarai").replaceChildren(...data.map((t) => {
+        const masuk = t.type === "In";
+        const li = document.createElement("li");
+        li.className = "transaction-row";
+
+        const ikon = document.createElement("span");
+        ikon.className = "transaction-icon" + (masuk ? "" : " expense");
+        ikon.textContent = masuk ? "+" : "−";
+        ikon.setAttribute("aria-hidden", "true");
+
+        const tengah = document.createElement("div");
+        tengah.className = "transaction-copy";
+        const atas = document.createElement("p");
+        atas.className = "transaction-title";
+        atas.textContent = t.description || t.category;
+        const bawah = document.createElement("p");
+        bawah.className = "transaction-detail";
+        const bahagian = [tarikhPendek(t.transaction_date), t.category];
+        if (bilOutlet > 1 && t.outlets) bahagian.push(t.outlets.name);
+        bawah.textContent = bahagian.join(", ");
+        tengah.append(atas, bawah);
+
+        const nilai = document.createElement("span");
+        nilai.className = "transaction-amount " + (masuk ? "text-daun" : "text-sambal");
+        nilai.textContent = (masuk ? "+" : "−") + rm(t.amount);
+
+        li.append(ikon, tengah, nilai);
+        return li;
+      }));
+    }
+
+    async function papar() {
+      const { data: { session } } = await sb.auth.getSession();
+      $("skrin-login").hidden = !!session;
+      $("skrin-app").hidden = !session;
+      if (!session) {
+        versiRingkasan++;
+        profil = null;
+        return;
+      }
+
+      const { data: p, error: e1 } = await sb.from("staff_profiles")
+        .select("role,outlet_id").eq("user_id", session.user.id).maybeSingle();
+      const { data: outlet, error: e2 } = await sb.from("outlets").select("id,name");
+      const { data: kat, error: e3 } = await sb.from("categories").select("key,name,type").order("key");
+      const { data: bayar, error: e4 } = await sb.from("payment_methods").select("name");
+      if (e1 || e2 || e3 || e4) { pesan("Data tak dapat dibaca. Semak sambungan internet dan muat semula."); return; }
+      if (!p) { pesan("Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner."); return; }
+
+      profil = p;
+      semuaKategori = kat;
+      bilOutlet = outlet.length;
+      const sendiri = outlet.find((o) => o.id === p.outlet_id);
+
+      $("nama-outlet").textContent = bilOutlet > 1 ? "Semua outlet" : (sendiri ? sendiri.name : "Outlet");
+      $("untuk-outlet").textContent = "Untuk " + (sendiri ? sendiri.name : "outlet anda");
+      $("info-akaun").textContent = (namaRole[p.role] || p.role) + ", " + session.user.email;
+
+      hariIni = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Kuala_Lumpur" });
+      $("tarikh").value = hariIni;
+      $("tarikh-ringkasan").value = hariIni;
+      $("tahun-ringkasan").value = hariIni.slice(0, 4);
+      isiKategori();
+      const caraBayaran = bayar.map((b) => b.name);
+      isiBayaran(caraBayaran);
+      paparPilihan("pilihan-masuk", kat.filter((k) => k.type === "In").map((k) => k.name));
+      paparPilihan("pilihan-keluar", kat.filter((k) => k.type === "Out").map((k) => k.name));
+      paparPilihan("pilihan-bayaran", caraBayaran);
+      muatRingkasan();
+      muatSenarai();
+    }
+
+    document.querySelectorAll('input[name="jenis"]').forEach((r) => r.addEventListener("change", isiKategori));
+    $("tarikh-ringkasan").addEventListener("change", muatRingkasan);
+    $("pilih-tahun").addEventListener("submit", (e) => {
+      e.preventDefault();
+      muatRingkasan();
+    });
+
+    const menu = document.querySelectorAll(".menu-button");
+    menu.forEach((butang) => butang.addEventListener("click", () => {
+      for (const item of menu) {
+        item.setAttribute("aria-pressed", String(item === butang));
+        $(item.getAttribute("aria-controls")).hidden = item !== butang;
+      }
+      window.scrollTo(0, 0);
+    }));
+
+    const tempoh = document.querySelectorAll(".period-button");
+    tempoh.forEach((butang) => butang.addEventListener("click", () => {
+      tempohDipilih = butang.dataset.tempoh;
+      for (const item of tempoh) item.setAttribute("aria-pressed", String(item === butang));
+      $("pilih-tarikh").hidden = tempohDipilih === "tahunan";
+      $("pilih-tahun").hidden = tempohDipilih !== "tahunan";
+      $("label-pilih-tarikh").textContent = {
+        harian: "Pilih tarikh", mingguan: "Pilih tarikh dalam minggu", bulanan: "Pilih tarikh dalam bulan"
+      }[tempohDipilih] || "Pilih tarikh";
+      muatRingkasan();
+    }));
+
+    $("btn-akaun").addEventListener("click", () => $("dialog-akaun").showModal());
+    $("tutup-akaun").addEventListener("click", () => $("dialog-akaun").close());
+    $("dialog-akaun").addEventListener("close", () => $("borang-katalaluan").reset());
+
+    $("borang-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("btn-login").disabled = true;
+      const { error } = await sb.auth.signInWithPassword({
+        email: $("emel").value.trim(),
+        password: $("katalaluan").value
+      });
+      $("btn-login").disabled = false;
+      if (error) { pesan("Emel atau kata laluan salah. Cuba lagi."); return; }
+      $("katalaluan").value = "";
+      papar();
+    });
+
+    $("btn-logout").addEventListener("click", async () => {
+      await sb.auth.signOut();
+      profil = null;
+      papar();
+    });
+
+    $("borang-transaksi").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const jumlah = Number($("jumlah").value);
+      const keterangan = $("keterangan").value.trim();
+      if (!(jumlah > 0)) { pesan("Masukkan jumlah lebih dari RM 0."); $("jumlah").focus(); return; }
+      if (!keterangan) { pesan("Isi keterangan supaya senang disemak nanti."); $("keterangan").focus(); return; }
+      if (!$("tarikh").value) { pesan("Pilih tarikh transaksi."); return; }
+
+      const butang = $("btn-simpan");
+      butang.disabled = true;
+      butang.textContent = "Menyimpan...";
+      const { error } = await sb.from("transactions").insert({
+        transaction_date: $("tarikh").value,
+        type: jenisDipilih(),
+        category: $("kategori").value,
+        amount: Math.round(jumlah * 100) / 100,
+        description: keterangan,
+        payment_method: document.querySelector('input[name="bayaran"]:checked').value,
+        reference_no: $("rujukan").value.trim() || null,
+        outlet_id: profil.outlet_id
+      });
+      butang.disabled = false;
+      butang.textContent = "Simpan transaksi";
+
+      if (error) { pesan("Transaksi tak disimpan: " + error.message); return; }
+      $("jumlah").value = "";
+      $("keterangan").value = "";
+      $("rujukan").value = "";
+      pesan("Transaksi disimpan.", "ok");
+      muatRingkasan();
+      muatSenarai();
+    });
+
+    $("borang-katalaluan").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const baru = $("kl-baru").value;
+      if (baru.length < 10) { pesan("Kata laluan baru mesti 10 aksara atau lebih."); return; }
+      if (baru !== $("kl-sahkan").value) { pesan("Dua kata laluan tak sama. Taip semula."); return; }
+
+      $("btn-katalaluan").disabled = true;
+      const { error } = await sb.auth.updateUser({ password: baru });
+      $("btn-katalaluan").disabled = false;
+
+      if (error) {
+        if (error.code === "same_password") pesan("Kata laluan baru mesti lain daripada yang lama.");
+        else if (error.code === "weak_password") pesan("Kata laluan terlalu lemah. Campur huruf besar, kecil dan nombor.");
+        else pesan("Kata laluan tak ditukar: " + error.message);
+        return;
+      }
+      $("kl-baru").value = "";
+      $("kl-sahkan").value = "";
+      $("dialog-akaun").close();
+      pesan("Kata laluan ditukar.", "ok");
+    });
+
+    papar();
+  </script>
+</body>
+</html>

@@ -23,7 +23,7 @@ export default {
       <p class="greet-sub" style="margin:6px 4px 0">Sementara (sehingga dipindahkan ke app ini)</p>
       <div class="list">
         <a class="row-btn" href="../inventory-emerald-v1.html">${icon('box')}<span>Smart Inventori<small>Halaman stok semasa</small></span></a>
-        <a class="row-btn" href="../index.html">${icon('link')}<span>App kewangan lama<small>Key In dan laporan semasa</small></span></a>
+        <a class="row-btn" href="../lama.html">${icon('link')}<span>App kewangan lama<small>Key In dan laporan semasa</small></span></a>
       </div>
 
       <div class="list">
