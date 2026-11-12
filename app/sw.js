@@ -2,11 +2,11 @@
 // Fail app: ambil versi TERBARU dari internet dahulu (elak masalah cache lama);
 // jika tiada internet, guna salinan tersimpan supaya app masih boleh dibuka.
 // Data Supabase tidak disimpan di sini: ia sentiasa perlukan internet.
-const CACHE = 'bizprofit-app-v1';
+const CACHE = 'bizprofit-app-v2';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/pwa.js', './js/ui.js', './js/session.js', './js/router.js', './js/format.js',
-  './js/pages/placeholder.js', './js/pages/utama.js', './js/pages/rekod.js', './js/pages/stok.js',
+  './js/pages/utama.js', './js/pages/rekod.js', './js/pages/stok.js',
   './js/pages/pekerja.js', './js/pages/laporan.js', './js/pages/menu.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   '../config.js'

@@ -23,10 +23,6 @@ export default {
       </div>
 
       <div class="list">
-        <a class="row-btn" href="../lama.html">${icon('link')}<span>App lama (sandaran)<small>Akan dibuang selepas app baru disahkan</small></span></a>
-      </div>
-
-      <div class="list">
         <button class="row-btn danger" type="button" id="logoutBtn">${icon('logout')}<span>Log keluar</span></button>
       </div>
 
