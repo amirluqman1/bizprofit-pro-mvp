@@ -1,5 +1,5 @@
 // Laporan ikut tempoh: Harian, Mingguan, Bulanan, Tahunan. Owner & manager sahaja.
-import { $, esc, icon } from '../ui.js';
+import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange } from '../format.js';
 
@@ -161,19 +161,34 @@ export default {
         $('repDetail').textContent = btn.dataset.text;
       };
       $('repChart').onclick = e => { const b = e.target.closest('.bar-group'); if (b) pick(b); };
-      const focus = groups.findIndex(g => state.date >= g.from && state.date <= g.to);
-      pick($('repChart').children[focus >= 0 && state.period !== 'tahunan' ? focus : groups.length - 1]);
+      // Bar mana dipilih dahulu: tarikh dipilih; untuk Tahunan, bulan ini (tahun semasa)
+      // atau bulan terakhir yang ada data (tahun lain), bukan Disember yang mungkin kosong.
+      let focus;
+      if (state.period === 'tahunan') {
+        const hasData = g => rows.some(r => r.transaction_date >= g.from && r.transaction_date <= g.to);
+        focus = state.year === today.slice(0, 4) ? Number(today.slice(5, 7)) - 1
+          : groups.reduce((last, g, i) => (hasData(g) ? i : last), groups.length - 1);
+      } else {
+        focus = groups.findIndex(g => state.date >= g.from && state.date <= g.to);
+        if (focus < 0) focus = groups.length - 1;
+      }
+      pick($('repChart').children[focus]);
     }
 
     view.querySelectorAll('[data-period]').forEach(b => b.addEventListener('click', () => {
       state.period = b.dataset.period; syncControls(); show();
     }));
     $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value; show(); } });
-    $('yearWrap').addEventListener('submit', e => {
+    $('yearWrap').addEventListener('submit', async e => {
       e.preventDefault();
       const y = Number($('repYear').value);
-      if (!(y >= 2000 && y <= 2100)) { $('repYear').focus(); return; }
-      state.year = String(y); show();
+      if (!(y >= 2000 && y <= 2100)) { toast('Masukkan tahun antara 2000 dan 2100.', 'error'); $('repYear').focus(); return; }
+      $('repYear').blur();                       // tutup papan kekunci phone
+      const btn = e.submitter || $('yearWrap').querySelector('button');
+      btn.disabled = true; btn.textContent = 'Memuatkan…';
+      state.year = String(y);
+      await show();
+      btn.disabled = false; btn.textContent = 'Papar';
     });
     syncControls();
     show();
