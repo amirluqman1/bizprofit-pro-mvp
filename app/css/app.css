@@ -175,3 +175,60 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
   .tab { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ===== Halaman Utama ===== */
+.coins, .spark, .trend-svg { stroke: none; }
+.hero {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; min-height: 132px;
+  border-color: var(--line-glow);
+  box-shadow: 0 0 0 1px #2f8a6333, 0 12px 36px #0007, inset 0 1px 0 #ffffff14, 0 6px 0 -3px #e9c46a55;
+}
+.hero.loading { justify-content: center; }
+.coins { width: 74px; height: 64px; flex: 0 0 auto; padding-right: 12px; border-right: 1px solid var(--line); box-sizing: content-box; }
+.hero-body { position: relative; z-index: 1; min-width: 0; }
+.hero-label { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.info { display: inline-grid; place-items: center; width: 17px; height: 17px; border: 1.5px solid var(--muted); border-radius: 50%; font-size: 11px; color: var(--muted); font-style: normal; cursor: help; }
+.hero-value { margin: 6px 0 8px; font-size: clamp(28px, 8.5vw, 38px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; white-space: nowrap; }
+.hero-value.neg { color: var(--red); }
+.hero-foot { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.spark { position: absolute; right: 14px; top: 12px; width: 92px; height: 32px; pointer-events: none; }
+.chg { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.chg.good { color: var(--mint); background: #1b5a3c; }
+.chg.bad { color: var(--red); background: var(--red-bg); }
+.chg.flat { color: var(--muted); background: #ffffff0d; font-weight: 500; }
+.stats3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tile { padding: 14px 12px; border-radius: 18px; background: linear-gradient(160deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); min-width: 0; }
+.tile svg { width: 20px; height: 20px; color: var(--mint-soft); }
+.tile-label { margin: 8px 0 2px; font-size: 13px; color: var(--muted); }
+.tile-value { margin: 0 0 6px; font-size: clamp(14px, 4.3vw, 18px); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.tile-value small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+.tile .chg { font-size: 11px; padding: 2px 6px; }
+.tile .chg.flat { white-space: normal; }
+.shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.short {
+  display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 14px; border-radius: 18px; text-decoration: none; color: var(--text);
+  background: linear-gradient(160deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); border-left: 3px solid var(--gold);
+  font-weight: 700; font-size: 15px; line-height: 1.2;
+}
+.short span { flex: 1; }
+.short > svg:first-child { width: 28px; height: 28px; color: var(--mint-soft); }
+.short > svg:last-child { width: 18px; height: 18px; color: var(--muted); }
+.trend-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.trend-head h2 { margin: 0; font-size: 16px; }
+.pill-select { position: relative; display: flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-glow); color: var(--text); }
+.pill-select select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; font-size: 13px; font-weight: 600; outline: none; }
+.pill-select option { background: var(--surface); }
+.pill-select svg { width: 16px; height: 16px; pointer-events: none; }
+.trend-svg { width: 100%; height: auto; display: block; }
+.trend-svg .grid { stroke: #ffffff12; stroke-width: 1; }
+.trend-svg .ylab { fill: var(--muted); font-size: 10px; text-anchor: end; }
+.trend-svg .xlab { fill: var(--muted); font-size: 10.5px; text-anchor: middle; }
+.trend-svg .pt { fill: #5fe08a; stroke: #0d3326; stroke-width: 2; }
+.trend-svg .pt.last { fill: #0d3326; stroke: #a3f0b8; stroke-width: 2.5; }
+.trend-empty { margin: 8px 0 0; text-align: center; }
+@media (max-width: 370px) {
+  .coins { display: none; }
+  .stats3 { gap: 6px; }
+  .tile { padding: 12px 8px; }
+  .short { font-size: 14px; gap: 8px; padding: 10px; }
+}

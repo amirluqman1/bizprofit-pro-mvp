@@ -3,6 +3,18 @@ import { $, toast } from './ui.js';
 import { sb, session, loadAccount, setOutlet, onOutletChange, ALL_OUTLETS, ROLE_NAME } from './session.js';
 import { startRouter, rerender } from './router.js';
 
+let lowStock = 0;
+
+// Loceng: titik kuning jika ada barang habis atau kurang dari "patut ada".
+async function refreshBell() {
+  let q = sb.from('inventory_items').select('current_qty,target_qty');
+  if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
+  const { data, error } = await q;
+  lowStock = error ? 0 : (data || []).filter(x => Number(x.current_qty) < Number(x.target_qty) || Number(x.current_qty) <= 0).length;
+  $('bellDot').hidden = lowStock === 0;
+  $('bellBtn').setAttribute('aria-label', lowStock ? `Notifikasi: ${lowStock} barang perlu tambah` : 'Notifikasi');
+}
+
 function showLogin(message) {
   $('boot').hidden = true;
   $('app').hidden = true;
@@ -30,6 +42,7 @@ async function enterApp() {
   $('login').hidden = true;
   $('app').hidden = false;
   await startRouter();
+  refreshBell();
 }
 
 async function boot() {
@@ -58,8 +71,12 @@ $('loginForm').addEventListener('submit', async e => {
 });
 
 $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));
-onOutletChange(() => rerender());
+onOutletChange(() => { rerender(); refreshBell(); });
 
-$('bellBtn').addEventListener('click', () => toast('Notifikasi stok akan ditambah dalam fasa seterusnya.'));
+$('bellBtn').addEventListener('click', () => {
+  if (!lowStock) { toast('Tiada notifikasi. Semua stok mencukupi.'); return; }
+  toast(`${lowStock} barang habis atau perlu tambah stok.`);
+  location.hash = '#/stok';
+});
 
 boot().catch(e => showLogin('Ralat aplikasi: ' + e.message));
