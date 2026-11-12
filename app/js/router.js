@@ -47,9 +47,17 @@ export async function render() {
 }
 
 export function startRouter() {
+  window.removeEventListener('hashchange', render);
   window.addEventListener('hashchange', render);
   buildTabbar();
   return render();
+}
+
+export function stopRouter() {
+  window.removeEventListener('hashchange', render);
+  if (current?.cleanup) { try { current.cleanup(); } catch { /* abaikan */ } }
+  current = null;
+  $('view').innerHTML = '';
 }
 
 export function rerender() { return render(); }

@@ -1,6 +1,6 @@
 // Akaun: maklumat, tukar kata laluan, pautan sementara, log keluar.
 import { $, esc, icon, toast } from '../ui.js';
-import { sb, session, clearSession, ROLE_NAME } from '../session.js';
+import { sb, session, ROLE_NAME } from '../session.js';
 
 export default {
   subtitle: 'Akaun dan tetapan.',
@@ -62,10 +62,6 @@ export default {
       toast('Kata laluan ditukar.');
     });
 
-    $('logoutBtn').onclick = async () => {
-      await sb.auth.signOut();
-      clearSession();
-      location.replace('./');
-    };
+    $('logoutBtn').onclick = () => window.dispatchEvent(new Event('bp:logout'));
   }
 };

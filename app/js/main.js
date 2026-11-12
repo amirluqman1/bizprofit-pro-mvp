@@ -1,7 +1,7 @@
 // Titik mula app: login, rangka, outlet, navigasi.
 import { $, toast } from './ui.js';
-import { sb, session, loadAccount, setOutlet, onOutletChange, ALL_OUTLETS, ROLE_NAME } from './session.js';
-import { startRouter, rerender } from './router.js';
+import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS, ROLE_NAME } from './session.js';
+import { startRouter, stopRouter, rerender } from './router.js';
 
 let lowStock = 0;
 
@@ -47,7 +47,11 @@ async function enterApp() {
 
 async function boot() {
   if (!sb) { showLogin('config.js tidak dijumpai.'); return; }
-  const { data: { session: s } } = await sb.auth.getSession();
+  // Jangan tunggu selamanya jika sambungan/sesi tersekat.
+  const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 10000));
+  const res = await Promise.race([sb.auth.getSession(), timeout]);
+  if (res === 'timeout') { showLogin('Sambungan lambat. Sila log masuk semula.'); return; }
+  const s = res.data?.session;
   if (!s) { showLogin(); return; }
   const err = await loadAccount(s.user);
   if (err) { showLogin(err); return; }
@@ -68,6 +72,15 @@ $('loginForm').addEventListener('submit', async e => {
   if (err) { await sb.auth.signOut(); toast(err, 'error'); return; }
   $('loginPassword').value = '';
   await enterApp();
+});
+
+window.addEventListener('bp:logout', async () => {
+  stopRouter();
+  clearSession();
+  history.replaceState(null, '', location.pathname);   // buang #/menu
+  showLogin();
+  $('loginForm').reset();
+  try { await sb.auth.signOut(); } catch { /* sesi tempatan tetap dibuang */ }
 });
 
 $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));

@@ -6,7 +6,11 @@ export const ALL_OUTLETS = 'all';
 
 /* global SUPABASE_URL, SUPABASE_KEY, supabase */
 export const sb = (typeof SUPABASE_URL === 'string' && typeof SUPABASE_KEY === 'string')
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      // Kunci pelayar (navigator.locks) boleh tersekat selepas log keluar/muat semula
+      // pada sesetengah Chrome Android. App ini satu tab, jadi jalankan terus.
+      auth: { lock: (_name, _timeout, fn) => fn() }
+    })
   : null;
 
 export const session = {
