@@ -66,7 +66,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .brand.small .brand-name { font-size: 19px; }
 
 /* Boot & login */
-.boot { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 14px; color: var(--muted); }
+.boot { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 14px; color: var(--muted); padding: 24px; text-align: center; }
+.boot-err { max-width: 340px; margin: 0; font-size: 12px; color: #ffb4a9; overflow-wrap: anywhere; }
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .login-inner { width: min(420px, 100%); display: grid; gap: 22px; }
 .login h1 { margin: 0; font-size: 22px; }

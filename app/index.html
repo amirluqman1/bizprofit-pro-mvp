@@ -11,7 +11,35 @@
 </head>
 <body>
   <!-- Skrin memuat -->
-  <div id="boot" class="boot"><div class="logo-mark big" aria-hidden="true"></div><p>Memuatkan…</p></div>
+  <div id="boot" class="boot"><div class="logo-mark big" aria-hidden="true"></div><p id="bootMsg">Memuatkan…</p>
+    <button class="btn primary" id="bootReload" type="button" hidden>Muat semula</button>
+    <p id="bootErr" class="boot-err" hidden></p>
+  </div>
+  <script>
+    // Jika app gagal bermula (fail tak dimuat, ralat, sambungan lambat), tunjuk punca, jangan diam.
+    (function () {
+      var errs = [];
+      function show(msg) {
+        var boot = document.getElementById('boot');
+        if (!boot || boot.hidden) return;
+        document.getElementById('bootMsg').textContent = msg;
+        document.getElementById('bootReload').hidden = false;
+        if (errs.length) { var e = document.getElementById('bootErr'); e.textContent = errs.slice(-3).join(' | '); e.hidden = false; }
+      }
+      window.addEventListener('error', function (e) {
+        errs.push((e.message || 'Fail gagal dimuat') + (e.filename ? ' @ ' + e.filename.split('/').slice(-2).join('/') : (e.target && e.target.src ? ' @ ' + e.target.src.split('/').slice(-2).join('/') : '')));
+        show('App gagal dimuat.');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        errs.push(String(e.reason && e.reason.message || e.reason));
+        show('App gagal dimuat.');
+      });
+      setTimeout(function () { show('Lambat sangat. Semak internet, kemudian muat semula.'); }, 12000);
+      document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'bootReload') location.reload();
+      });
+    })();
+  </script>
 
   <!-- Skrin log masuk -->
   <main id="login" class="login" hidden>
