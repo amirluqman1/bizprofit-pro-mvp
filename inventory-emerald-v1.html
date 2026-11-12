@@ -1,13 +1,404 @@
-<!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>BizProfit Pro · Inventory</title><style>
-:root{color-scheme:dark;font-family:Inter,system-ui,Arial,sans-serif;background:#081a15;color:#f1f8ef}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% -5%,#285943 0,transparent 45%),linear-gradient(145deg,#081a15,#0b261d);min-height:100vh}.shell{max-width:980px;margin:auto;padding:24px 16px 80px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:13px;letter-spacing:.17em;color:#a9d9bd;font-weight:800}.tag{font-size:11px;border:1px solid #4b7e68;border-radius:50px;padding:7px 10px;color:#b8e7c9}h1{font-size:clamp(30px,7vw,48px);line-height:1.05;margin:32px 0 10px;letter-spacing:-.05em}.sub{color:#a4c1b0;font-size:14px;line-height:1.6}.glass{background:linear-gradient(125deg,#ffffff14,#ffffff08);border:1px solid #ffffff24;box-shadow:0 12px 40px #0003;backdrop-filter:blur(20px);border-radius:24px;padding:20px;margin-top:18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#ffffff0b;border:1px solid #ffffff16;border-radius:18px;padding:14px}.stat b{display:block;font-size:27px;margin-top:10px}.stat span{font-size:11px;color:#a5c4b2}.row{display:flex;gap:10px;align-items:center;justify-content:space-between}.stack{display:grid;gap:12px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:12px;color:#bad5c4;display:grid;gap:7px}input,select{width:100%;border:1px solid #ffffff2a;border-radius:13px;background:#0b261d;color:white;padding:13px;font:inherit;outline:none}input:focus,select:focus{border-color:#8be5b4}button{border:0;border-radius:13px;padding:12px 16px;font:inherit;font-weight:750;cursor:pointer}.primary{background:#a3f0b8;color:#0b3021}.secondary{background:#ffffff14;color:#e8f5ed;border:1px solid #ffffff24}.danger{color:#ffce99}.muted{color:#9ab7a5;font-size:12px}.item{padding:16px;border:1px solid #ffffff1e;border-radius:17px;background:#ffffff09;margin-top:10px}.item h3{margin:0 0 4px;font-size:16px}.pill{font-size:11px;color:#f9d397;background:#f7b34b1b;padding:6px 9px;border-radius:30px}.qty{font-size:24px;font-weight:800;letter-spacing:-.04em}.hidden{display:none!important}#message{min-height:20px;color:#f3d59e;font-size:13px;margin-top:12px}button:disabled{opacity:.5;cursor:not-allowed}@media(min-width:750px){.main{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:start}.main>.glass{margin-top:18px}}@media(max-width:380px){.stats{gap:5px}.stat{padding:10px}.stat b{font-size:22px}}
-</style></head><body><div class="shell"><div class="top"><div class="brand">◈ BIZPROFIT PRO</div><span class="tag">EMERALD GLASS · V1</span></div><h1>Inventory<span style="color:#a3f0b8">.</span></h1><p class="sub">Stok jelas. Outlet teratur. Setiap perubahan ada jejak.</p><section class="glass" id="loginBox"><b>Log masuk sebagai Owner</b><p class="muted">Gunakan akaun Supabase BizProfit Pro yang sama.</p><form id="loginForm" class="stack"><label>Email<input id="email" type="email" autocomplete="username" required></label><label>Password<input id="password" type="password" autocomplete="current-password" required></label><button class="primary">Log masuk</button></form></section><section id="app" class="hidden"><div class="row"><span class="muted" id="identity"></span><button class="secondary" id="logout">Log keluar</button></div><section class="glass"><label>Outlet<select id="outlet"></select></label><div class="stats" style="margin-top:16px"><div class="stat"><span>Barang</span><b id="count">0</b></div><div class="stat"><span>Stok rendah</span><b id="low">0</b></div><div class="stat"><span>Habis stok</span><b id="empty">0</b></div></div></section><div class="main"><section class="glass" id="editor"><div class="row"><h2 style="margin:0">Tambah barang</h2><span class="tag">OWNER</span></div><p class="muted">Perubahan kuantiti akan cuba direkod oleh trigger Supabase.</p><form id="addForm" class="stack"><label>Nama barang<input id="name" required maxlength="120" placeholder="Contoh: Ayam potong"></label><div class="two"><label>Unit<select id="unit"><option>kg</option><option>pcs</option><option>liter</option><option>pack</option><option>g</option></select></label><label>Stok awal<input id="current" type="number" min="0" step="any" value="0" required></label></div><div class="two"><label>Minimum<input id="min" type="number" min="0" step="any" value="5" required></label><label>Sasaran<input id="target" type="number" min="0" step="any" value="20" required></label></div><button class="primary" id="addBtn">+ Tambah barang</button></form></section><section class="glass"><div class="row"><h2 style="margin:0">Senarai stok</h2><button class="secondary" id="refresh">↻ Refresh</button></div><div id="items"><p class="muted">Belum ada barang.</p></div></section></div></section><div id="message" role="status" aria-live="polite"></div><p class="muted">Development preview · Tiada fungsi delete dalam V1 untuk melindungi sejarah stok. Audit log belum dipaparkan kerana akses baca log belum dikonfigurasi.</p></div><script src="./config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script><script>
-'use strict';const $=id=>document.getElementById(id);let sb,profile,items=[];const say=t=>$('message').textContent=t;const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const num=n=>Number(n).toLocaleString('ms-MY',{maximumFractionDigits:3});const selected=()=>$('outlet').value;
-async function start(){if(typeof SUPABASE_URL!=='string'||typeof SUPABASE_KEY!=='string'){say('config.js tidak dijumpai. Letakkan fail ini bersama config.js asal.');return}sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);const {data:{session}}=await sb.auth.getSession();if(session)await loadAccount(session.user);else $('loginBox').classList.remove('hidden')}
-async function loadAccount(user){const {data:p,error:pe}=await sb.from('staff_profiles').select('role,outlet_id').eq('user_id',user.id).maybeSingle();if(pe||!p){say('Profil pengguna tidak dapat dibaca.');return}profile=p;const {data:outlets,error:oe}=await sb.from('outlets').select('id,name').order('name');if(oe){say(oe.message);return}const allowed=p.role==='owner'?outlets:(outlets||[]).filter(o=>o.id===p.outlet_id);$('outlet').replaceChildren(...allowed.map(o=>{const opt=document.createElement('option');opt.value=o.id;opt.textContent=o.name;return opt}));$('identity').textContent=`${user.email} · ${p.role}`;$('editor').classList.toggle('hidden',p.role!=='owner');$('loginBox').classList.add('hidden');$('app').classList.remove('hidden');if(!allowed.length){say('Tiada outlet yang boleh diakses.');return}await refresh()}
-async function refresh(){if(!selected())return;say('');const {data,error}=await sb.from('inventory_items').select('id,outlet_id,name,unit,current_qty,min_qty,target_qty,updated_at').eq('outlet_id',selected()).order('name');if(error){say('Gagal baca stok: '+error.message);return}items=data||[];$('count').textContent=items.length;$('low').textContent=items.filter(x=>Number(x.current_qty)<=Number(x.min_qty)).length;$('empty').textContent=items.filter(x=>Number(x.current_qty)===0).length;$('items').innerHTML=items.length?items.map(x=>`<div class="item"><div class="row"><div><h3>${safe(x.name)}</h3><span class="muted">Minimum ${num(x.min_qty)} · Sasaran ${num(x.target_qty)} ${safe(x.unit)}</span></div>${Number(x.current_qty)<=Number(x.min_qty)?'<span class="pill">Stok rendah</span>':''}</div><div class="row" style="margin-top:14px"><span class="qty">${num(x.current_qty)} <small style="font-size:13px;color:#a5c4b2">${safe(x.unit)}</small></span>${profile.role==='owner'?`<button class="secondary" data-edit="${safe(x.id)}">Ubah stok</button>`:''}</div></div>`).join(''):'<p class="muted">Belum ada barang dalam outlet ini.</p>'}
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();say('Sedang log masuk...');const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){say(error.message);return}await loadAccount(data.user)});
-$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};$('outlet').onchange=refresh;$('refresh').onclick=refresh;
-$('addForm').addEventListener('submit',async e=>{e.preventDefault();if(profile?.role!=='owner')return;const payload={outlet_id:selected(),name:$('name').value.trim(),unit:$('unit').value,current_qty:Number($('current').value),min_qty:Number($('min').value),target_qty:Number($('target').value)};if(!payload.name||[payload.current_qty,payload.min_qty,payload.target_qty].some(v=>!Number.isFinite(v)||v<0)){say('Sila masukkan kuantiti sah.');return}const b=$('addBtn');b.disabled=true;say('Menyimpan...');const {error}=await sb.from('inventory_items').insert(payload);b.disabled=false;if(error){say('Gagal tambah: '+error.message);return}$('addForm').reset();say('Barang berjaya ditambah.');await refresh()});
-$('items').addEventListener('click',async e=>{const btn=e.target.closest('[data-edit]');if(!btn||profile?.role!=='owner')return;const item=items.find(x=>x.id===btn.dataset.edit);if(!item)return;const raw=prompt(`Stok baharu untuk ${item.name} (${item.unit}):`,item.current_qty);if(raw===null)return;const qty=Number(raw);if(raw.trim()===''||!Number.isFinite(qty)||qty<0){say('Kuantiti tidak sah.');return}btn.disabled=true;const {error}=await sb.from('inventory_items').update({current_qty:qty}).eq('id',item.id).eq('outlet_id',selected());btn.disabled=false;if(error){say('Gagal ubah stok: '+error.message);return}say('Stok berjaya dikemas kini.');await refresh()});
-start().catch(e=>say('Ralat aplikasi: '+e.message));
-</script></body></html>
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BizProfit Pro · Inventory</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,Arial,sans-serif;background:#081a15;color:#f1f8ef}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 10% -5%,#285943 0,transparent 45%),linear-gradient(145deg,#081a15,#0b261d);min-height:100vh}
+.shell{max-width:980px;margin:auto;padding:24px 16px 80px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:13px;letter-spacing:.17em;color:#a9d9bd;font-weight:800}
+.tag{font-size:11px;border:1px solid #4b7e68;border-radius:50px;padding:7px 10px;color:#b8e7c9;white-space:nowrap}
+h1{font-size:clamp(30px,7vw,48px);line-height:1.05;margin:32px 0 10px;letter-spacing:-.05em}
+h2{font-size:18px}
+.sub{color:#a4c1b0;font-size:14px;line-height:1.6}
+.glass{background:linear-gradient(125deg,#ffffff14,#ffffff08);border:1px solid #ffffff24;box-shadow:0 12px 40px #0003;backdrop-filter:blur(20px);border-radius:24px;padding:20px;margin-top:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#ffffff0b;border:1px solid #ffffff16;border-radius:18px;padding:14px}
+.stat b{display:block;font-size:27px;margin-top:10px}
+.stat span{font-size:11px;color:#a5c4b2}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.stack{display:grid;gap:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:12px;color:#bad5c4;display:grid;gap:7px}
+input,select{width:100%;border:1px solid #ffffff2a;border-radius:13px;background:#0b261d;color:white;padding:13px;font:inherit;font-size:16px;outline:none}
+input:focus,select:focus{border-color:#8be5b4}
+button{border:0;border-radius:13px;padding:12px 16px;font:inherit;font-weight:750;cursor:pointer}
+.small{padding:9px 12px;font-size:13px}
+.primary{background:#a3f0b8;color:#0b3021}
+.secondary{background:#ffffff14;color:#e8f5ed;border:1px solid #ffffff24}
+.muted{color:#9ab7a5;font-size:12px}
+.item{padding:16px;border:1px solid #ffffff1e;border-radius:17px;background:#ffffff09;margin-top:10px}
+.item.habis{border-color:#ff9c8a55;background:#ff6b5212}
+.item.tambah{border-color:#f7b34b44}
+.item h3{margin:0 0 4px;font-size:16px;overflow-wrap:anywhere}
+.pill{font-size:11px;padding:6px 9px;border-radius:30px;white-space:nowrap}
+.pill.habis{color:#ffc2b6;background:#ff6b5226}
+.pill.tambah{color:#f9d397;background:#f7b34b1b}
+.pill.cukup{color:#b8e7c9;background:#a3f0b814}
+.qty{font-size:24px;font-weight:800;letter-spacing:-.04em}
+.alert{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:13px 15px;border-radius:15px;background:#f7b34b17;border:1px solid #f7b34b44;color:#f9d397;font-size:13px;line-height:1.6}
+.alert.danger{background:#ff6b521c;border-color:#ff9c8a55;color:#ffc2b6}
+.hidden{display:none!important}
+#message{min-height:20px;color:#f3d59e;font-size:13px;margin-top:12px}
+button:disabled{opacity:.5;cursor:not-allowed}
+dialog{width:min(440px,calc(100% - 32px));border:1px solid #ffffff2a;border-radius:20px;background:#0d2b21;color:#f1f8ef;padding:20px}
+dialog::backdrop{background:#000a}
+.log{padding:10px 0;border-bottom:1px solid #ffffff14;font-size:13px;line-height:1.6}
+.log:last-child{border-bottom:0}
+@media(min-width:750px){.main{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:start}}
+@media(max-width:380px){.stats{gap:5px}.stat{padding:10px}.stat b{font-size:22px}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top"><div class="brand">◈ BIZPROFIT PRO</div><span class="tag">EMERALD GLASS · V2</span></div>
+  <h1>Inventory<span style="color:#a3f0b8">.</span></h1>
+  <p class="sub">Stok jelas. Outlet teratur. Setiap perubahan ada jejak.</p>
+
+  <section class="glass hidden" id="loginBox">
+    <b>Log masuk</b>
+    <p class="muted">Gunakan akaun BizProfit Pro anda.</p>
+    <form id="loginForm" class="stack">
+      <label>Email<input id="email" type="email" autocomplete="username" required></label>
+      <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary">Log masuk</button>
+    </form>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="row"><span class="muted" id="identity"></span><button class="secondary small" id="logout">Log keluar</button></div>
+    <section class="glass">
+      <label>Outlet<select id="outlet"></select></label>
+      <div class="stats" style="margin-top:16px">
+        <div class="stat"><span>Barang</span><b id="count">0</b></div>
+        <div class="stat"><span>Perlu tambah</span><b id="low">0</b></div>
+        <div class="stat"><span>Habis</span><b id="empty">0</b></div>
+      </div>
+      <div id="alert" class="alert hidden" role="status"></div>
+    </section>
+
+    <div class="main">
+      <section class="glass">
+        <h2 style="margin:0">Tambah barang</h2>
+        <p class="muted">Selepas disimpan, hanya owner boleh ubah nama, unit atau "patut ada".</p>
+        <form id="addForm" class="stack">
+          <label>Nama barang<input id="name" required maxlength="120" placeholder="Contoh: Ayam potong"></label>
+          <label>Unit<select id="unit"><option>kg</option><option>pcs</option><option>liter</option><option>pack</option><option>g</option></select></label>
+          <div class="two">
+            <label>Berapa ada<input id="current" type="number" inputmode="decimal" min="0" step="any" value="0" required></label>
+            <label>Patut ada<input id="target" type="number" inputmode="decimal" min="0" step="any" placeholder="Contoh: 20" required></label>
+          </div>
+          <button class="primary" id="addBtn">+ Tambah barang</button>
+        </form>
+      </section>
+
+      <section class="glass">
+        <div class="row">
+          <h2 style="margin:0">Senarai stok</h2>
+          <div class="actions">
+            <button class="secondary small" id="copyCsv" type="button">Copy CSV</button>
+            <button class="secondary small" id="refresh" type="button">↻</button>
+          </div>
+        </div>
+        <div id="items"><p class="muted">Belum ada barang.</p></div>
+      </section>
+    </div>
+  </section>
+
+  <div id="message" role="status" aria-live="polite"></div>
+  <p class="muted">Tiada fungsi padam dalam V2 untuk melindungi sejarah stok.</p>
+</div>
+
+<dialog id="editDialog">
+  <form id="editForm" class="stack" method="dialog">
+    <h2 id="editTitle" style="margin:0"></h2>
+    <label>Berapa ada sekarang<input id="editCurrent" type="number" inputmode="decimal" min="0" step="any" required></label>
+    <div id="ownerFields" class="stack">
+      <label>Nama barang<input id="editName" maxlength="120" required></label>
+      <div class="two">
+        <label>Unit<select id="editUnit"><option>kg</option><option>pcs</option><option>liter</option><option>pack</option><option>g</option></select></label>
+        <label>Patut ada<input id="editTarget" type="number" inputmode="decimal" min="0" step="any" required></label>
+      </div>
+    </div>
+    <p id="editNote" class="muted"></p>
+    <div class="actions">
+      <button class="secondary" type="button" id="editCancel">Batal</button>
+      <button class="primary" id="editSave">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="historyDialog">
+  <div class="row"><h2 id="historyTitle" style="margin:0"></h2><button class="secondary small" type="button" id="historyClose">Tutup</button></div>
+  <div id="historyList" style="margin-top:12px"></div>
+</dialog>
+
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let sb, user, profile, items = [], editing = null;
+const people = new Map();
+
+const say = t => { $('message').textContent = t; };
+const safe = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = n => Number(n).toLocaleString('ms-MY', {maximumFractionDigits: 3});
+const selected = () => $('outlet').value;
+const isOwner = () => profile?.role === 'owner';
+const canSeeLogs = () => profile?.role === 'owner' || profile?.role === 'manager';
+const roleName = r => ({owner: 'Owner', manager: 'Manager', staff: 'Staff'}[r] || r);
+const validQty = v => Number.isFinite(v) && v >= 0;
+
+// Satu nombor sahaja: "patut ada". Habis = 0, perlu tambah = kurang dari patut ada.
+function status(x) {
+  const ada = Number(x.current_qty), patut = Number(x.target_qty);
+  if (ada <= 0) return 'habis';
+  if (ada < patut) return 'tambah';
+  return 'cukup';
+}
+const statusLabel = {habis: 'Habis', tambah: 'Perlu tambah', cukup: 'Cukup'};
+const statusOrder = {habis: 0, tambah: 1, cukup: 2};
+
+function errorText(error) {
+  if (error?.code === '23505') return 'Nama barang ini dah wujud dalam outlet ni.';
+  return error?.message || 'Ralat tidak diketahui.';
+}
+
+async function start() {
+  if (typeof SUPABASE_URL !== 'string' || typeof SUPABASE_KEY !== 'string') {
+    say('config.js tidak dijumpai. Letakkan fail ini bersama config.js asal.');
+    return;
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const {data: {session}} = await sb.auth.getSession();
+  if (session) await loadAccount(session.user);
+  else $('loginBox').classList.remove('hidden');
+}
+
+async function loadAccount(u) {
+  user = u;
+  const {data: p, error: pe} = await sb.from('staff_profiles').select('role,outlet_id').eq('user_id', u.id).maybeSingle();
+  if (pe || !p) { say('Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner.'); return; }
+  profile = p;
+
+  const {data: outlets, error: oe} = await sb.from('outlets').select('id,name').order('name');
+  if (oe) { say(oe.message); return; }
+  const allowed = isOwner() ? outlets : (outlets || []).filter(o => o.id === p.outlet_id);
+  $('outlet').replaceChildren(...allowed.map(o => {
+    const opt = document.createElement('option');
+    opt.value = o.id; opt.textContent = o.name;
+    return opt;
+  }));
+  if (!isOwner() && p.outlet_id) $('outlet').value = p.outlet_id;
+  $('outlet').disabled = allowed.length < 2;
+
+  // Untuk label "siapa ubah" dalam sejarah. RLS hanya pulangkan profil yang boleh dibaca.
+  const {data: staff} = await sb.from('staff_profiles').select('user_id,role');
+  (staff || []).forEach(s => people.set(s.user_id, s.role));
+
+  $('identity').textContent = `${u.email} · ${roleName(p.role)}`;
+  $('loginBox').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  if (!allowed.length) { say('Tiada outlet yang boleh diakses.'); return; }
+  await refresh();
+}
+
+async function refresh() {
+  if (!selected()) return;
+  const {data, error} = await sb.from('inventory_items')
+    .select('id,outlet_id,name,unit,current_qty,target_qty,updated_at')
+    .eq('outlet_id', selected());
+  if (error) { say('Gagal baca stok: ' + error.message); return; }
+  items = (data || []).sort((a, b) =>
+    statusOrder[status(a)] - statusOrder[status(b)] || a.name.localeCompare(b.name, 'ms-MY'));
+  render();
+}
+
+function render() {
+  const habis = items.filter(x => status(x) === 'habis').length;
+  const tambah = items.filter(x => status(x) === 'tambah').length;
+  $('count').textContent = items.length;
+  $('low').textContent = tambah;
+  $('empty').textContent = habis;
+
+  const alert = $('alert');
+  const parts = [];
+  if (habis) parts.push(`${habis} barang habis`);
+  if (tambah) parts.push(`${tambah} barang perlu tambah`);
+  alert.textContent = parts.length ? '⚠ ' + parts.join(', ') + '. Semak dan kemas kini stok.' : '';
+  alert.classList.toggle('hidden', !parts.length);
+  alert.classList.toggle('danger', habis > 0);
+
+  if (!items.length) { $('items').innerHTML = '<p class="muted">Belum ada barang dalam outlet ini.</p>'; return; }
+  $('items').innerHTML = items.map(x => {
+    const st = status(x);
+    const kurang = Math.max(0, Number(x.target_qty) - Number(x.current_qty));
+    return `<div class="item ${st}">
+      <div class="row">
+        <div><h3>${safe(x.name)}</h3><span class="muted">Patut ada ${num(x.target_qty)} ${safe(x.unit)}${kurang ? ' · kurang ' + num(kurang) : ''}</span></div>
+        <span class="pill ${st}">${statusLabel[st]}</span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <span class="qty">${num(x.current_qty)} <small style="font-size:13px;color:#a5c4b2">${safe(x.unit)}</small></span>
+        <div class="actions">
+          ${canSeeLogs() ? `<button class="secondary small" data-history="${safe(x.id)}">Sejarah</button>` : ''}
+          <button class="secondary small" data-edit="${safe(x.id)}">${isOwner() ? 'Edit' : 'Kemas kini'}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Tambah barang (semua role, outlet sendiri) ----------
+$('addForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {
+    outlet_id: selected(),
+    name: $('name').value.trim(),
+    unit: $('unit').value,
+    current_qty: Number($('current').value),
+    target_qty: Number($('target').value)
+  };
+  if (!payload.name) { say('Isi nama barang.'); return; }
+  if ($('target').value.trim() === '' || !validQty(payload.current_qty) || !validQty(payload.target_qty)) {
+    say('Sila masukkan kuantiti yang sah (0 atau lebih).'); return;
+  }
+  const b = $('addBtn');
+  b.disabled = true; say('Menyimpan...');
+  const {error} = await sb.from('inventory_items').insert(payload);
+  b.disabled = false;
+  if (error) { say('Gagal tambah: ' + errorText(error)); return; }
+  $('addForm').reset();
+  say('Barang berjaya ditambah.');
+  await refresh();
+});
+
+// ---------- Kemas kini / Edit ----------
+$('items').addEventListener('click', e => {
+  const edit = e.target.closest('[data-edit]');
+  const hist = e.target.closest('[data-history]');
+  if (edit) openEdit(items.find(x => x.id === edit.dataset.edit));
+  if (hist) openHistory(items.find(x => x.id === hist.dataset.history));
+});
+
+function openEdit(item) {
+  if (!item) return;
+  editing = item;
+  $('editTitle').textContent = item.name;
+  $('editCurrent').value = item.current_qty;
+  $('ownerFields').classList.toggle('hidden', !isOwner());
+  // Medan owner disembunyikan untuk bukan owner, jadi jangan wajibkan ia.
+  ['editName', 'editTarget'].forEach(id => { $(id).required = isOwner(); });
+  if (isOwner()) {
+    $('editName').value = item.name;
+    $('editUnit').value = item.unit;
+    $('editTarget').value = item.target_qty;
+  }
+  $('editNote').textContent = isOwner()
+    ? 'Setiap perubahan kuantiti direkod dalam sejarah.'
+    : `Patut ada: ${num(item.target_qty)} ${item.unit}. Hanya owner boleh ubah nama, unit atau patut ada.`;
+  $('editDialog').showModal();
+}
+
+$('editCancel').onclick = () => $('editDialog').close();
+
+$('editForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!editing) return;
+  const payload = {current_qty: Number($('editCurrent').value)};
+  if ($('editCurrent').value.trim() === '' || !validQty(payload.current_qty)) { say('Kuantiti tidak sah.'); return; }
+  if (isOwner()) {
+    payload.name = $('editName').value.trim();
+    payload.unit = $('editUnit').value;
+    payload.target_qty = Number($('editTarget').value);
+    if (!payload.name || !validQty(payload.target_qty)) { say('Nama atau patut ada tidak sah.'); return; }
+  }
+  const b = $('editSave');
+  b.disabled = true;
+  const {data, error} = await sb.from('inventory_items').update(payload)
+    .eq('id', editing.id).eq('outlet_id', selected()).select('id');
+  b.disabled = false;
+  if (error) { say('Gagal simpan: ' + errorText(error)); return; }
+  if (!data || !data.length) { say('Tiada perubahan disimpan. Anda mungkin tiada akses untuk barang ini.'); return; }
+  $('editDialog').close();
+  say('Stok berjaya dikemas kini.');
+  await refresh();
+});
+
+// ---------- Sejarah (owner & manager) ----------
+async function openHistory(item) {
+  if (!item || !canSeeLogs()) return;
+  $('historyTitle').textContent = 'Sejarah · ' + item.name;
+  $('historyList').innerHTML = '<p class="muted">Memuatkan...</p>';
+  $('historyDialog').showModal();
+  const {data, error} = await sb.from('inventory_stock_logs')
+    .select('previous_qty,new_qty,change_type,note,changed_by,created_at')
+    .eq('inventory_item_id', item.id)
+    .order('created_at', {ascending: false})
+    .limit(30);
+  if (error) { $('historyList').innerHTML = `<p class="muted">Gagal baca sejarah: ${safe(error.message)}</p>`; return; }
+  if (!data.length) { $('historyList').innerHTML = '<p class="muted">Tiada sejarah lagi.</p>'; return; }
+  $('historyList').innerHTML = data.map(l => {
+    const who = l.changed_by === user.id ? 'Anda' : (people.has(l.changed_by) ? roleName(people.get(l.changed_by)) : 'Ahli outlet');
+    const when = new Date(l.created_at).toLocaleString('ms-MY', {dateStyle: 'medium', timeStyle: 'short'});
+    return `<div class="log"><b>${num(l.previous_qty)} → ${num(l.new_qty)} ${safe(item.unit)}</b><br>
+      <span class="muted">${safe(when)} · ${safe(who)}${l.note ? ' · ' + safe(l.note) : ''}</span></div>`;
+  }).join('');
+}
+$('historyClose').onclick = () => $('historyDialog').close();
+
+// ---------- Copy CSV (semua role) ----------
+const csvCell = v => {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+$('copyCsv').onclick = async () => {
+  if (!items.length) { say('Tiada barang untuk disalin.'); return; }
+  const outlet = $('outlet').selectedOptions[0]?.textContent || '';
+  const rows = [['Outlet', 'Nama', 'Unit', 'Ada', 'Patut ada', 'Kurang', 'Status']];
+  items.forEach(x => rows.push([
+    outlet, x.name, x.unit, x.current_qty, x.target_qty,
+    Math.max(0, Number(x.target_qty) - Number(x.current_qty)), statusLabel[status(x)]
+  ]));
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+  say(await copyText(csv) ? `CSV disalin (${items.length} barang). Tampal ke WhatsApp atau Sheets.` : 'Gagal salin. Cuba lagi.');
+};
+
+// ---------- Login / logout ----------
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  say('Sedang log masuk...');
+  const {data, error} = await sb.auth.signInWithPassword({email: $('email').value.trim(), password: $('password').value});
+  if (error) { say('Emel atau kata laluan salah.'); return; }
+  $('password').value = '';
+  say('');
+  await loadAccount(data.user);
+});
+$('logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$('outlet').onchange = () => { say(''); refresh(); };
+$('refresh').onclick = refresh;
+
+start().catch(e => say('Ralat aplikasi: ' + e.message));
+</script>
+</body>
+</html>
