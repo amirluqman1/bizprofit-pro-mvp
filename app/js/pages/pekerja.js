@@ -224,7 +224,115 @@ function recalc(r) {
   r.net = gross - r.adv;
   return r;
 }
+// Data slip (satu sumber untuk teks WhatsApp dan PDF).
+function slipData(r) {
+  const money = c => rm(fromCents(c));
+  const baseItem = r.payType === 'harian' ? [`Gaji harian (${r.days} hari × ${rm(r.rate)})`, money(r.base)]
+    : r.payType === 'mingguan' ? [`Gaji mingguan (${r.weeks} minggu × ${rm(r.rate)})`, money(r.base)]
+    : ['Gaji bulanan', money(r.base)];
+  const items = [baseItem, [`OT (${r.ot} jam × ${rm(r.otRate)})`, money(r.otAmt)], ['Elaun', money(r.allow)], ['Potongan', '-' + money(r.ded)]];
+  if (r.adv) items.push(['Tolak advance', '-' + money(r.adv)]);
+  return {
+    business: session.business?.name || 'BizProfit Pro',
+    info: [['Nama', r.e.name], ...(r.e.position ? [['Jawatan', r.e.position]] : []), ['Outlet', outletName(r.e.outlet_id)],
+      ['Tempoh', dateRange(state.from, state.to)]],
+    items, total: money(r.net),
+    status: r.paid ? `Dibayar ${new Date(r.slip.paid_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : r.slip ? 'Draf (belum dibayar)' : 'Belum dibayar'
+  };
+}
+
+// jsPDF dimuat hanya bila diperlukan (tidak melambatkan app).
+const JSPDF_URL = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+function loadJsPdf() {
+  if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = JSPDF_URL;
+    sc.onload = () => (window.jspdf?.jsPDF ? resolve(window.jspdf.jsPDF) : reject(new Error('jsPDF')));
+    sc.onerror = () => reject(new Error('jsPDF'));
+    document.head.append(sc);
+  });
+}
+
+// Fon asas PDF tiada simbol tolak (−); guna "-" biasa.
+const pdfText = t => String(t).replace(/−/g, '-').replace(/—/g, '-');
+
+function drawSlip(doc, d) {
+  const W = 148, M = 12;
+  doc.setFillColor(11, 42, 31); doc.rect(0, 0, W, 30, 'F');
+  doc.setFillColor(233, 196, 106); doc.rect(0, 30, W, 1.2, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text(pdfText(d.business), M, 13, { maxWidth: W - M * 2 });
+  doc.setTextColor(95, 224, 138); doc.setFontSize(10); doc.text('SLIP GAJI', M, 22);
+  doc.setTextColor(200, 225, 210); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text(pdfText(d.info.find(i => i[0] === 'Tempoh')[1]), W - M, 22, { align: 'right' });
+
+  let y = 42;
+  doc.setTextColor(30, 40, 35); doc.setFontSize(10);
+  d.info.filter(i => i[0] !== 'Tempoh').forEach(([k, v]) => {
+    doc.setTextColor(110, 125, 115); doc.text(k, M, y);
+    doc.setTextColor(30, 40, 35); doc.setFont('helvetica', 'bold'); doc.text(pdfText(v), M + 24, y, { maxWidth: W - M * 2 - 24 });
+    doc.setFont('helvetica', 'normal'); y += 6.5;
+  });
+
+  y += 4; doc.setDrawColor(210, 220, 214); doc.line(M, y, W - M, y); y += 8;
+  d.items.forEach(([k, v]) => {
+    doc.setTextColor(60, 75, 66); doc.text(pdfText(k), M, y, { maxWidth: W - M * 2 - 34 });
+    doc.setTextColor(30, 40, 35); doc.text(pdfText(v), W - M, y, { align: 'right' });
+    y += 7;
+  });
+
+  y += 2; doc.setFillColor(232, 247, 238); doc.roundedRect(M, y, W - M * 2, 16, 2, 2, 'F');
+  doc.setTextColor(11, 42, 31); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('JUMLAH BERSIH', M + 4, y + 10);
+  doc.setFontSize(14); doc.text(pdfText(d.total), W - M - 4, y + 10.5, { align: 'right' });
+  y += 24;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(60, 75, 66);
+  doc.text('Status: ' + pdfText(d.status), M, y);
+
+  const sy = 184;
+  doc.setDrawColor(150, 160, 155);
+  doc.line(M, sy, M + 50, sy); doc.line(W - M - 50, sy, W - M, sy);
+  doc.setFontSize(8.5); doc.text('Tandatangan pekerja', M, sy + 5); doc.text('Tandatangan majikan', W - M - 50, sy + 5);
+  doc.setFontSize(7.5); doc.setTextColor(150, 160, 155);
+  doc.text('Dijana oleh BizProfit Pro · ' + new Date().toLocaleString('ms-MY'), W / 2, 203, { align: 'center' });
+}
+
+let pdfFile = null;   // fail PDF terakhir, untuk dialog Muat turun / Kongsi
+
+async function makePdf(list, filename, label) {
+  let JsPDF;
+  try { JsPDF = await loadJsPdf(); }
+  catch { toast('PDF tidak dapat disediakan. Semak sambungan internet.', 'error'); return; }
+  const doc = new JsPDF({ unit: 'mm', format: 'a5' });
+  list.forEach((r, i) => { if (i) doc.addPage(); drawSlip(doc, slipData(r)); });
+  const safe = filename.replace(/[^\w.-]+/g, '_');
+  pdfFile = new File([doc.output('blob')], safe, { type: 'application/pdf' });
+  $('pdfInfo').textContent = `${label} · ${safe}`;
+  $('pdfShare').hidden = !(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
+  $('pdfDialog').showModal();
+}
+
+function downloadPdf() {
+  if (!pdfFile) return;
+  const url = URL.createObjectURL(pdfFile);
+  const a = document.createElement('a');
+  a.href = url; a.download = pdfFile.name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  toast('PDF dimuat turun. Semak folder Download.');
+}
+
+async function sharePdf() {
+  if (!pdfFile) return;
+  try { await navigator.share({ files: [pdfFile], title: pdfFile.name }); }
+  catch (e) { if (e?.name !== 'AbortError') toast('Gagal kongsi. Cuba Muat turun.', 'error'); }
+}
+
+let payrollVersion = 0;   // hanya pemuatan terkini dipaparkan (elak paparan berganda)
+
 async function renderPayroll() {
+  const v = ++payrollVersion;
   const box = $('pkBody');
   box.innerHTML = `
     <section class="card stack">
@@ -237,8 +345,10 @@ async function renderPayroll() {
         <label class="field">Hingga<input id="pyTo" type="date" value="${state.to}"></label>
       </div>
       <div class="kv total" id="pyTotal"></div>
+      <p class="greet-sub right" id="pyPaid"></p>
+      <button class="btn ghost block" id="pyPdfAll" type="button" hidden>${icon('download')} PDF semua slip</button>
     </section>
-    <div class="section-row"><details class="breakdown card" id="pyAdvances"></details></div>
+    <details class="card adv-box" id="pyAdvances"></details>
     <button class="btn ghost block" id="pyAdvanceBtn" type="button">+ Beri advance (gaji awal)</button>
     <div id="pyList" class="list"><section class="card"><p class="greet-sub">Mengira…</p></section></div>
     <p class="note-line small">${icon('lock')}Gaji harian = hari hadir × kadar (separuh hari = 0.5). Gaji bulanan dibayar penuh; tolak ketidakhadiran secara manual dalam "Potongan". Slip yang sudah dibayar dikunci.</p>`;
@@ -262,6 +372,7 @@ async function renderPayroll() {
     sb.from('salary_advances').select('employee_id,amount,advance_date,note,created_at').in('employee_id', ids).order('created_at', { ascending: false }),
     sb.from('payroll').select('employee_id,advance_deduction').eq('status', 'dibayar').in('employee_id', ids)
   ]);
+  if (v !== payrollVersion) return;   // pengguna dah tukar tempoh; abaikan hasil lama
   if (att.error || pr.error || adv.error || paidAdv.error) { $('pyList').innerHTML = '<div class="empty">Data gaji tak dapat dibaca.</div>'; return; }
   const slips = new Map((pr.data || []).map(p => [p.employee_id, p]));
   // Baki advance belum ditolak (sen) = semua advance − yang sudah ditolak dalam gaji dibayar
@@ -296,8 +407,10 @@ async function renderPayroll() {
   const total = rows.reduce((t, r) => t + r.net, 0);
   const paid = rows.filter(r => r.paid).reduce((t, r) => t + r.net, 0);
   $('pyTotal').innerHTML = `<span>Jumlah gaji ${esc(dateRange(state.from, state.to))}</span><b>${rm(fromCents(total))}</b>`;
-  $('pyTotal').insertAdjacentHTML('afterend', `<p class="greet-sub right" id="pyPaid">Sudah dibayar ${rm(fromCents(paid))} · Belum ${rm(fromCents(total - paid))}</p>`);
+  $('pyPaid').textContent = `Sudah dibayar ${rm(fromCents(paid))} · Belum ${rm(fromCents(total - paid))}`;
   if (!rows.length) { $('pyList').innerHTML = emptyStaff(); return; }
+  $('pyPdfAll').hidden = false;
+  $('pyPdfAll').onclick = () => makePdf(rows, `Slip-Gaji_Semua_${state.from}_${state.to}.pdf`, `${rows.length} slip gaji`);
 
   $('pyList').innerHTML = rows.map(r => {
     const st = r.paid ? '<span class="pill ok">Dibayar</span>' : r.slip ? '<span class="pill rendah">Draf</span>' : '<span class="pill">Belum disimpan</span>';
@@ -323,6 +436,7 @@ async function renderPayroll() {
       <div class="kv total"><span>Jumlah</span><b data-net>${rm(fromCents(r.net))}</b></div>
       ${r.paid ? `<p class="greet-sub">Dibayar ${esc(new Date(r.slip.paid_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' }))} · direkod sebagai "Staff Wages"</p>` : ''}
       <div class="dialog-actions">
+        <button class="btn ghost" type="button" data-pdf>${icon('download')}PDF</button>
         <button class="btn ghost" type="button" data-copy>Copy slip</button>
         ${r.e.active ? '<button class="btn ghost" type="button" data-advance>+ Advance</button>' : ''}
         ${r.paid ? '' : '<button class="btn ghost" type="button" data-draft>Simpan draf</button><button class="btn primary" type="button" data-pay>Bayar</button>'}
@@ -364,21 +478,15 @@ async function renderPayroll() {
     if (!btn || !btn.closest('[data-emp]')) return;
     const card = btn.closest('[data-emp]'), r = rowOf(card);
     if (btn.matches('[data-copy]')) {
-      const lines = [
-        `SLIP GAJI — ${session.business?.name || 'BizProfit Pro'}`,
-        `Nama: ${r.e.name} (${outletName(r.e.outlet_id)})`,
-        `Tempoh: ${dateRange(state.from, state.to)}`,
-        r.payType === 'harian' ? `Hari bekerja: ${r.days} × ${rm(r.rate)} = ${rm(fromCents(r.base))}`
-          : r.payType === 'mingguan' ? `Gaji mingguan: ${r.weeks} minggu × ${rm(r.rate)} = ${rm(fromCents(r.base))}`
-          : `Gaji bulanan: ${rm(fromCents(r.base))}`,
-        `OT: ${r.ot} jam × ${rm(r.otRate)} = ${rm(fromCents(r.otAmt))}`,
-        `Elaun: ${rm(fromCents(r.allow))}`, `Potongan: ${rm(fromCents(r.ded))}`,
-        ...(r.adv ? [`Tolak advance: ${rm(fromCents(r.adv))}`] : []),
-        `JUMLAH: ${rm(fromCents(r.net))}`,
-        r.paid ? `Status: Dibayar ${new Date(r.slip.paid_at).toLocaleDateString('ms-MY')}` : 'Status: Belum dibayar'
-      ];
+      const d = slipData(r);
+      const lines = [`SLIP GAJI — ${d.business}`, ...d.info.map(([k, v]) => `${k}: ${v}`),
+        ...d.items.map(([k, v]) => `${k}: ${v}`), `JUMLAH: ${d.total}`, `Status: ${d.status}`];
       try { await navigator.clipboard.writeText(lines.join('\n')); toast('Slip disalin. Tampal ke WhatsApp.'); }
       catch { toast('Gagal salin.', 'error'); }
+      return;
+    }
+    if (btn.matches('[data-pdf]')) {
+      makePdf([r], `Slip-Gaji_${r.e.name}_${state.from}_${state.to}.pdf`, `Slip gaji ${r.e.name}`);
       return;
     }
     if (btn.matches('[data-advance]')) { openAdvance(r.e.id); return; }
@@ -454,6 +562,16 @@ function dialogsHTML() {
     <div class="dialog-actions"><button class="btn ghost" type="button" data-close="advDialog">Batal</button><button class="btn primary" id="advSave">Simpan advance</button></div>
   </form></dialog>
 
+  <dialog id="pdfDialog">
+    <div class="stack">
+      <h2>Slip PDF siap</h2>
+      <p class="note" id="pdfInfo"></p>
+      <button class="btn primary block" type="button" id="pdfShare">Kongsi (WhatsApp, emel…)</button>
+      <button class="btn ghost block" type="button" id="pdfDownload">Muat turun</button>
+      <div class="dialog-actions"><button class="btn ghost" type="button" data-close="pdfDialog">Tutup</button></div>
+    </div>
+  </dialog>
+
   <dialog id="payDialog">
     <div class="stack">
       <h2>Bayar gaji</h2>
@@ -496,6 +614,8 @@ async function saveAdvance(e) {
 }
 
 function bindDialogs(view) {
+  $('pdfDownload').onclick = downloadPdf;
+  $('pdfShare').onclick = sharePdf;
   $('advForm').addEventListener('submit', saveAdvance);
   view.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $(b.dataset.close).close()));
   $('empPayType').addEventListener('change', syncRateLabel);

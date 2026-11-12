@@ -2,7 +2,7 @@
 // Fail app: ambil versi TERBARU dari internet dahulu (elak masalah cache lama);
 // jika tiada internet, guna salinan tersimpan supaya app masih boleh dibuka.
 // Data Supabase tidak disimpan di sini: ia sentiasa perlukan internet.
-const CACHE = 'bizprofit-app-v2';
+const CACHE = 'bizprofit-app-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/pwa.js', './js/ui.js', './js/session.js', './js/router.js', './js/format.js',
@@ -34,8 +34,8 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Pustaka Supabase dari CDN: versi tetap, jadi guna salinan dahulu.
-  if (url.href === CDN) {
+  // Pustaka dari CDN (Supabase, jsPDF) dengan versi tetap: guna salinan dahulu.
+  if (url.hostname === 'cdn.jsdelivr.net' && url.pathname.includes('@')) {
     event.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
       const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res;
     })));

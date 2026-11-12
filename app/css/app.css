@@ -377,3 +377,9 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
   background: #4d3d1cf2; color: var(--amber); font-size: 13px; text-align: center; line-height: 1.4; box-shadow: 0 6px 20px #0008;
 }
 .login:not([hidden]) ~ .offline, .boot:not([hidden]) ~ .offline { bottom: calc(16px + env(safe-area-inset-bottom)); }
+.adv-box { padding: 14px 16px; }
+.adv-box summary { cursor: pointer; color: var(--mint-soft); font-size: 14px; font-weight: 700; }
+.adv-box .kv { padding-top: 8px; font-size: 13px; }
+.adv-box .note { margin-top: 8px; }
+.slip .dialog-actions .btn svg { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
+#pyPdfAll svg { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; }
