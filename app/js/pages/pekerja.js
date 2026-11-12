@@ -259,44 +259,63 @@ function loadJsPdf() {
 const pdfText = t => String(t).replace(/−/g, '-').replace(/—/g, '-');
 
 function drawSlip(doc, d) {
-  const W = 148, M = 12;
-  doc.setFillColor(11, 42, 31); doc.rect(0, 0, W, 30, 'F');
-  doc.setFillColor(233, 196, 106); doc.rect(0, 30, W, 1.2, 'F');
-  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  doc.text(pdfText(d.business), M, 13, { maxWidth: W - M * 2 });
-  doc.setTextColor(95, 224, 138); doc.setFontSize(10); doc.text('SLIP GAJI', M, 22);
-  doc.setTextColor(200, 225, 210); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(pdfText(d.info.find(i => i[0] === 'Tempoh')[1]), W - M, 22, { align: 'right' });
+  const W = 148, M = 12, R = W - M;
+  const GREEN = [17, 90, 55], INK = [22, 28, 25], GREY = [95, 105, 100], LINE = [214, 221, 217];
+  const fill = c => doc.setFillColor(...c), stroke = c => doc.setDrawColor(...c), color = c => doc.setTextColor(...c);
 
-  let y = 42;
-  doc.setTextColor(30, 40, 35); doc.setFontSize(10);
+  // Kepala: nama perniagaan, tajuk SLIP GAJI dengan bar hijau, tempoh di kanan.
+  color(INK); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text(pdfText(d.business), M, 17, { maxWidth: W - M * 2 });
+  fill(GREEN); doc.rect(M, 23, 1.6, 8.5, 'F');
+  color(GREEN); doc.setFontSize(19); doc.text('SLIP GAJI', M + 5, 30.3);
+  color(INK); doc.setFontSize(9.5);
+  doc.text(pdfText(d.info.find(i => i[0] === 'Tempoh')[1]), R, 29.5, { align: 'right' });
+  stroke(GREEN); doc.setLineWidth(0.8); doc.line(M, 35, R, 35);
+
+  // Maklumat pekerja.
+  let y = 45;
+  doc.setFontSize(10);
   d.info.filter(i => i[0] !== 'Tempoh').forEach(([k, v]) => {
-    doc.setTextColor(110, 125, 115); doc.text(k, M, y);
-    doc.setTextColor(30, 40, 35); doc.setFont('helvetica', 'bold'); doc.text(pdfText(v), M + 24, y, { maxWidth: W - M * 2 - 24 });
-    doc.setFont('helvetica', 'normal'); y += 6.5;
+    doc.setFont('helvetica', 'normal'); color(GREY); doc.text(k, M + 1, y); doc.text(':', M + 29, y);
+    doc.setFont('helvetica', 'bold'); color(INK); doc.text(pdfText(v), M + 35, y, { maxWidth: R - M - 35 });
+    y += 6.5;
   });
+  y += 1; stroke(LINE); doc.setLineWidth(0.3); doc.line(M, y, R, y); y += 7;
 
-  y += 4; doc.setDrawColor(210, 220, 214); doc.line(M, y, W - M, y); y += 8;
+  // Jadual Perihal / Amaun.
+  const split = R - 42, hH = 8.5, rH = 8.5;
+  fill(GREEN); doc.rect(M, y, R - M, hH, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Perihal', M + 4, y + 5.7); doc.text('Amaun (RM)', R - 4, y + 5.7, { align: 'right' });
+  stroke([255, 255, 255]); doc.setLineWidth(0.3); doc.line(split, y, split, y + hH);
+  y += hH;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); stroke(LINE);
   d.items.forEach(([k, v]) => {
-    doc.setTextColor(60, 75, 66); doc.text(pdfText(k), M, y, { maxWidth: W - M * 2 - 34 });
-    doc.setTextColor(30, 40, 35); doc.text(pdfText(v), W - M, y, { align: 'right' });
-    y += 7;
+    doc.rect(M, y, R - M, rH); doc.line(split, y, split, y + rH);
+    color(INK); doc.text(pdfText(k), M + 4, y + 5.7, { maxWidth: split - M - 8 });
+    doc.text(pdfText(v), R - 4, y + 5.7, { align: 'right' });
+    y += rH;
   });
+  const tH = 11;
+  fill([230, 245, 236]); doc.rect(M, y, R - M, tH, 'FD');
+  color([11, 60, 36]); doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5);
+  doc.text('JUMLAH BERSIH', M + 4, y + 7.3);
+  doc.setFontSize(13); doc.text(pdfText(d.total), R - 4, y + 7.5, { align: 'right' });
+  y += tH + 8;
 
-  y += 2; doc.setFillColor(232, 247, 238); doc.roundedRect(M, y, W - M * 2, 16, 2, 2, 'F');
-  doc.setTextColor(11, 42, 31); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-  doc.text('JUMLAH BERSIH', M + 4, y + 10);
-  doc.setFontSize(14); doc.text(pdfText(d.total), W - M - 4, y + 10.5, { align: 'right' });
-  y += 24;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(60, 75, 66);
-  doc.text('Status: ' + pdfText(d.status), M, y);
+  // Status.
+  color(INK); doc.setFontSize(10); doc.text('Status:', M, y);
+  const sw = doc.getTextWidth('Status: ');
+  doc.setFont('helvetica', 'normal'); doc.text(pdfText(d.status), M + sw, y);
 
-  const sy = 184;
-  doc.setDrawColor(150, 160, 155);
-  doc.line(M, sy, M + 50, sy); doc.line(W - M - 50, sy, W - M, sy);
-  doc.setFontSize(8.5); doc.text('Tandatangan pekerja', M, sy + 5); doc.text('Tandatangan majikan', W - M - 50, sy + 5);
-  doc.setFontSize(7.5); doc.setTextColor(150, 160, 155);
-  doc.text('Dijana oleh BizProfit Pro · ' + new Date().toLocaleString('ms-MY'), W / 2, 203, { align: 'center' });
+  // Tandatangan dan kaki.
+  const sy = 176;
+  stroke([60, 70, 65]); doc.setLineWidth(0.3);
+  doc.line(M + 1, sy, M + 50, sy); doc.line(R - 50, sy, R - 1, sy);
+  color(INK); doc.setFontSize(9); doc.text('Tandatangan pekerja', M + 1, sy + 5.5); doc.text('Tandatangan majikan', R - 50, sy + 5.5);
+  stroke([180, 188, 184]); doc.line(M - 2, 191, R + 2, 191);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); color([110, 118, 114]);
+  doc.text('Dijana oleh BizProfit Pro · ' + new Date().toLocaleString('ms-MY'), W / 2, 197, { align: 'center' });
 }
 
 let pdfFile = null;   // fail PDF terakhir, untuk dialog Muat turun / Kongsi
