@@ -21,6 +21,7 @@ h2{font-size:18px}
 .stat b{display:block;font-size:27px;margin-top:10px}
 .stat span{font-size:11px;color:#a5c4b2}
 .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.copy-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .stack{display:grid;gap:12px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -100,10 +101,11 @@ dialog::backdrop{background:#000a}
       <section class="glass">
         <div class="row">
           <h2 style="margin:0">Senarai stok</h2>
-          <div class="actions">
-            <button class="secondary small" id="copyCsv" type="button">Copy CSV</button>
-            <button class="secondary small" id="refresh" type="button">↻</button>
-          </div>
+          <button class="secondary small" id="refresh" type="button" aria-label="Muat semula">↻</button>
+        </div>
+        <div class="copy-row">
+          <button class="primary small" id="copyList" type="button">Copy senarai beli</button>
+          <button class="secondary small" id="copyCsv" type="button">CSV</button>
         </div>
         <div id="items"><p class="muted">Belum ada barang.</p></div>
       </section>
@@ -382,6 +384,17 @@ $('copyCsv').onclick = async () => {
   ]));
   const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
   say(await copyText(csv) ? `CSV disalin (${items.length} barang). Tampal ke WhatsApp atau Sheets.` : 'Gagal salin. Cuba lagi.');
+};
+
+// ---------- Copy senarai beli (untuk WhatsApp) ----------
+$('copyList').onclick = async () => {
+  const perlu = items
+    .map(x => ({...x, kurang: Math.max(0, Number(x.target_qty) - Number(x.current_qty))}))
+    .filter(x => x.kurang > 0);
+  if (!perlu.length) { say('Semua stok cukup. Tiada apa perlu dibeli.'); return; }
+  const outlet = $('outlet').selectedOptions[0]?.textContent || '';
+  const text = [outlet, ...perlu.map(x => `${x.name} ${num(x.kurang)} ${x.unit}`)].join('\n');
+  say(await copyText(text) ? `Senarai beli disalin (${perlu.length} barang). Tampal ke WhatsApp.` : 'Gagal salin. Cuba lagi.');
 };
 
 // ---------- Login / logout ----------
