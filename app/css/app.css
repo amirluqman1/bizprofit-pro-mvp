@@ -336,3 +336,36 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .bar.out { background: var(--red); }
 .bar-label { white-space: nowrap; overflow: hidden; }
 @media (max-width: 370px) { .step { width: 48px; height: 42px; } .qty { font-size: 32px; } .two { grid-template-columns: 1fr; } }
+
+/* ===== Pekerja (Fasa 5) ===== */
+.emp { padding: 14px 16px; display: grid; gap: 12px; }
+.emp-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.emp-head b { font-size: 16px; }
+.emp-head .sub { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.ot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); flex: 0 0 auto; }
+.ot input { width: 58px; padding: 7px 6px; border: 1px solid var(--line); border-radius: 10px; background: #082419; color: var(--text); font-size: 15px; text-align: center; }
+.chips.st { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.chips.st .chip { background: transparent; padding: 9px 4px; font-size: 12.5px; text-align: center; font-weight: 600; }
+.chips.st .chip.on.hadir { background: #15513a; border-color: var(--line-glow); color: var(--mint); }
+.chips.st .chip.on.separuh { background: #4d3d1c; border-color: #7a6229; color: var(--amber); }
+.chips.st .chip.on.cuti { background: #1c3a4d; border-color: #2c5f7a; color: #9fd4f7; }
+.chips.st .chip.on.tidak_hadir { background: var(--red-bg); border-color: #7a3730; color: #ffb4a9; }
+.tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #4d3d1c; color: var(--amber); font-size: 11px; font-style: normal; font-weight: 600; vertical-align: middle; }
+.tag.off { background: #ffffff14; color: var(--muted); }
+.emp-row.inactive { opacity: .6; }
+.emp-row span { flex: 1; min-width: 0; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.check input { width: 20px; height: 20px; accent-color: var(--mint); }
+.check small { color: var(--muted); }
+.slip { display: grid; gap: 4px; }
+.slip .kv-list { margin-top: 10px; }
+.slip .two { margin-top: 4px; }
+.pill:not(.ok):not(.rendah):not(.habis) { color: var(--muted); background: #ffffff10; }
+
+/* Elak page jadi lebih lebar dari skrin (medan tarikh ada lebar minimum sendiri dalam grid) */
+.two > *, .field, .seg > * { min-width: 0; }
+.field input, .field select { min-width: 0; max-width: 100%; }
+.kv.total > span { min-width: 0; }
+.view > *, #rekodBody > *, #pkBody > * { min-width: 0; }
+.slip .dialog-actions { flex-wrap: wrap; }
+.slip .dialog-actions .btn { padding: 11px 13px; font-size: 14px; white-space: nowrap; }
