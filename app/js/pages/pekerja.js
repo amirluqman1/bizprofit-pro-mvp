@@ -17,9 +17,10 @@ const tabFromHash = () => {
 };
 const cents = n => Math.round(Number(n || 0) * 100);
 const fromCents = c => c / 100;
-const payLabel = e => e.pay_type === 'harian'
-  ? `Harian ${rm(e.rate)}/hari${Number(e.ot_rate) ? ' · OT ' + rm(e.ot_rate) + '/jam' : ''}`
-  : `Bulanan ${rm(e.rate)}${Number(e.ot_rate) ? ' · OT ' + rm(e.ot_rate) + '/jam' : ''}`;
+const PAY_TYPE = { harian: ['Harian', '/hari', 'Gaji sehari (RM)'], mingguan: ['Mingguan', '/minggu', 'Gaji seminggu (RM)'], bulanan: ['Bulanan', '/bulan', 'Gaji sebulan (RM)'] };
+const payLabel = e => `${PAY_TYPE[e.pay_type][0]} ${rm(e.rate)}${PAY_TYPE[e.pay_type][1]}${Number(e.ot_rate) ? ' · OT ' + rm(e.ot_rate) + '/jam' : ''}`;
+// Bilangan minggu dalam tempoh (contoh 7 hari = 1, 30 hari = 4.29)
+const weeksIn = (from, to) => Math.round(((new Date(to) - new Date(from)) / 86400000 + 1) / 7 * 100) / 100;
 const errText = e => e?.message || 'Ralat tidak diketahui.';
 
 async function loadEmployees() {
@@ -183,7 +184,7 @@ function openEmployee(emp) {
   $('empDialog').showModal();
 }
 function syncRateLabel() {
-  $('empRateLabel').firstChild.textContent = $('empPayType').value === 'harian' ? 'Gaji sehari (RM)' : 'Gaji sebulan (RM)';
+  $('empRateLabel').firstChild.textContent = PAY_TYPE[$('empPayType').value][2];
 }
 
 async function saveEmployee(e) {
@@ -216,6 +217,13 @@ async function saveEmployee(e) {
 }
 
 // ================= Gaji =================
+// Advance ditolak automatik (maksimum = gaji kasar); lebihan dibawa ke gaji seterusnya.
+function recalc(r) {
+  const gross = Math.max(0, r.base + r.otAmt + r.allow - r.ded);
+  r.adv = Math.min(r.bal, gross);
+  r.net = gross - r.adv;
+  return r;
+}
 async function renderPayroll() {
   const box = $('pkBody');
   box.innerHTML = `
@@ -230,9 +238,12 @@ async function renderPayroll() {
       </div>
       <div class="kv total" id="pyTotal"></div>
     </section>
+    <div class="section-row"><details class="breakdown card" id="pyAdvances"></details></div>
+    <button class="btn ghost block" id="pyAdvanceBtn" type="button">+ Beri advance (gaji awal)</button>
     <div id="pyList" class="list"><section class="card"><p class="greet-sub">Mengira…</p></section></div>
     <p class="note-line small">${icon('lock')}Gaji harian = hari hadir × kadar (separuh hari = 0.5). Gaji bulanan dibayar penuh; tolak ketidakhadiran secara manual dalam "Potongan". Slip yang sudah dibayar dikunci.</p>`;
 
+  $('pyAdvanceBtn').onclick = () => openAdvance(null);
   box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
     state.preset = b.dataset.preset; [state.from, state.to] = presetRange(state.preset); renderPayroll();
   });
@@ -245,12 +256,18 @@ async function renderPayroll() {
 
   const ids = employees.map(e => e.id);
   if (!ids.length) { $('pyList').innerHTML = emptyStaff(); $('pyTotal').innerHTML = ''; return; }
-  const [att, pr] = await Promise.all([
+  const [att, pr, adv, paidAdv] = await Promise.all([
     sb.from('attendance').select('employee_id,status,ot_hours').gte('work_date', state.from).lte('work_date', state.to).in('employee_id', ids),
-    sb.from('payroll').select('*').eq('period_start', state.from).eq('period_end', state.to).in('employee_id', ids)
+    sb.from('payroll').select('*').eq('period_start', state.from).eq('period_end', state.to).in('employee_id', ids),
+    sb.from('salary_advances').select('employee_id,amount,advance_date,note,created_at').in('employee_id', ids).order('created_at', { ascending: false }),
+    sb.from('payroll').select('employee_id,advance_deduction').eq('status', 'dibayar').in('employee_id', ids)
   ]);
-  if (att.error || pr.error) { $('pyList').innerHTML = '<div class="empty">Data gaji tak dapat dibaca.</div>'; return; }
+  if (att.error || pr.error || adv.error || paidAdv.error) { $('pyList').innerHTML = '<div class="empty">Data gaji tak dapat dibaca.</div>'; return; }
   const slips = new Map((pr.data || []).map(p => [p.employee_id, p]));
+  // Baki advance belum ditolak (sen) = semua advance − yang sudah ditolak dalam gaji dibayar
+  const balance = new Map();
+  (adv.data || []).forEach(a => balance.set(a.employee_id, (balance.get(a.employee_id) || 0) + cents(a.amount)));
+  (paidAdv.data || []).forEach(p => balance.set(p.employee_id, (balance.get(p.employee_id) || 0) - cents(p.advance_deduction)));
 
   // Kira dalam sen supaya tiada ralat pecahan.
   const rows = employees.filter(e => e.active || slips.has(e.id)).map(e => {
@@ -261,14 +278,19 @@ async function renderPayroll() {
     const slip = slips.get(e.id);
     if (slip?.status === 'dibayar') {
       return { e, slip, paid: true, days: Number(slip.days_worked), ot: Number(slip.ot_hours), absent,
-        base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction), net: cents(slip.net_amount),
+        base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction),
+        adv: cents(slip.advance_deduction), bal: Math.max(0, balance.get(e.id) || 0), net: cents(slip.net_amount), weeks: weeksIn(slip.period_start, slip.period_end),
         rate: Number(slip.rate), otRate: Number(slip.ot_rate), payType: slip.pay_type };
     }
-    const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate)) : cents(e.rate);
+    const weeks = weeksIn(state.from, state.to);
+    const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate))
+      : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate)) : cents(e.rate);
     const otAmt = Math.round(ot * cents(e.ot_rate));
     const allow = cents(slip?.allowance), ded = cents(slip?.deduction);
-    return { e, slip, paid: false, days, ot, absent, base, otAmt, allow, ded, net: Math.max(0, base + otAmt + allow - ded),
+    const bal = Math.max(0, balance.get(e.id) || 0);
+    const r = { e, slip, paid: false, days, ot, absent, weeks, base, otAmt, allow, ded, bal,
       rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type };
+    return recalc(r);
   });
 
   const total = rows.reduce((t, r) => t + r.net, 0);
@@ -279,9 +301,14 @@ async function renderPayroll() {
 
   $('pyList').innerHTML = rows.map(r => {
     const st = r.paid ? '<span class="pill ok">Dibayar</span>' : r.slip ? '<span class="pill rendah">Draf</span>' : '<span class="pill">Belum disimpan</span>';
+    const absentNote = r.absent ? ` (${r.absent} hari tidak hadir)` : '';
     const baseLine = r.payType === 'harian'
       ? `<div class="kv"><span>${r.days} hari × ${rm(r.rate)}</span><b>${rm(fromCents(r.base))}</b></div>`
-      : `<div class="kv"><span>Gaji bulanan${r.absent ? ` (${r.absent} hari tidak hadir)` : ''}</span><b>${rm(fromCents(r.base))}</b></div>`;
+      : r.payType === 'mingguan'
+      ? `<div class="kv"><span>${r.weeks} minggu × ${rm(r.rate)}${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`
+      : `<div class="kv"><span>Gaji bulanan${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`;
+    const advLine = (r.adv || r.bal)
+      ? `<div class="kv"><span>Tolak advance${r.paid ? '' : ` (baki ${rm(fromCents(r.bal))})`}</span><b class="neg" data-adv>−${rm(fromCents(r.adv))}</b></div>` : '';
     return `<section class="card slip" data-emp="${esc(r.e.id)}">
       <div class="emp-head"><div><b>${esc(r.e.name)}</b><span class="sub">${esc(outletName(r.e.outlet_id))}${r.e.is_manager ? ' · Peringkat pengurus' : ''}</span></div>${st}</div>
       <div class="kv-list">
@@ -291,11 +318,13 @@ async function renderPayroll() {
           ? `<div class="kv"><span>Elaun</span><b>${rm(fromCents(r.allow))}</b></div><div class="kv"><span>Potongan</span><b class="neg">−${rm(fromCents(r.ded))}</b></div>`
           : `<div class="two"><label class="field">Elaun (RM)<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.allow)}" data-allow></label>
               <label class="field">Potongan (RM)<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.ded)}" data-ded></label></div>`}
+        ${advLine}
       </div>
       <div class="kv total"><span>Jumlah</span><b data-net>${rm(fromCents(r.net))}</b></div>
       ${r.paid ? `<p class="greet-sub">Dibayar ${esc(new Date(r.slip.paid_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' }))} · direkod sebagai "Staff Wages"</p>` : ''}
       <div class="dialog-actions">
         <button class="btn ghost" type="button" data-copy>Copy slip</button>
+        ${r.e.active ? '<button class="btn ghost" type="button" data-advance>+ Advance</button>' : ''}
         ${r.paid ? '' : '<button class="btn ghost" type="button" data-draft>Simpan draf</button><button class="btn primary" type="button" data-pay>Bayar</button>'}
       </div>
     </section>`;
@@ -310,8 +339,10 @@ async function renderPayroll() {
     if (!e.target.matches('[data-allow],[data-ded]')) return;
     const card = e.target.closest('[data-emp]'), r = rowOf(card), x = readExtras(card);
     if (!x) return;
-    r.allow = x.allow; r.ded = x.ded; r.net = Math.max(0, r.base + r.otAmt + r.allow - r.ded);
+    r.allow = x.allow; r.ded = x.ded; recalc(r);
     card.querySelector('[data-net]').textContent = rm(fromCents(r.net));
+    const advEl = card.querySelector('[data-adv]');
+    if (advEl) advEl.textContent = '−' + rm(fromCents(r.adv));
   });
 
   async function saveDraft(r) {
@@ -337,9 +368,12 @@ async function renderPayroll() {
         `SLIP GAJI — ${session.business?.name || 'BizProfit Pro'}`,
         `Nama: ${r.e.name} (${outletName(r.e.outlet_id)})`,
         `Tempoh: ${dateRange(state.from, state.to)}`,
-        r.payType === 'harian' ? `Hari bekerja: ${r.days} × ${rm(r.rate)} = ${rm(fromCents(r.base))}` : `Gaji bulanan: ${rm(fromCents(r.base))}`,
+        r.payType === 'harian' ? `Hari bekerja: ${r.days} × ${rm(r.rate)} = ${rm(fromCents(r.base))}`
+          : r.payType === 'mingguan' ? `Gaji mingguan: ${r.weeks} minggu × ${rm(r.rate)} = ${rm(fromCents(r.base))}`
+          : `Gaji bulanan: ${rm(fromCents(r.base))}`,
         `OT: ${r.ot} jam × ${rm(r.otRate)} = ${rm(fromCents(r.otAmt))}`,
         `Elaun: ${rm(fromCents(r.allow))}`, `Potongan: ${rm(fromCents(r.ded))}`,
+        ...(r.adv ? [`Tolak advance: ${rm(fromCents(r.adv))}`] : []),
         `JUMLAH: ${rm(fromCents(r.net))}`,
         r.paid ? `Status: Dibayar ${new Date(r.slip.paid_at).toLocaleDateString('ms-MY')}` : 'Status: Belum dibayar'
       ];
@@ -347,6 +381,7 @@ async function renderPayroll() {
       catch { toast('Gagal salin.', 'error'); }
       return;
     }
+    if (btn.matches('[data-advance]')) { openAdvance(r.e.id); return; }
     if (!readExtras(card)) { toast('Elaun dan potongan mesti 0 atau lebih.', 'error'); return; }
     if (btn.matches('[data-draft]')) {
       btn.disabled = true;
@@ -355,9 +390,9 @@ async function renderPayroll() {
       return;
     }
     if (btn.matches('[data-pay]')) {
-      if (r.net <= 0) { toast('Jumlah RM 0, tiada apa untuk dibayar.', 'error'); return; }
+      if (r.net <= 0 && r.adv <= 0) { toast('Jumlah RM 0, tiada apa untuk dibayar.', 'error'); return; }
       const methods = await loadPayMethods();
-      $('payInfo').textContent = `${r.e.name} · ${dateRange(state.from, state.to)} · ${rm(fromCents(r.net))}`;
+      $('payInfo').textContent = `${r.e.name} · ${dateRange(state.from, state.to)} · ${rm(fromCents(r.net))}` + (r.adv ? ` (selepas tolak advance ${rm(fromCents(r.adv))})` : '');
       $('payMethod').replaceChildren(...methods.map(m => new Option(m, m)));
       $('payDialog').dataset.emp = r.e.id;
       $('payDialog').showModal();
@@ -374,9 +409,16 @@ async function renderPayroll() {
     $('payConfirm').disabled = false;
     if (error) { toast('Gagal bayar: ' + errText(error), 'error'); return; }
     $('payDialog').close();
-    toast(`Gaji ${r.e.name} dibayar dan direkod sebagai Staff Wages.`);
+    toast(r.net > 0 ? `Gaji ${r.e.name} dibayar dan direkod sebagai Staff Wages.` : `Gaji ${r.e.name} ditampung sepenuhnya oleh advance.`);
     renderPayroll();
   };
+
+  // Senarai advance dalam tempoh ini
+  const inPeriod = (adv.data || []).filter(a => a.advance_date >= state.from && a.advance_date <= state.to);
+  const empName = id => employees.find(x => x.id === id)?.name || '-';
+  $('pyAdvances').innerHTML = `<summary>Advance dalam tempoh ini (${inPeriod.length}) · ${rm(fromCents(inPeriod.reduce((t, a) => t + cents(a.amount), 0)))}</summary>
+    ${inPeriod.length ? inPeriod.map(a => `<div class="kv"><span>${esc(new Date(a.advance_date + 'T00:00:00').toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' }))} · ${esc(empName(a.employee_id))}${a.note ? ' · ' + esc(a.note) : ''}</span><b>${rm(a.amount)}</b></div>`).join('')
+      : '<p class="note">Tiada advance dalam tempoh ini.</p>'}`;
 }
 
 // ================= Dialog =================
@@ -393,13 +435,23 @@ function dialogsHTML() {
     </div>
     ${outletSel}
     <div class="two">
-      <label class="field">Jenis gaji<select id="empPayType"><option value="harian">Harian</option><option value="bulanan">Bulanan</option></select></label>
+      <label class="field">Jenis gaji<select id="empPayType"><option value="harian">Harian</option><option value="mingguan">Mingguan</option><option value="bulanan">Bulanan</option></select></label>
       <label class="field" id="empRateLabel">Gaji sehari (RM)<input id="empRate" type="number" inputmode="decimal" min="0" step="0.01"></label>
     </div>
     <label class="field">Kadar OT sejam (RM)<input id="empOt" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>
     ${session.isOwner ? '<label class="check"><input type="checkbox" id="empManager"> Peringkat pengurus <small>(gaji hanya owner nampak)</small></label>' : ''}
     <label class="check" id="empActiveWrap"><input type="checkbox" id="empActive" checked> Masih bekerja (aktif)</label>
     <div class="dialog-actions"><button class="btn ghost" type="button" data-close="empDialog">Batal</button><button class="btn primary" id="empSave">Simpan</button></div>
+  </form></dialog>
+
+  <dialog id="advDialog"><form id="advForm" class="stack" novalidate>
+    <h2>Beri advance (gaji awal)</h2>
+    <label class="field">Pekerja<select id="advEmp"></select></label>
+    <label class="field">Jumlah (RM)<input id="advAmount" type="number" inputmode="decimal" min="0.01" step="0.01"></label>
+    <label class="field">Cara bayaran<select id="advMethod"></select></label>
+    <label class="field">Nota<input id="advNote" maxlength="120" placeholder="Pilihan, contoh: duit sewa rumah"></label>
+    <p class="note">Advance direkod sebagai "Staff Wages" hari ini, dan ditolak automatik masa bayar gaji. Tidak boleh diubah selepas disimpan.</p>
+    <div class="dialog-actions"><button class="btn ghost" type="button" data-close="advDialog">Batal</button><button class="btn primary" id="advSave">Simpan advance</button></div>
   </form></dialog>
 
   <dialog id="payDialog">
@@ -413,7 +465,38 @@ function dialogsHTML() {
   </dialog>`;
 }
 
+async function openAdvance(empId) {
+  const list = employees.filter(e => e.active);
+  if (!list.length) { toast('Tiada pekerja aktif.', 'error'); return; }
+  $('advEmp').replaceChildren(...list.map(e => new Option(e.name + (session.outlets.length > 1 ? ' · ' + outletName(e.outlet_id) : ''), e.id)));
+  if (empId) $('advEmp').value = empId;
+  $('advMethod').replaceChildren(...(await loadPayMethods()).map(m => new Option(m, m)));
+  $('advForm').reset();
+  if (empId) $('advEmp').value = empId;
+  $('advDialog').showModal();
+  $('advAmount').focus();
+}
+
+async function saveAdvance(e) {
+  e.preventDefault();
+  const amount = Number($('advAmount').value);
+  if (!(amount > 0)) { toast('Masukkan jumlah advance lebih dari RM 0.', 'error'); return; }
+  const name = employees.find(x => x.id === $('advEmp').value)?.name || '';
+  if (!confirm(`Beri advance ${rm(amount)} kepada ${name}? Ia tidak boleh diubah selepas disimpan.`)) return;
+  $('advSave').disabled = true;
+  const { error } = await sb.rpc('give_advance', {
+    p_employee: $('advEmp').value, p_amount: Math.round(amount * 100) / 100,
+    p_payment_method: $('advMethod').value, p_note: $('advNote').value.trim() || null
+  });
+  $('advSave').disabled = false;
+  if (error) { toast('Gagal simpan advance: ' + errText(error), 'error'); return; }
+  $('advDialog').close();
+  toast(`Advance ${rm(amount)} untuk ${name} direkod.`);
+  if (state.tab === 'gaji') renderPayroll();
+}
+
 function bindDialogs(view) {
+  $('advForm').addEventListener('submit', saveAdvance);
   view.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $(b.dataset.close).close()));
   $('empPayType').addEventListener('change', syncRateLabel);
   $('empForm').addEventListener('submit', saveEmployee);
