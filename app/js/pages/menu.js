@@ -1,0 +1,71 @@
+// Akaun: maklumat, tukar kata laluan, pautan sementara, log keluar.
+import { $, esc, icon, toast } from '../ui.js';
+import { sb, session, clearSession, ROLE_NAME } from '../session.js';
+
+export default {
+  subtitle: 'Akaun dan tetapan.',
+  render(view) {
+    const ownOutlet = session.outlets.find(o => o.id === session.profile.outlet_id)?.name || '-';
+    view.innerHTML = `
+      <section class="card">
+        <dl class="info-grid">
+          <dt>Emel</dt><dd>${esc(session.user.email)}</dd>
+          <dt>Peranan</dt><dd>${esc(ROLE_NAME[session.role] || session.role)}</dd>
+          <dt>Outlet</dt><dd>${esc(session.isOwner ? 'Semua outlet' : ownOutlet)}</dd>
+          <dt>Syarikat</dt><dd>${esc(session.business?.name || '-')}</dd>
+        </dl>
+      </section>
+
+      <div class="list">
+        <button class="row-btn" type="button" id="pwBtn">${icon('lock')}<span>Tukar kata laluan</span></button>
+      </div>
+
+      <p class="greet-sub" style="margin:6px 4px 0">Sementara (sehingga dipindahkan ke app ini)</p>
+      <div class="list">
+        <a class="row-btn" href="../inventory-emerald-v1.html">${icon('box')}<span>Smart Inventori<small>Halaman stok semasa</small></span></a>
+        <a class="row-btn" href="../index.html">${icon('link')}<span>App kewangan lama<small>Key In dan laporan semasa</small></span></a>
+      </div>
+
+      <div class="list">
+        <button class="row-btn danger" type="button" id="logoutBtn">${icon('logout')}<span>Log keluar</span></button>
+      </div>
+
+      <dialog id="pwDialog">
+        <form id="pwForm" class="stack" novalidate>
+          <h2>Tukar kata laluan</h2>
+          <label class="field">Kata laluan baru<input id="pwNew" type="password" autocomplete="new-password" placeholder="Minimum 10 aksara"></label>
+          <label class="field">Sahkan kata laluan<input id="pwConfirm" type="password" autocomplete="new-password"></label>
+          <div class="dialog-actions">
+            <button class="btn ghost" type="button" id="pwCancel">Batal</button>
+            <button class="btn primary" id="pwSave">Simpan</button>
+          </div>
+        </form>
+      </dialog>`;
+
+    $('pwBtn').onclick = () => { $('pwForm').reset(); $('pwDialog').showModal(); };
+    $('pwCancel').onclick = () => $('pwDialog').close();
+    $('pwForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const pw = $('pwNew').value;
+      if (pw.length < 10) { toast('Kata laluan baru mesti 10 aksara atau lebih.', 'error'); return; }
+      if (pw !== $('pwConfirm').value) { toast('Dua kata laluan tak sama.', 'error'); return; }
+      $('pwSave').disabled = true;
+      const { error } = await sb.auth.updateUser({ password: pw });
+      $('pwSave').disabled = false;
+      if (error) {
+        toast(error.code === 'same_password' ? 'Kata laluan baru mesti lain daripada yang lama.'
+          : error.code === 'weak_password' ? 'Kata laluan terlalu lemah. Campur huruf besar, kecil dan nombor.'
+          : 'Kata laluan tak ditukar: ' + error.message, 'error');
+        return;
+      }
+      $('pwDialog').close();
+      toast('Kata laluan ditukar.');
+    });
+
+    $('logoutBtn').onclick = async () => {
+      await sb.auth.signOut();
+      clearSession();
+      location.replace('./');
+    };
+  }
+};
