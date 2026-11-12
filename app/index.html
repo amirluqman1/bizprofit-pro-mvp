@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061a13">
+<meta name="description" content="BizProfit Pro — sistem pengurusan F&B: kewangan, stok dan pekerja.">
+<title>BizProfit Pro</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%230b2a1f'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%235fe08a' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BizProfit">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <!-- Skrin memuat -->
+  <div id="boot" class="boot"><div class="logo-mark big" aria-hidden="true"></div><p id="bootMsg">Memuatkan…</p>
+    <button class="btn primary" id="bootReload" type="button" hidden>Muat semula</button>
+    <p id="bootErr" class="boot-err" hidden></p>
+  </div>
+  <script>
+    // Jika app gagal bermula (fail tak dimuat, ralat, sambungan lambat), tunjuk punca, jangan diam.
+    (function () {
+      var errs = [];
+      function show(msg) {
+        var boot = document.getElementById('boot');
+        if (!boot || boot.hidden) return;
+        document.getElementById('bootMsg').textContent = msg;
+        document.getElementById('bootReload').hidden = false;
+        if (errs.length) { var e = document.getElementById('bootErr'); e.textContent = errs.slice(-3).join(' | '); e.hidden = false; }
+      }
+      window.addEventListener('error', function (e) {
+        errs.push((e.message || 'Fail gagal dimuat') + (e.filename ? ' @ ' + e.filename.split('/').slice(-2).join('/') : (e.target && e.target.src ? ' @ ' + e.target.src.split('/').slice(-2).join('/') : '')));
+        show('App gagal dimuat.');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        errs.push(String(e.reason && e.reason.message || e.reason));
+        show('App gagal dimuat.');
+      });
+      setTimeout(function () { show('Lambat sangat. Semak internet, kemudian muat semula.'); }, 12000);
+      document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'bootReload') location.reload();
+      });
+    })();
+  </script>
+
+  <!-- Skrin log masuk -->
+  <main id="login" class="login" hidden>
+    <div class="login-inner">
+      <div class="brand">
+        <div class="logo-mark big" aria-hidden="true"></div>
+        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub">Sistem Pengurusan F&amp;B</p></div>
+      </div>
+      <form id="loginForm" class="card stack" novalidate>
+        <h1>Log masuk</h1>
+        <label class="field">Emel<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label class="field">Kata laluan<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="btn primary block" id="loginBtn">Log masuk</button>
+        <p class="hint">Lupa kata laluan? Minta owner set semula.</p>
+      </form>
+    </div>
+  </main>
+
+  <!-- App -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand small">
+        <div class="logo-mark" aria-hidden="true"></div>
+        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub" id="businessName">Sistem Pengurusan F&amp;B</p></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="bellBtn" type="button" aria-label="Notifikasi"><svg><use href="#i-bell"/></svg><span class="dot" id="bellDot" hidden></span></button>
+        <a class="icon-btn" href="#/menu" aria-label="Akaun"><svg><use href="#i-user"/></svg></a>
+      </div>
+    </header>
+
+    <div class="subbar">
+      <div><p class="greet" id="greet"></p><p class="greet-sub" id="pageTitle"></p></div>
+      <label class="outlet-pill" id="outletWrap">
+        <svg aria-hidden="true"><use href="#i-store"/></svg>
+        <select id="outletSelect" aria-label="Pilih outlet"></select>
+        <svg class="chev" aria-hidden="true"><use href="#i-chevron"/></svg>
+      </label>
+    </div>
+
+    <main id="view" class="view" tabindex="-1"></main>
+
+    <nav class="tabbar" id="tabbar" aria-label="Menu utama"></nav>
+  </div>
+
+  <div id="offline" class="offline" role="status" hidden>Tiada internet. App masih boleh dibuka, tetapi data tidak boleh dibaca atau disimpan.</div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Ikon -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7zM4 7l8 4 8-4M12 11v10"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M16 3.5a4 4 0 0 1 0 7.5M18 14a5 5 0 0 1 4 5v2"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9 5.5 4h13L20 9M4 9h16v2a3 3 0 0 1-5 2 3 3 0 0 1-6 0 3 3 0 0 1-5-2zM5 13v7h14v-7M10 20v-4h4v4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M9 12h10"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 7H6.2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="i-plus-box" viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM12 8v8M8 12h8"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  </svg>
+
+  <script src="../config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
