@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b2a1f">
-<title>BizProfit Pro · Smart Inventory</title>
+<title>BizProfit Pro · Smart Inventori</title>
 <style>
 :root{
   color-scheme:dark;font-family:Inter,system-ui,-apple-system,Arial,sans-serif;
@@ -95,7 +95,7 @@ dialog h2{margin:0 0 4px;font-size:20px}
 <div class="shell">
   <div class="panel">
     <div class="head">
-      <div><div class="overline">BIZPROFIT PRO</div><h1>Smart Inventory</h1></div>
+      <div><div class="overline">BIZPROFIT PRO</div><h1>Smart Inventori</h1></div>
       <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="m4 7 8 4 8-4M12 11v10"/></svg></span>
     </div>
 
@@ -192,7 +192,7 @@ const $ = id => document.getElementById(id);
 let sb, user, profile, items = [], editing = null;
 const people = new Map();
 const pending = new Map();      // id -> timer, untuk simpan selepas tekan +/− berhenti
-const SAVE_DELAY = 900;
+const SAVE_DELAY = 3000;
 
 const say = t => { $('message').textContent = t; };
 const safe = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
