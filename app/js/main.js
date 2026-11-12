@@ -2,6 +2,9 @@
 import { $, toast } from './ui.js';
 import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS, ROLE_NAME } from './session.js';
 import { startRouter, stopRouter, rerender } from './router.js';
+import { initPWA } from './pwa.js';
+
+initPWA();
 
 let lowStock = 0;
 

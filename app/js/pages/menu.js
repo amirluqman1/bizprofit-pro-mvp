@@ -1,6 +1,7 @@
 // Akaun: maklumat, tukar kata laluan, pautan sementara, log keluar.
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ROLE_NAME } from '../session.js';
+import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
 
 export default {
   subtitle: 'Akaun dan tetapan.',
@@ -17,6 +18,7 @@ export default {
       </section>
 
       <div class="list">
+        ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>Pasang app<small>Letak BizProfit Pro di skrin utama phone</small></span></button>`}
         <button class="row-btn" type="button" id="pwBtn">${icon('lock')}<span>Tukar kata laluan</span></button>
       </div>
 
@@ -27,6 +29,14 @@ export default {
       <div class="list">
         <button class="row-btn danger" type="button" id="logoutBtn">${icon('logout')}<span>Log keluar</span></button>
       </div>
+
+      <dialog id="installDialog">
+        <div class="stack">
+          <h2>Pasang app</h2>
+          <p class="note" id="installSteps"></p>
+          <div class="dialog-actions"><button class="btn primary" type="button" id="installClose">Faham</button></div>
+        </div>
+      </dialog>
 
       <dialog id="pwDialog">
         <form id="pwForm" class="stack" novalidate>
@@ -40,6 +50,18 @@ export default {
         </form>
       </dialog>`;
 
+    if ($('installBtn')) $('installBtn').onclick = async () => {
+      if (canPromptInstall()) {
+        const r = await promptInstall();
+        if (r === 'accepted') toast('BizProfit Pro sedang dipasang di skrin utama.');
+        return;
+      }
+      $('installSteps').innerHTML = isIOS()
+        ? 'Di iPhone (Safari): tekan butang <b>Kongsi</b> (petak dengan anak panah ke atas), kemudian <b>Tambah ke Skrin Utama</b>.'
+        : 'Di Chrome: tekan <b>⋮</b> di atas kanan, kemudian <b>Pasang app</b> atau <b>Tambah ke skrin utama</b>.';
+      $('installDialog').showModal();
+    };
+    $('installClose').onclick = () => $('installDialog').close();
     $('pwBtn').onclick = () => { $('pwForm').reset(); $('pwDialog').showModal(); };
     $('pwCancel').onclick = () => $('pwDialog').close();
     $('pwForm').addEventListener('submit', async e => {

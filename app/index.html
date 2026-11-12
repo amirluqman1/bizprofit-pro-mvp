@@ -7,6 +7,12 @@
 <meta name="description" content="BizProfit Pro — sistem pengurusan F&B: kewangan, stok dan pekerja.">
 <title>BizProfit Pro</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%230b2a1f'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%235fe08a' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BizProfit">
 <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
@@ -85,6 +91,7 @@
     <nav class="tabbar" id="tabbar" aria-label="Menu utama"></nav>
   </div>
 
+  <div id="offline" class="offline" role="status" hidden>Tiada internet. App masih boleh dibuka, tetapi data tidak boleh dibaca atau disimpan.</div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <!-- Ikon -->
@@ -106,6 +113,7 @@
     <symbol id="i-plus-box" viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM12 8v8M8 12h8"/></symbol>
     <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
     <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
   </svg>
 
