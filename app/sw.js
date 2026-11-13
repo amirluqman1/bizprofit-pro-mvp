@@ -2,7 +2,7 @@
 // Fail app: ambil versi TERBARU dari internet dahulu (elak masalah cache lama);
 // jika tiada internet, guna salinan tersimpan supaya app masih boleh dibuka.
 // Data Supabase tidak disimpan di sini: ia sentiasa perlukan internet.
-const CACHE = 'bizprofit-app-v5';
+const CACHE = 'bizprofit-app-v6';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/pwa.js', './js/ui.js', './js/session.js', './js/router.js', './js/format.js',

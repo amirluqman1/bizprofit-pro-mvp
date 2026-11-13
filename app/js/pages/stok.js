@@ -7,6 +7,8 @@ import { qty } from '../format.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
 const UNITS = ['kg', 'pcs', 'biji', 'pack', 'liter', 'g'];
+const CATEGORIES = ['Barang Kering', 'Barang Plastik', 'Barang Air', 'Barang Basah'];
+const OTHER = 'Lain-lain';
 const LABEL = { habis: 'Habis', rendah: 'Stok rendah', ok: 'Stok OK' };
 
 let items = [];
@@ -21,6 +23,8 @@ const allMode = () => session.outletId === ALL_OUTLETS;
 const canSeeLogs = () => session.isManagerUp;
 const stockChanged = () => window.dispatchEvent(new Event('bp:stock-changed'));
 const errText = e => (e?.code === '23505' ? 'Nama barang ini dah wujud dalam outlet ni.' : e?.message || 'Ralat tidak diketahui.');
+const catOf = x => x.category || OTHER;
+const catOptions = (sel = OTHER) => [...CATEGORIES, OTHER].map(c => `<option ${c === sel ? 'selected' : ''}>${c}</option>`).join('');
 const unitOptions = sel => UNITS.map(u => `<option ${u === sel ? 'selected' : ''}>${u}</option>`).join('');
 
 function cardHTML(x) {
@@ -29,7 +33,7 @@ function cardHTML(x) {
     <div class="item-top">
       <button class="item-name" type="button" data-open="${esc(x.id)}">
         <h3>${esc(x.name)}</h3>
-        <span class="sub">Patut ada ${qty(x.target_qty)} ${esc(x.unit)}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
+        <span class="sub">${esc(catOf(x))} · Patut ada ${qty(x.target_qty)} ${esc(x.unit)}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
       </button>
       <span class="pill ${st}">${LABEL[st]}</span>
     </div>
@@ -138,10 +142,13 @@ function dialogsHTML() {
   return `
   <dialog id="addDialog"><form id="addForm" class="stack" novalidate>
     <h2>Tambah barang</h2>
-    <p class="note">Selepas disimpan, hanya owner boleh ubah nama, unit atau "patut ada".</p>
+    <p class="note">Selepas disimpan, hanya owner boleh ubah nama, kategori, unit atau "patut ada".</p>
     ${outletSel}
     <label class="field">Nama barang<input id="addName" maxlength="120" placeholder="Contoh: Ayam fillet"></label>
-    <label class="field">Unit<select id="addUnit">${unitOptions('kg')}</select></label>
+    <div class="two">
+      <label class="field">Kategori<select id="addCat">${catOptions()}</select></label>
+      <label class="field">Unit<select id="addUnit">${unitOptions('kg')}</select></label>
+    </div>
     <div class="two">
       <label class="field">Berapa ada<input id="addCurrent" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
       <label class="field">Patut ada<input id="addTarget" type="number" inputmode="decimal" min="0" step="any" placeholder="20"></label>
@@ -154,6 +161,7 @@ function dialogsHTML() {
     <label class="field">Berapa ada sekarang<input id="editCurrent" type="number" inputmode="decimal" min="0" step="any"></label>
     <div id="ownerFields" class="stack">
       <label class="field">Nama barang<input id="editName" maxlength="120"></label>
+      <label class="field">Kategori<select id="editCat">${catOptions()}</select></label>
       <div class="two">
         <label class="field">Unit<select id="editUnit">${unitOptions()}</select></label>
         <label class="field">Patut ada<input id="editTarget" type="number" inputmode="decimal" min="0" step="any"></label>
@@ -181,12 +189,13 @@ function openEdit(x) {
   $('ownerFields').hidden = !session.isOwner;
   if (session.isOwner) {
     $('editName').value = x.name;
+    $('editCat').value = catOf(x);
     if (![...$('editUnit').options].some(o => o.value === x.unit)) $('editUnit').add(new Option(x.unit, x.unit));
     $('editUnit').value = x.unit;
     $('editTarget').value = x.target_qty;
   }
   $('editNote').textContent = session.isOwner ? 'Setiap perubahan kuantiti direkod dalam sejarah.'
-    : `Patut ada: ${qty(x.target_qty)} ${x.unit}. Hanya owner boleh ubah nama, unit atau patut ada.`;
+    : `Patut ada: ${qty(x.target_qty)} ${x.unit}. Hanya owner boleh ubah nama, kategori, unit atau patut ada.`;
   $('openHistory').hidden = !canSeeLogs();
   $('editDialog').showModal();
 }
@@ -229,15 +238,21 @@ async function copyText(text) {
   }
 }
 
-// Senarai beli ringkas untuk WhatsApp, dikumpul ikut outlet: "Ayam 6 kg"
+// Senarai beli untuk WhatsApp, dikumpul ikut outlet kemudian kategori:
+//   BARANG KERING
+//   • Ayam 6 kg
 async function copyList() {
   await flushAll();
   const perlu = items.filter(x => kurang(x) > 0);
   if (!perlu.length) { toast('Semua stok cukup. Tiada apa perlu dibeli.'); return; }
-  const groups = new Map();
-  perlu.forEach(x => { if (!groups.has(x.outlet_id)) groups.set(x.outlet_id, []); groups.get(x.outlet_id).push(x); });
-  const text = [...groups].map(([oid, list]) =>
-    [outletName(oid), ...list.map(x => `${x.name} ${qty(kurang(x))} ${x.unit}`)].join('\n')).join('\n\n');
+  const groupBy = (list, key) => list.reduce((m, x) => m.set(key(x), [...(m.get(key(x)) || []), x]), new Map());
+  const order = [...CATEGORIES, OTHER];
+  const block = list => [...groupBy(list, catOf)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
+    .map(([cat, xs]) => [cat.toUpperCase(), ...xs.map(x => `• ${x.name} ${qty(kurang(x))} ${x.unit}`)].join('\n')).join('\n\n');
+  const byOutlet = groupBy(perlu, x => x.outlet_id);
+  const text = byOutlet.size > 1 || allMode()
+    ? [...byOutlet].map(([oid, list]) => `*${outletName(oid)}*\n\n${block(list)}`).join('\n\n')
+    : block(perlu);
   toast(await copyText(text) ? `Senarai beli disalin (${perlu.length} barang). Tampal ke WhatsApp.` : 'Gagal salin. Cuba lagi.',
     undefined);
 }
@@ -246,8 +261,8 @@ async function copyCsv() {
   await flushAll();
   if (!items.length) { toast('Tiada barang untuk disalin.'); return; }
   const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const rows = [['Outlet', 'Nama', 'Unit', 'Ada', 'Patut ada', 'Kurang', 'Status'],
-    ...items.map(x => [outletName(x.outlet_id), x.name, x.unit, x.current_qty, x.target_qty, kurang(x), LABEL[status(x)]])];
+  const rows = [['Outlet', 'Kategori', 'Nama', 'Unit', 'Ada', 'Patut ada', 'Kurang', 'Status'],
+    ...items.map(x => [outletName(x.outlet_id), catOf(x), x.name, x.unit, x.current_qty, x.target_qty, kurang(x), LABEL[status(x)]])];
   toast(await copyText(rows.map(r => r.map(cell).join(',')).join('\n')) ? `CSV disalin (${items.length} barang). Tampal ke Google Sheets.` : 'Gagal salin. Cuba lagi.');
 }
 
@@ -299,6 +314,7 @@ export default {
         outlet_id: $('addOutlet') ? $('addOutlet').value : (allMode() ? session.profile.outlet_id : session.outletId),
         name: $('addName').value.trim(),
         unit: $('addUnit').value,
+        category: $('addCat').value === OTHER ? null : $('addCat').value,
         current_qty: Number($('addCurrent').value),
         target_qty: Number($('addTarget').value)
       };
@@ -326,6 +342,7 @@ export default {
       if (session.isOwner) {
         payload.name = $('editName').value.trim();
         payload.unit = $('editUnit').value;
+        payload.category = $('editCat').value === OTHER ? null : $('editCat').value;
         payload.target_qty = Number($('editTarget').value);
         if (!payload.name || !ok(payload.target_qty)) { toast('Nama atau patut ada tidak sah.', 'error'); return; }
       }
