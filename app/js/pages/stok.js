@@ -8,7 +8,6 @@ import { qty } from '../format.js';
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
 const UNITS = ['kg', 'pcs', 'biji', 'pack', 'liter', 'g'];
 const LABEL = { habis: 'Habis', rendah: 'Stok rendah', ok: 'Stok OK' };
-const ORDER = { habis: 0, rendah: 1, ok: 2 };
 
 let items = [];
 let editing = null;
@@ -80,11 +79,15 @@ function setSaving(id, text) {
 
 async function load() {
   await flushAll();
-  let q = sb.from('inventory_items').select('id,outlet_id,name,unit,current_qty,target_qty,updated_at');
+  // '*' supaya tak gagal jika kolum created_at belum wujud.
+  let q = sb.from('inventory_items').select('*');
   if (!allMode()) q = q.eq('outlet_id', session.outletId);
   const { data, error } = await q;
   if (error) throw error;
-  items = (data || []).sort((a, b) => ORDER[status(a)] - ORDER[status(b)] || a.name.localeCompare(b.name, 'ms-MY'));
+  // Ikut turutan barang ditambah: barang baru sentiasa di bawah.
+  // (Dulu disusun ikut status + abjad, jadi barang baru melompat ke atas/tengah.)
+  const t = x => (x.created_at ? Date.parse(x.created_at) : 0);
+  items = (data || []).sort((a, b) => t(a) - t(b) || a.name.localeCompare(b.name, 'ms-MY'));
 }
 
 // ---------- − / + : simpan sekali selepas berhenti menekan ----------
