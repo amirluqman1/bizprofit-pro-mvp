@@ -2,7 +2,7 @@
 // Owner: semua pekerja. Manager: pekerja outlet sendiri yang bukan peringkat pengurus.
 // Semua sekatan ini dikuatkuasa di database; UI hanya menyusun paparan.
 import { $, esc, icon, toast } from '../ui.js';
-import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
+import { sb, session, ALL_OUTLETS, outletName, outletCompany } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, dateRange, dateLong } from '../format.js';
 
 const STATUS = { hadir: 'Hadir', separuh: 'Separuh', cuti: 'Cuti', tidak_hadir: 'Tidak hadir' };
@@ -232,8 +232,9 @@ function slipData(r) {
     : ['Gaji bulanan', money(r.base)];
   const items = [baseItem, [`OT (${r.ot} jam × ${rm(r.otRate)})`, money(r.otAmt)], ['Elaun', money(r.allow)], ['Potongan', '-' + money(r.ded)]];
   if (r.adv) items.push(['Tolak advance', '-' + money(r.adv)]);
+  const co = outletCompany(r.e.outlet_id);
   return {
-    business: session.business?.name || 'BizProfit Pro',
+    business: co.name, regNo: co.regNo,
     info: [['Nama', r.e.name], ...(r.e.position ? [['Jawatan', r.e.position]] : []), ['Outlet', outletName(r.e.outlet_id)],
       ['Tempoh', dateRange(state.from, state.to)]],
     items, total: money(r.net),
@@ -265,7 +266,8 @@ function drawSlip(doc, d) {
 
   // Kepala: nama perniagaan, tajuk SLIP GAJI dengan bar hijau, tempoh di kanan.
   color(INK); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-  doc.text(pdfText(d.business), M, 17, { maxWidth: W - M * 2 });
+  doc.text(pdfText(d.business), M, d.regNo ? 14.5 : 17, { maxWidth: W - M * 2 });
+  if (d.regNo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); color(GREY); doc.text(pdfText(d.regNo), M, 19.3); doc.setFont('helvetica', 'bold'); }
   fill(GREEN); doc.rect(M, 23, 1.6, 8.5, 'F');
   color(GREEN); doc.setFontSize(19); doc.text('SLIP GAJI', M + 5, 30.3);
   color(INK); doc.setFontSize(9.5);
@@ -498,7 +500,7 @@ async function renderPayroll() {
     const card = btn.closest('[data-emp]'), r = rowOf(card);
     if (btn.matches('[data-copy]')) {
       const d = slipData(r);
-      const lines = [`SLIP GAJI — ${d.business}`, ...d.info.map(([k, v]) => `${k}: ${v}`),
+      const lines = [`SLIP GAJI — ${d.business}${d.regNo ? ` (${d.regNo})` : ''}`, ...d.info.map(([k, v]) => `${k}: ${v}`),
         ...d.items.map(([k, v]) => `${k}: ${v}`), `JUMLAH: ${d.total}`, `Status: ${d.status}`];
       try { await navigator.clipboard.writeText(lines.join('\n')); toast('Slip disalin. Tampal ke WhatsApp.'); }
       catch { toast('Gagal salin.', 'error'); }

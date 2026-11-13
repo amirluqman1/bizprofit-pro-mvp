@@ -17,7 +17,7 @@ export const session = {
   user: null,       // { id, email }
   profile: null,    // { role, outlet_id }
   business: null,   // { id, name }
-  outlets: [],      // [{ id, name }] yang boleh diakses
+  outlets: [],      // [{ id, name, company_name, company_reg_no }] yang boleh diakses
   outletId: null,   // outlet dipilih, atau ALL_OUTLETS (owner sahaja)
   get role() { return this.profile?.role; },
   get isOwner() { return this.role === 'owner'; },
@@ -38,6 +38,12 @@ export function outletName(id = session.outletId) {
   return session.outlets.find(o => o.id === id)?.name || '';
 }
 
+// Syarikat berdaftar bagi outlet (setiap outlet boleh ada syarikat sendiri).
+export function outletCompany(id) {
+  const o = session.outlets.find(x => x.id === id);
+  return { name: o?.company_name?.trim() || session.business?.name || 'BizProfit Pro', regNo: o?.company_reg_no?.trim() || '' };
+}
+
 // Muat profil, syarikat dan outlet. Pulangkan mesej ralat, atau null jika berjaya.
 export async function loadAccount(user) {
   session.user = user;
@@ -49,7 +55,7 @@ export async function loadAccount(user) {
 
   const [{ data: biz }, { data: outlets, error: oe }] = await Promise.all([
     sb.from('businesses').select('id,name').maybeSingle(),
-    sb.from('outlets').select('id,name').order('name')
+    sb.from('outlets').select('id,name,company_name,company_reg_no').order('name')
   ]);
   if (oe) return 'Senarai outlet tidak dapat dibaca.';
   session.business = biz || null;
