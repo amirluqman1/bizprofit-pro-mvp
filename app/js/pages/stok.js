@@ -6,7 +6,7 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { qty } from '../format.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
-const UNITS = ['kg', 'pcs', 'biji', 'pack', 'liter', 'g'];
+const UNITS = ['kg', 'pcs', 'biji', 'pack', 'kotak', 'ekor', 'papan', 'liter', 'g'];
 const CATEGORIES = ['Barang Kering', 'Barang Plastik', 'Barang Air', 'Barang Basah'];
 const OTHER = 'Lain-lain';
 const LABEL = { habis: 'Habis', rendah: 'Stok rendah', ok: 'Stok OK', unset: 'Belum set' };
