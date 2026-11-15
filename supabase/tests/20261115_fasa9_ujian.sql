@@ -2,7 +2,7 @@
 do $$
 declare res text := ''; gagal int := 0; n int; v text;
   o uuid; aL uuid; aA uuid; mI uuid; st uuid; lubok uuid; intan uuid; amir uuid;
-  txL bigint; txI bigint; txG bigint; txG2 bigint; slip uuid;
+  txL bigint; txI bigint; txG bigint; txG2 bigint; slip uuid; emp uuid;
 begin
   select id into lubok from public.outlets where name = 'Lubok Sarapan';
   select id into intan from public.outlets where name = 'Restoran 3 Intan';
@@ -20,12 +20,19 @@ begin
     insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
       select business_id, current_date, 'Out', (select name from public.categories where type = 'Out' and name <> 'Staff Wages' limit 1), 20, 'UJI Intan',
              (select name from public.payment_methods limit 1), intan, o from public.outlets where id = intan returning id into txI;
-    select transaction_id, id into txG, slip from public.payroll where transaction_id is not null and status = 'dibayar'
-      and employee_id in (select id from public.employees where outlet_id = lubok) limit 1;
-    select transaction_id into txG2 from public.payroll where transaction_id is not null and transaction_id <> txG
-      and employee_id in (select id from public.employees where outlet_id = lubok) limit 1;
-
-    -- ===== Admin Lubok =====
+    -- Dua slip gaji ujian yang sudah dibayar (pekerja Lubok)
+    select id into emp from public.employees where outlet_id = lubok limit 1;
+    insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
+      select business_id, current_date, 'Out', 'Staff Wages', 100, 'UJI Gaji 1', (select name from public.payment_methods limit 1), lubok, o
+      from public.outlets where id = lubok returning id into txG;
+    insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
+      select business_id, current_date, 'Out', 'Staff Wages', 100, 'UJI Gaji 2', (select name from public.payment_methods limit 1), lubok, o
+      from public.outlets where id = lubok returning id into txG2;
+    insert into public.payroll (business_id, employee_id, period_start, period_end, pay_type, rate, base_amount, status, paid_at, transaction_id, created_by)
+      select business_id, emp, date '2000-01-01', date '2000-01-07', 'harian', 20, 100, 'dibayar', now(), txG, o from public.employees where id = emp
+      returning id into slip;
+    insert into public.payroll (business_id, employee_id, period_start, period_end, pay_type, rate, base_amount, status, paid_at, transaction_id, created_by)
+      select business_id, emp, date '2000-01-08', date '2000-01-14', 'harian', 20, 100, 'dibayar', now(), txG2, o from public.employees where id = emp;
     perform set_config('request.jwt.claims', json_build_object('sub', aL)::text, true);
     set local role authenticated;
     select count(*) into n from public.transactions where outlet_id = intan;
