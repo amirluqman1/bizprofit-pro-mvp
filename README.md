@@ -14,13 +14,17 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
 
 ## Peranan
-| | Owner | Manager | Staff |
-|---|---|---|---|
-| Outlet | Semua | Sendiri | Sendiri |
-| Profit & laporan | ✓ | Outlet sendiri | ✗ |
-| Key In | ✓ | ✓ | ✓ (nampak transaksi sendiri hari ini sahaja) |
-| Stok | ✓ | Tambah & ubah kuantiti | Tambah & ubah kuantiti |
-| Pekerja & gaji | ✓ | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| | Owner | Admin | Manager | Staff |
+|---|---|---|---|---|
+| Outlet | Semua | Sendiri | Sendiri | Sendiri |
+| Profit & laporan | ✓ | Outlet sendiri | Outlet sendiri | ✗ |
+| Key In | ✓ | ✓ | ✓ | ✓ (nampak transaksi sendiri hari ini sahaja) |
+| Ubah & padam transaksi | ✓ | Outlet sendiri | ✗ | ✗ |
+| Log audit | ✓ | Outlet sendiri | ✗ | ✗ |
+| Stok | ✓ | Penuh (outlet sendiri) | Tambah & ubah kuantiti | Tambah & ubah kuantiti |
+| Pekerja & gaji | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+
+Padam rekod gaji di Rekod akan membuka semula slip gaji (draf). Setiap ubah/padam transaksi direkod dalam log audit yang tidak boleh diubah.
 
 Semua sekatan dikuatkuasa di database (Row Level Security), bukan sekadar di UI.
 

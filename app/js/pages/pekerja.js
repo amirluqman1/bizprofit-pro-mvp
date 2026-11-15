@@ -159,7 +159,7 @@ function renderStaffList() {
         ${icon('user')}<span>${esc(e.name)}${e.is_manager ? ' <i class="tag">Peringkat pengurus</i>' : ''}${e.active ? '' : ' <i class="tag off">Tidak aktif</i>'}
         <small>${esc([e.position, outletName(e.outlet_id), payLabel(e)].filter(Boolean).join(' · '))}</small></span>${icon('chev-right')}
       </button>`).join('') : emptyStaff().replace('Buka tab <b>Pekerja</b> dan tekan', 'Tekan')}</div>
-    ${session.isOwner ? '' : '<p class="note-line small">' + icon('lock') + 'Pekerja peringkat pengurus hanya diurus oleh owner.</p>'}`;
+    ${session.isAdminUp ? '' : '<p class="note-line small">' + icon('lock') + 'Pekerja peringkat pengurus hanya diurus oleh owner atau admin.</p>'}`;
   $('empAdd').onclick = () => openEmployee(null);
   $('empList').addEventListener('click', e => {
     const b = e.target.closest('[data-edit]');
@@ -568,7 +568,7 @@ function dialogsHTML() {
       <label class="field" id="empRateLabel">Gaji sehari (RM)<input id="empRate" type="number" inputmode="decimal" min="0" step="0.01"></label>
     </div>
     <label class="field">Kadar OT sejam (RM)<input id="empOt" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>
-    ${session.isOwner ? '<label class="check"><input type="checkbox" id="empManager"> Peringkat pengurus <small>(gaji hanya owner nampak)</small></label>' : ''}
+    ${session.isAdminUp ? '<label class="check"><input type="checkbox" id="empManager"> Peringkat pengurus <small>(gaji hanya owner &amp; admin nampak)</small></label>' : ''}
     <label class="check" id="empActiveWrap"><input type="checkbox" id="empActive" checked> Masih bekerja (aktif)</label>
     <div class="dialog-actions"><button class="btn ghost" type="button" data-close="empDialog">Batal</button><button class="btn primary" id="empSave">Simpan</button></div>
   </form></dialog>

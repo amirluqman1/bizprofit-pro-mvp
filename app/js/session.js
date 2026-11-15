@@ -1,7 +1,7 @@
 // Sambungan Supabase, akaun yang login, syarikat dan outlet.
 import { store } from './ui.js';
 
-export const ROLE_NAME = { owner: 'Owner', manager: 'Manager', staff: 'Staff' };
+export const ROLE_NAME = { owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 'Staff' };
 export const ALL_OUTLETS = 'all';
 
 /* global SUPABASE_URL, SUPABASE_KEY, supabase */
@@ -21,7 +21,9 @@ export const session = {
   outletId: null,   // outlet dipilih, atau ALL_OUTLETS (owner sahaja)
   get role() { return this.profile?.role; },
   get isOwner() { return this.role === 'owner'; },
-  get isManagerUp() { return this.role === 'owner' || this.role === 'manager'; }
+  // Admin = kuasa owner, tetapi untuk outlet sendiri sahaja (dikunci di database).
+  get isAdminUp() { return this.role === 'owner' || this.role === 'admin'; },
+  get isManagerUp() { return this.isAdminUp || this.role === 'manager'; }
 };
 
 const listeners = new Set();

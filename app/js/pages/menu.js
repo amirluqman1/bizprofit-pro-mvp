@@ -17,7 +17,7 @@ export default {
         </dl>
       </section>
 
-      ${session.isOwner ? `
+      ${session.isAdminUp ? `
       <h2 class="section-title">Syarikat ikut outlet</h2>
       <p class="note">Nama ini keluar di kepala slip gaji pekerja outlet tersebut. Kosong = guna "${esc(session.business?.name || '-')}".</p>
       <div class="list" id="coList">

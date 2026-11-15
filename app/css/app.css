@@ -383,3 +383,11 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .adv-box .note { margin-top: 8px; }
 .slip .dialog-actions .btn svg { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
 #pyPdfAll svg { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; }
+
+/* Rekod: transaksi boleh ditekan (owner & admin), log audit */
+.tx.editable { cursor: pointer; border-radius: 12px; }
+.tx.editable:hover, .tx.editable:focus-visible { background: #ffffff0a; outline: none; }
+.log .kv { margin-top: 4px; }
+.log .kv b { white-space: normal; text-align: right; overflow-wrap: anywhere; }
+.log .tag { margin: 0 6px 0 0; }
+.log .note { margin: 4px 0 0; }
