@@ -6,17 +6,18 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { qty } from '../format.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
-const UNITS = ['kg', 'pcs', 'biji', 'pack', 'liter', 'g'];
+const UNITS = ['kg', 'pcs', 'biji', 'pack', 'kotak', 'ekor', 'papan', 'liter', 'g'];
 const CATEGORIES = ['Barang Kering', 'Barang Plastik', 'Barang Air', 'Barang Basah'];
 const OTHER = 'Lain-lain';
-const LABEL = { habis: 'Habis', rendah: 'Stok rendah', ok: 'Stok OK' };
+const LABEL = { habis: 'Habis', rendah: 'Stok rendah', ok: 'Stok OK', unset: 'Belum set' };
 
 let items = [];
 let editing = null;
 const pending = new Map();         // id -> timer
 const inflight = new Set();        // simpanan yang sedang dihantar
 
-const status = x => (Number(x.current_qty) <= 0 ? 'habis' : Number(x.current_qty) < Number(x.target_qty) ? 'rendah' : 'ok');
+// "Patut ada" 0 = owner belum tetapkan; jangan tanda Habis.
+const status = x => (Number(x.target_qty) <= 0 ? 'unset' : Number(x.current_qty) <= 0 ? 'habis' : Number(x.current_qty) < Number(x.target_qty) ? 'rendah' : 'ok');
 const kurang = x => Math.max(0, Number(x.target_qty) - Number(x.current_qty));
 const find = id => items.find(x => x.id === id);
 const allMode = () => session.outletId === ALL_OUTLETS;
