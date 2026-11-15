@@ -143,7 +143,7 @@ function dialogsHTML() {
   return `
   <dialog id="addDialog"><form id="addForm" class="stack" novalidate>
     <h2>Tambah barang</h2>
-    <p class="note">Selepas disimpan, hanya owner boleh ubah nama, kategori, unit atau "patut ada".</p>
+    <p class="note">Selepas disimpan, hanya owner atau admin boleh ubah nama, kategori, unit atau "patut ada".</p>
     ${outletSel}
     <label class="field">Nama barang<input id="addName" maxlength="120" placeholder="Contoh: Ayam fillet"></label>
     <div class="two">
@@ -187,16 +187,16 @@ function openEdit(x) {
   editing = x;
   $('editTitle').textContent = x.name;
   $('editCurrent').value = x.current_qty;
-  $('ownerFields').hidden = !session.isOwner;
-  if (session.isOwner) {
+  $('ownerFields').hidden = !session.isAdminUp;
+  if (session.isAdminUp) {
     $('editName').value = x.name;
     $('editCat').value = catOf(x);
     if (![...$('editUnit').options].some(o => o.value === x.unit)) $('editUnit').add(new Option(x.unit, x.unit));
     $('editUnit').value = x.unit;
     $('editTarget').value = x.target_qty;
   }
-  $('editNote').textContent = session.isOwner ? 'Setiap perubahan kuantiti direkod dalam sejarah.'
-    : `Patut ada: ${qty(x.target_qty)} ${x.unit}. Hanya owner boleh ubah nama, kategori, unit atau patut ada.`;
+  $('editNote').textContent = session.isAdminUp ? 'Setiap perubahan kuantiti direkod dalam sejarah.'
+    : `Patut ada: ${qty(x.target_qty)} ${x.unit}. Hanya owner atau admin boleh ubah nama, kategori, unit atau patut ada.`;
   $('openHistory').hidden = !canSeeLogs();
   $('editDialog').showModal();
 }
@@ -216,7 +216,7 @@ async function openHistory() {
   if (error) { $('historyList').innerHTML = `<p class="note">Gagal baca sejarah: ${esc(error.message)}</p>`; return; }
   if (!data.length) { $('historyList').innerHTML = '<p class="note">Tiada sejarah lagi.</p>'; return; }
   const roles = new Map((staff || []).map(s => [s.user_id, s.role]));
-  const roleName = r => ({ owner: 'Owner', manager: 'Manager', staff: 'Staff' }[r] || 'Ahli outlet');
+  const roleName = r => ({ owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 'Staff' }[r] || 'Ahli outlet');
   $('historyList').innerHTML = data.map(l => {
     const who = l.changed_by === session.user.id ? 'Anda' : roleName(roles.get(l.changed_by));
     const when = new Date(l.created_at).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' });
@@ -340,7 +340,7 @@ export default {
       const payload = { current_qty: Number($('editCurrent').value) };
       const ok = v => Number.isFinite(v) && v >= 0;
       if ($('editCurrent').value.trim() === '' || !ok(payload.current_qty)) { toast('Kuantiti tidak sah.', 'error'); return; }
-      if (session.isOwner) {
+      if (session.isAdminUp) {
         payload.name = $('editName').value.trim();
         payload.unit = $('editUnit').value;
         payload.category = $('editCat').value === OTHER ? null : $('editCat').value;
