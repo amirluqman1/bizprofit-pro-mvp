@@ -391,3 +391,13 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .log .kv b { white-space: normal; text-align: right; overflow-wrap: anywhere; }
 .log .tag { margin: 0 6px 0 0; }
 .log .note { margin: 4px 0 0; }
+
+/* List (senarai beli ringkas) */
+.sl-dialog { width: 100%; max-width: 560px; height: 100%; max-height: 100%; margin: 0 auto; border-radius: 0; padding: 16px 16px 24px; }
+.sl-dialog[open] { display: flex; flex-direction: column; gap: 12px; }
+.sl-head { display: flex; justify-content: space-between; align-items: center; }
+.sl-head .btn { border-radius: 999px; padding: 9px 16px; font-size: 14px; }
+.sl-tools { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.sl-tools .btn { border-radius: 999px; padding: 11px 16px; font-size: 14px; }
+.sl-items { display: flex; flex-direction: column; gap: 12px; }
+.sl-name { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
