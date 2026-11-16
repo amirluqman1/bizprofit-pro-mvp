@@ -65,13 +65,16 @@ async function copyText(text) {
   }
 }
 
+// Salin ke clipboard (sandaran) dan terus buka WhatsApp dengan mesej siap ditaip.
 async function copyWhatsApp() {
   const count = list.filter(x => x.n > 0).length;
   if (!count) { toast('Semua kuantiti 0. Tekan + dulu.'); return; }
-  if (!(await copyText(buildText()))) { toast('Gagal salin. Cuba lagi.', 'error'); return; }
+  const text = buildText();
+  const copied = await copyText(text);
   list.forEach(x => { x.n = 0; });
   saveList(); render();
-  toast(`List disalin (${count} barang). Tampal ke WhatsApp.`);
+  toast(copied ? `List disalin (${count} barang). Membuka WhatsApp…` : 'Membuka WhatsApp…');
+  location.href = 'whatsapp://send?text=' + encodeURIComponent(text);
 }
 
 export function smartListHTML() {
