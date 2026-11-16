@@ -79,7 +79,10 @@ export function smartListHTML() {
   <dialog id="slDialog" class="sl-dialog">
     <div class="sl-head">
       <h2>List</h2>
-      <button class="btn ghost" type="button" id="slClose">Tutup</button>
+      <div class="sl-head-btns">
+        <button class="btn ghost" type="button" id="slImport">Ambil dari Stok</button>
+        <button class="btn ghost" type="button" id="slClose">Tutup</button>
+      </div>
     </div>
     <div class="sl-tools">
       <button class="btn primary" id="slCopy" type="button">Copy ke WhatsApp</button>
@@ -100,12 +103,31 @@ export function smartListHTML() {
   </form></dialog>`;
 }
 
-export function bindSmartList() {
+// Salin nama, kategori dan unit dari Smart Inventori (kuantiti mula 0).
+// Barang yang namanya dah ada dalam List dilangkau.
+function importFromStock(stock) {
+  if (!stock.length) { toast('Tiada barang dalam stok untuk diambil.'); return; }
+  const have = new Set(list.map(x => x.name.toLowerCase()));
+  let added = 0;
+  stock.forEach((s, i) => {
+    const name = String(s.name || '').trim();
+    if (!name || have.has(name.toLowerCase())) return;
+    have.add(name.toLowerCase());
+    list.push({ id: Date.now().toString(36) + i.toString(36) + Math.random().toString(36).slice(2, 5),
+      name, cat: s.category || OTHER, unit: s.unit || '', n: 0 });
+    added++;
+  });
+  saveList(); render();
+  toast(added ? `${added} barang diambil dari Stok.` : 'Semua barang stok dah ada dalam List.');
+}
+
+export function bindSmartList(getStock = () => []) {
   let holdTimer = null;
   const cancelHold = () => { clearTimeout(holdTimer); holdTimer = null; };
 
   $('slClose').onclick = () => $('slDialog').close();
   $('slCopy').onclick = copyWhatsApp;
+  $('slImport').onclick = () => importFromStock(getStock());
   $('slAddCancel').onclick = () => $('slAddDialog').close();
   $('slOpenAdd').onclick = () => {
     $('slAddForm').reset();

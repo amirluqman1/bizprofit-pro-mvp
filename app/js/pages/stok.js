@@ -294,7 +294,7 @@ export default {
     };
     $('copyList').onclick = copyList;
     $('openSmartList').onclick = openSmartList;
-    bindSmartList();
+    bindSmartList(() => items);
     $('openHistory').onclick = openHistory;
 
     $('openAdd').onclick = () => {
