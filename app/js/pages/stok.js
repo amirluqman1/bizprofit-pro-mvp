@@ -4,6 +4,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { qty } from '../format.js';
+import { smartListHTML, bindSmartList, openSmartList } from './smartlist.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
 const UNITS = ['kg', 'pcs', 'biji', 'pack', 'kotak', 'botol', 'ekor', 'papan', 'liter', 'g'];
@@ -258,15 +259,6 @@ async function copyList() {
     undefined);
 }
 
-async function copyCsv() {
-  await flushAll();
-  if (!items.length) { toast('Tiada barang untuk disalin.'); return; }
-  const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const rows = [['Outlet', 'Kategori', 'Nama', 'Unit', 'Ada', 'Patut ada', 'Kurang', 'Status'],
-    ...items.map(x => [outletName(x.outlet_id), catOf(x), x.name, x.unit, x.current_qty, x.target_qty, kurang(x), LABEL[status(x)]])];
-  toast(await copyText(rows.map(r => r.map(cell).join(',')).join('\n')) ? `CSV disalin (${items.length} barang). Tampal ke Google Sheets.` : 'Gagal salin. Cuba lagi.');
-}
-
 // ---------- Halaman ----------
 export default {
   subtitle: 'Stok bahan mentah outlet.',
@@ -279,12 +271,13 @@ export default {
       </div>
       <div class="tools">
         <button class="btn primary" id="copyList" type="button">Copy senarai beli</button>
-        <button class="btn ghost" id="copyCsv" type="button">CSV</button>
+        <button class="btn ghost" id="openSmartList" type="button">List</button>
         <button class="btn ghost" id="stokRefresh" type="button" aria-label="Muat semula">↻</button>
       </div>
       <div id="stokItems"><section class="card"><p class="greet-sub">Memuatkan…</p></section></div>
       <p class="greet-sub center">Tekan nombor untuk taip jumlah tepat. Setiap perubahan direkod.</p>
-      ${dialogsHTML()}`;
+      ${dialogsHTML()}
+      ${smartListHTML()}`;
 
     try { await load(); renderAll(); }
     catch { $('stokItems').innerHTML = '<div class="empty">Stok tak dapat dibaca. Semak internet dan tekan ↻.</div>'; }
@@ -300,7 +293,8 @@ export default {
       try { await load(); renderAll(); } catch { toast('Stok tak dapat dibaca.', 'error'); }
     };
     $('copyList').onclick = copyList;
-    $('copyCsv').onclick = copyCsv;
+    $('openSmartList').onclick = openSmartList;
+    bindSmartList();
     $('openHistory').onclick = openHistory;
 
     $('openAdd').onclick = () => {
