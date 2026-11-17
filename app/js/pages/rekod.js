@@ -7,6 +7,14 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, dateShort } from '../format.js';
 
 const PAGE_SIZE = 30;
+// Pilihan susunan Sejarah: [kolum, menaik?] — kolum seterusnya jadi pemutus seri.
+const SORTS = [
+  { label: 'Tarikh terbaru', order: [['transaction_date', false], ['created_at', false]] },
+  { label: 'Tarikh terlama', order: [['transaction_date', true], ['created_at', true]] },
+  { label: 'Baru dikey in', order: [['created_at', false]] },
+  { label: 'Jumlah besar', order: [['amount', false], ['transaction_date', false]] },
+  { label: 'Jumlah kecil', order: [['amount', true], ['transaction_date', false]] }
+];
 let lists = null;   // { categories, payments } — dimuat sekali sahaja
 
 async function loadLists() {
@@ -131,11 +139,24 @@ async function renderKeyIn(box) {
 
 // ---------------- Sejarah ----------------
 async function renderHistory(box) {
-  let offset = 0;
+  let offset = 0, runId = 0;
   const rows = new Map();
   box.innerHTML = `
     ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'Anda hanya nampak transaksi yang anda masukkan hari ini.</p>' : ''}
     ${session.isAdminUp ? '<p class="note-line small">' + icon('history') + 'Tekan transaksi untuk ubah atau padam. Setiap perubahan direkod dalam Log audit.</p>' : ''}
+    <section class="card stack filter-bar" aria-label="Susun dan tapis transaksi">
+      <div class="seg" role="radiogroup" aria-label="Jenis transaksi">
+        <label class="seg-opt"><input type="radio" name="fType" value="" checked>Semua</label>
+        <label class="seg-opt in"><input type="radio" name="fType" value="In">${icon('plus-box')}Masuk</label>
+        <label class="seg-opt out"><input type="radio" name="fType" value="Out">${icon('layers')}Keluar</label>
+      </div>
+      <div class="two">
+        <label class="field">Kategori<select id="fCat"><option value="">Semua kategori</option></select></label>
+        <label class="field">Susun ikut<select id="fSort">${SORTS.map((o, i) =>
+          `<option value="${i}">${esc(o.label)}</option>`).join('')}</select></label>
+      </div>
+      <p class="note-line small" id="fCount" hidden></p>
+    </section>
     <section class="card"><ul class="tx-list" id="txList"></ul>
       <p class="greet-sub" id="txStatus">Memuatkan…</p>
       <button class="btn ghost block" id="txMore" type="button" hidden>Muat lagi</button></section>
@@ -144,23 +165,54 @@ async function renderHistory(box) {
   async function more() {
     $('txMore').hidden = true;
     $('txStatus').hidden = false; $('txStatus').textContent = 'Memuatkan…';
+    const run = ++runId;
+    const type = document.querySelector('input[name="fType"]:checked').value;
+    const cat = $('fCat').value;
+    const sort = SORTS[Number($('fSort').value)] || SORTS[0];
     let q = sb.from('transactions')
-      .select('id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1);
+      .select('id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at',
+        { count: offset ? undefined : 'exact' });
+    sort.order.forEach(([col, asc]) => { q = q.order(col, { ascending: asc }); });
+    q = q.order('id', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
-    const { data, error } = await q;
+    if (type) q = q.eq('type', type);
+    if (cat) q = q.eq('category', cat);
+    const { data, error, count } = await q;
+    if (run !== runId) return;   // tapisan dah berubah semasa menunggu
     if (error) { $('txStatus').textContent = 'Senarai transaksi tak dapat dibaca. Cuba lagi.'; return; }
     data.forEach(t => rows.set(String(t.id), t));
     $('txList').insertAdjacentHTML('beforeend', data.map(rowHTML).join(''));
     offset += data.length;
-    if (!offset) { $('txStatus').textContent = 'Belum ada transaksi.'; return; }
+    if (count != null) {
+      const filtered = type || cat;
+      $('fCount').hidden = !filtered;
+      $('fCount').textContent = `${count} transaksi ditemui`;
+    }
+    if (!offset) {
+      $('txStatus').textContent = type || cat ? 'Tiada transaksi untuk tapisan ini.' : 'Belum ada transaksi.';
+      return;
+    }
     $('txStatus').hidden = true;
     $('txMore').hidden = data.length < PAGE_SIZE;
   }
   $('txMore').onclick = more;
+  const reload = () => { offset = 0; rows.clear(); $('txList').innerHTML = ''; return more(); };
+
+  // Tapisan: jenis (masuk/keluar) → kategori ikut jenis; susun ikut tarikh/jumlah.
+  let cats = [];
+  const fillCats = () => {
+    const type = document.querySelector('input[name="fType"]:checked').value;
+    const keep = $('fCat').value;
+    const names = [...new Set(cats.filter(c => !type || c.type === type).map(c => c.name))];
+    $('fCat').replaceChildren(new Option('Semua kategori', ''), ...names.map(n => new Option(n, n)));
+    $('fCat').value = names.includes(keep) ? keep : '';
+  };
+  loadLists().then(l => { cats = l.categories; fillCats(); }).catch(() => {});
+  document.querySelectorAll('input[name="fType"]').forEach(r => r.addEventListener('change', () => { fillCats(); reload(); }));
+  $('fCat').addEventListener('change', reload);
+  $('fSort').addEventListener('change', reload);
+
   if (session.isAdminUp) {
-    const reload = () => { offset = 0; rows.clear(); $('txList').innerHTML = ''; return more(); };
     const open = e => {
       const li = e.target.closest('[data-tx]');
       if (li) openEdit(rows.get(li.dataset.tx), reload);
