@@ -271,6 +271,8 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .chip input { position: absolute; opacity: 0; pointer-events: none; }
 .chip:has(input:checked) { background: #15513a; border-color: var(--line-glow); color: var(--mint); }
 .chip:has(input:focus-visible) { outline: 2px solid var(--mint); }
+#rekodBody { display: grid; gap: 14px; }
+.card.filter-bar { gap: 12px; padding: 14px; }
 
 /* Senarai transaksi */
 .tx-list { list-style: none; margin: 0; padding: 0; }
