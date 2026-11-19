@@ -147,6 +147,7 @@ export default {
         <a class="short" href="#/stok">${icon('box')}<span>Inventory</span>${icon('chev-right')}</a>
         <a class="short" href="#/laporan">${icon('chart')}<span>Report</span>${icon('chev-right')}</a>
         <a class="short" href="#/rekod?t=sejarah">${icon('history')}<span>History</span>${icon('chev-right')}</a>
+        ${session.isAdminUp ? `<a class="short" href="#/foodcost">${icon('cart')}<span>Food Cost</span>${icon('chev-right')}</a>` : ''}
       </div>
 
       <section class="card trend">

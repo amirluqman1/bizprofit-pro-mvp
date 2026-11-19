@@ -3,7 +3,7 @@
 // Nama, unit dan "patut ada" hanya owner boleh ubah (dikunci di database).
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
-import { qty } from '../format.js';
+import { qty, rm } from '../format.js';
 import { smartListHTML, bindSmartList, openSmartList } from './smartlist.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
@@ -13,6 +13,7 @@ const OTHER = 'Lain-lain';
 const LABEL = { habis: 'Out of stock', rendah: 'Low stock', ok: 'Stock OK', unset: 'Not set' };
 
 let items = [];
+let prices = new Map();           // inventory_item_id -> harga seunit (owner/admin sahaja)
 let editing = null;
 const pending = new Map();         // id -> timer
 const inflight = new Set();        // simpanan yang sedang dihantar
@@ -35,7 +36,7 @@ function cardHTML(x) {
     <div class="item-top">
       <button class="item-name" type="button" data-open="${esc(x.id)}">
         <h3>${esc(x.name)}</h3>
-        <span class="sub">${esc(catOf(x))} · Target ${qty(x.target_qty)} ${esc(x.unit)}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
+        <span class="sub">${esc(catOf(x))} · Target ${qty(x.target_qty)} ${esc(x.unit)}${prices.has(x.id) ? ' · ' + esc(rm(prices.get(x.id))) + '/' + esc(x.unit) : ''}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
       </button>
       <span class="pill ${st}">${LABEL[st]}</span>
     </div>
@@ -88,8 +89,12 @@ async function load() {
   // '*' supaya tak gagal jika kolum created_at belum wujud.
   let q = sb.from('inventory_items').select('*');
   if (!allMode()) q = q.eq('outlet_id', session.outletId);
-  const { data, error } = await q;
+  const [{ data, error }, pr] = await Promise.all([
+    q,
+    session.isAdminUp ? sb.from('ingredient_costs').select('inventory_item_id,unit_price') : Promise.resolve({ data: [] })
+  ]);
   if (error) throw error;
+  prices = new Map((pr.data || []).map(p => [p.inventory_item_id, Number(p.unit_price)]));
   // Ikut turutan barang ditambah: barang baru sentiasa di bawah.
   // (Dulu disusun ikut status + abjad, jadi barang baru melompat ke atas/tengah.)
   const t = x => (x.created_at ? Date.parse(x.created_at) : 0);
@@ -135,6 +140,21 @@ async function doSave(id) {
   stockChanged();
 }
 
+// Harga seunit untuk food cost. Kosong = buang harga.
+async function savePrice(id, raw) {
+  const text = String(raw ?? '').trim();
+  if (text === '') {
+    if (!prices.has(id)) return null;
+    const { error } = await sb.from('ingredient_costs').delete().eq('inventory_item_id', id);
+    return error;
+  }
+  const { error } = await sb.from('ingredient_costs').upsert({ inventory_item_id: id, unit_price: Number(text) });
+  return error;
+}
+const priceOk = raw => String(raw ?? '').trim() === '' || (Number.isFinite(Number(raw)) && Number(raw) >= 0);
+const priceField = id => session.isAdminUp
+  ? `<label class="field">Price per unit (RM) <small>optional · for food cost · only owner &amp; admin see this</small><input id="${id}" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 9.50"></label>` : '';
+
 function flushAll() { return Promise.all([...[...pending.keys()].map(save), ...inflight]); }
 
 // ---------- Dialog ----------
@@ -155,6 +175,7 @@ function dialogsHTML() {
       <label class="field">In stock<input id="addCurrent" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
       <label class="field">Target<input id="addTarget" type="number" inputmode="decimal" min="0" step="any" placeholder="20"></label>
     </div>
+    ${priceField('addPrice')}
     <div class="dialog-actions"><button class="btn ghost" type="button" data-close="addDialog">Cancel</button><button class="btn primary" id="addSave">Save</button></div>
   </form></dialog>
 
@@ -168,6 +189,7 @@ function dialogsHTML() {
         <label class="field">Unit<select id="editUnit">${unitOptions()}</select></label>
         <label class="field">Target<input id="editTarget" type="number" inputmode="decimal" min="0" step="any"></label>
       </div>
+      ${priceField('editPrice')}
     </div>
     <p id="editNote" class="note"></p>
     <div class="dialog-actions">
@@ -195,6 +217,7 @@ function openEdit(x) {
     if (![...$('editUnit').options].some(o => o.value === x.unit)) $('editUnit').add(new Option(x.unit, x.unit));
     $('editUnit').value = x.unit;
     $('editTarget').value = x.target_qty;
+    $('editPrice').value = prices.has(x.id) ? prices.get(x.id) : '';
   }
   $('editNote').textContent = session.isAdminUp ? 'Every quantity change is recorded in history.'
     : `Target: ${qty(x.target_qty)} ${x.unit}. Only the owner or an admin can change the name, category, unit or target.`;
@@ -317,12 +340,14 @@ export default {
       if ($('addTarget').value.trim() === '' || !ok(payload.current_qty) || !ok(payload.target_qty)) {
         toast('Please enter a valid quantity (0 or more).', 'error'); return;
       }
+      if ($('addPrice') && !priceOk($('addPrice').value)) { toast('Invalid price.', 'error'); return; }
       $('addSave').disabled = true;
-      const { error } = await sb.from('inventory_items').insert(payload);
+      const { data: added, error } = await sb.from('inventory_items').insert(payload).select('id').single();
+      if (error) { $('addSave').disabled = false; toast('Add failed: ' + errText(error), 'error'); return; }
+      const pErr = $('addPrice') ? await savePrice(added.id, $('addPrice').value) : null;
       $('addSave').disabled = false;
-      if (error) { toast('Add failed: ' + errText(error), 'error'); return; }
       $('addDialog').close();
-      toast('Item added.');
+      toast(pErr ? 'Item added, but the price was not saved: ' + errText(pErr) : 'Item added.', pErr ? 'error' : undefined);
       await load(); renderAll(); stockChanged();
     });
 
@@ -339,6 +364,7 @@ export default {
         payload.category = $('editCat').value === OTHER ? null : $('editCat').value;
         payload.target_qty = Number($('editTarget').value);
         if (!payload.name || !ok(payload.target_qty)) { toast('Invalid name or target.', 'error'); return; }
+        if (!priceOk($('editPrice').value)) { toast('Invalid price.', 'error'); return; }
       }
       $('editSave').disabled = true;
       const { data, error } = await sb.from('inventory_items').update(payload)
@@ -346,8 +372,9 @@ export default {
       $('editSave').disabled = false;
       if (error) { toast('Save failed: ' + errText(error), 'error'); return; }
       if (!data?.length) { toast('Nothing was saved. You may not have access.', 'error'); return; }
+      const pErr = session.isAdminUp ? await savePrice(editing.id, $('editPrice').value) : null;
       $('editDialog').close();
-      toast('Stock updated.');
+      toast(pErr ? 'Stock updated, but the price was not saved: ' + errText(pErr) : 'Stock updated.', pErr ? 'error' : undefined);
       await load(); renderAll(); stockChanged();
     });
 

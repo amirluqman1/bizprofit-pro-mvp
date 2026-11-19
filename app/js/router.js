@@ -7,6 +7,7 @@ import stok from './pages/stok.js';
 import pekerja from './pages/pekerja.js';
 import menu from './pages/menu.js';
 import laporan from './pages/laporan.js';
+import foodcost from './pages/foodcost.js';
 
 // roles: siapa boleh buka halaman. Staff tidak boleh nampak Utama (ada profit) atau Pekerja.
 const PAGES = [
@@ -16,6 +17,7 @@ const PAGES = [
   { path: 'pekerja', label: 'Staff', icon: 'users',   page: pekerja, roles: ['owner', 'admin', 'manager'] },
   { path: 'menu',    label: 'Menu',    icon: 'menu',    page: menu,    roles: ['owner', 'admin', 'manager', 'staff'] },
   // Tiada tab: dibuka dari butang pintas di Utama.
+  { path: 'foodcost', label: 'Food Cost', icon: 'chart', page: foodcost, roles: ['owner', 'admin'], tab: false },
   { path: 'laporan', label: 'Report', icon: 'chart',   page: laporan, roles: ['owner', 'admin', 'manager'], tab: false }
 ];
 
