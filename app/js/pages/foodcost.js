@@ -10,7 +10,7 @@ const TARGET = 30;                       // % food cost sasaran untuk harga cada
 const PERIODS = { week: 'This week', month: 'This month', last: 'Last month' };
 const state = { period: 'month' };
 let menus = [], lines = [], stock = [], prices = new Map();
-let editing = null;                      // { id, outlet, rows: [{ item, qty }] }
+let editing = null;                      // { id, outlet, rows: [{ item | menu, qty }] }
 let version = 0;
 
 function periodRange(p) {
@@ -25,22 +25,34 @@ const level = pct => (pct == null ? '' : pct <= 35 ? 'ok' : pct <= 40 ? 'rendah'
 const pctText = pct => (pct == null ? '—' : pct.toFixed(1) + '%');
 const item = id => stock.find(s => s.id === id);
 
-// Kos satu menu daripada baris resipi. missing = bahan tanpa harga.
-function costOf(rows, portions) {
+const menuOf = id => menus.find(m => m.id === id);
+// Baris resipi: { item: <stok> } atau { menu: <lauk/menu lain> }, qty = unit stok / bilangan porsi.
+const rowsOf = menuId => lines.filter(l => l.menu_item_id === menuId)
+  .map(l => (l.sub_menu_id ? { menu: l.sub_menu_id, qty: Number(l.qty) } : { item: l.inventory_item_id, qty: Number(l.qty) }));
+
+// Kos satu menu daripada baris resipi (termasuk lauk di dalamnya). missing = bahan tanpa harga.
+function costOf(rows, portions, seen = new Set()) {
   let total = 0, missing = 0;
   rows.forEach(r => {
-    if (prices.has(r.item)) total += Number(r.qty) * prices.get(r.item); else missing++;
+    if (r.menu) {
+      const sub = menuOf(r.menu);
+      if (!sub || seen.has(sub.id)) return;           // elak pusingan
+      const c = costOf(rowsOf(sub.id), sub.portions, new Set([...seen, sub.id]));
+      total += Number(r.qty) * c.perPlate; missing += c.missing;
+    } else if (prices.has(r.item)) total += Number(r.qty) * prices.get(r.item);
+    else missing++;
   });
   const perPlate = total / (Number(portions) || 1);
   return { total, perPlate, missing };
 }
+const plateCost = m => costOf(rowsOf(m.id), m.portions, new Set([m.id])).perPlate;
 const pctOf = (cost, price) => (Number(price) > 0 ? cost / Number(price) * 100 : null);
 
 async function loadAll() {
   const outletFilter = q => (session.outletId === ALL_OUTLETS ? q : q.eq('outlet_id', session.outletId));
   const [m, l, s, p] = await Promise.all([
     outletFilter(sb.from('menu_items').select('id,outlet_id,name,selling_price,portions')).order('name'),
-    outletFilter(sb.from('menu_ingredients').select('menu_item_id,inventory_item_id,qty')),
+    outletFilter(sb.from('menu_ingredients').select('menu_item_id,inventory_item_id,sub_menu_id,qty')),
     outletFilter(sb.from('inventory_items').select('id,outlet_id,name,unit')).order('name'),
     sb.from('ingredient_costs').select('inventory_item_id,unit_price')
   ]);
@@ -80,23 +92,27 @@ function periodHTML(d, from, to) {
 }
 
 function menuCardHTML(m) {
-  const rows = lines.filter(l => l.menu_item_id === m.id).map(l => ({ item: l.inventory_item_id, qty: l.qty }));
-  const c = costOf(rows, m.portions);
+  const rows = rowsOf(m.id);
+  const c = costOf(rows, m.portions, new Set([m.id]));
+  const usedIn = new Set(lines.filter(l => l.sub_menu_id === m.id).map(l => l.menu_item_id)).size;
   const pct = pctOf(c.perPlate, m.selling_price);
   const lv = level(pct);
+  const lauk = !(Number(m.selling_price) > 0);        // harga jual 0 = lauk/komponen, tak dijual sendiri
+  const info = lauk ? [`Cost ${rm(c.perPlate)} per portion`]
+    : [`Sell ${rm(m.selling_price)}`, `Cost ${rm(c.perPlate)}`, `Profit ${rm(Number(m.selling_price) - c.perPlate)}`];
   return `<button type="button" class="row-btn fc-menu" data-menu="${esc(m.id)}">
     <span>${esc(m.name)}
-      <small>${esc([session.outletId === ALL_OUTLETS ? outletName(m.outlet_id) : '', `Sell ${rm(m.selling_price)}`, `Cost ${rm(c.perPlate)}`,
-        `Profit ${rm(Number(m.selling_price) - c.perPlate)}`].filter(Boolean).join(' · '))}</small>
+      <small>${esc([session.outletId === ALL_OUTLETS ? outletName(m.outlet_id) : '', ...info].filter(Boolean).join(' · '))}</small>
+      ${usedIn ? `<small>Used in ${usedIn} menu${usedIn > 1 ? 's' : ''}</small>` : ''}
       ${!rows.length ? '<small class="warn">No ingredients yet</small>' : c.missing ? `<small class="warn">⚠ ${c.missing} ingredient${c.missing > 1 ? 's have' : ' has'} no price</small>` : ''}
     </span>
-    <span class="pill ${lv}">${pctText(pct)}</span>
+    <span class="pill ${lauk ? '' : lv}">${lauk ? 'Lauk' : pctText(pct)}</span>
   </button>`;
 }
 
 function renderMenus() {
   $('fcMenus').innerHTML = menus.length ? menus.map(menuCardHTML).join('')
-    : `<div class="empty">No menus yet.<br>Tap <b>+ Add menu</b> and pick its ingredients from Stock.</div>`;
+    : `<div class="empty">No menus yet.<br>Tap <b>+ Add menu</b>. Tip: add lauk first (e.g. Ayam Goreng, Sambal), then reuse them in set menus like Nasi Lemak Ayam.</div>`;
   const noPrice = stock.filter(s => !prices.has(s.id)).length;
   $('fcPriceNote').hidden = !noPrice;
   $('fcPriceNote').innerHTML = `${icon('box')}${noPrice} stock item${noPrice > 1 ? 's have' : ' has'} no price yet. Add prices in <a href="#/stok">Stock</a> (tap an item) so costs are accurate.`;
@@ -116,9 +132,13 @@ function dialogHTML() {
       <label class="field">Selling price (RM)<input id="fmPrice" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></label>
       <label class="field">Recipe makes (plates)<input id="fmPortions" type="number" inputmode="decimal" min="0.001" step="any" value="1"></label>
     </div>
-    <div class="fc-lines-head"><b>Ingredients</b><small>Quantity in the stock item's unit (e.g. 0.15 kg = 150 g)</small></div>
+    <div class="fc-lines-head"><b>Ingredients</b><small>Stock items: quantity in the item's unit (e.g. 0.15 kg = 150 g). Lauk: number of portions.</small></div>
     <div id="fmLines" class="fc-lines"></div>
-    <button class="btn ghost block" type="button" id="fmAddLine">+ Add ingredient</button>
+    <div class="two">
+      <button class="btn ghost" type="button" id="fmAddLine">+ Ingredient</button>
+      <button class="btn ghost" type="button" id="fmAddLauk">+ Lauk / menu</button>
+    </div>
+    <p class="note small">Set selling price to 0 for a lauk that is not sold on its own (e.g. Sambal).</p>
     <div class="kv-list fc-sum" id="fmSum"></div>
     <div class="dialog-actions">
       <button class="btn danger" type="button" id="fmDelete">Delete</button>
@@ -129,14 +149,26 @@ function dialogHTML() {
 }
 
 const outletStock = () => stock.filter(s => s.outlet_id === editing.outlet);
+// Lauk yang boleh dipilih: menu outlet sama, bukan menu yang sedang diubah.
+const outletLauk = () => menus.filter(m => m.outlet_id === editing.outlet && m.id !== editing.id);
+const isLauk = r => 'menu' in r;
+const lineCost = r => {
+  if (!(Number(r.qty) > 0)) return null;
+  if (isLauk(r)) { const m = menuOf(r.menu); return m ? Number(r.qty) * plateCost(m) : null; }
+  return prices.has(r.item) ? Number(r.qty) * prices.get(r.item) : null;
+};
 
 function lineHTML(r, i) {
-  const opts = outletStock().map(s => `<option value="${esc(s.id)}" ${s.id === r.item ? 'selected' : ''}>${esc(s.name)}${prices.has(s.id) ? '' : ' (no price)'}</option>`).join('');
-  const it = item(r.item);
-  const cost = it && prices.has(it.id) && Number(r.qty) > 0 ? rm(Number(r.qty) * prices.get(it.id)) : '—';
-  return `<div class="fc-line" data-i="${i}">
-    <select data-f="item" aria-label="Ingredient"><option value="">Choose…</option>${opts}</select>
-    <label class="fc-qty"><input data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="${r.qty ?? ''}" placeholder="0" aria-label="Quantity"><span>${esc(it?.unit || '')}</span></label>
+  const lauk = isLauk(r);
+  const opts = lauk
+    ? outletLauk().map(m => `<option value="${esc(m.id)}" ${m.id === r.menu ? 'selected' : ''}>🍗 ${esc(m.name)} (${esc(rm(plateCost(m)))})</option>`).join('')
+    : outletStock().map(s => `<option value="${esc(s.id)}" ${s.id === r.item ? 'selected' : ''}>${esc(s.name)}${prices.has(s.id) ? '' : ' (no price)'}</option>`).join('');
+  const unit = lauk ? 'portion' : (item(r.item)?.unit || '');
+  const c = lineCost(r);
+  const cost = c == null ? '—' : rm(c);
+  return `<div class="fc-line${lauk ? ' lauk' : ''}" data-i="${i}">
+    <select data-f="${lauk ? 'menu' : 'item'}" aria-label="${lauk ? 'Lauk' : 'Ingredient'}"><option value="">${lauk ? 'Choose lauk…' : 'Choose…'}</option>${opts}</select>
+    <label class="fc-qty"><input data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="${r.qty ?? ''}" placeholder="0" aria-label="Quantity"><span>${esc(unit)}</span></label>
     <span class="fc-cost" data-cost>${cost}</span>
     <button type="button" class="fc-del" data-del aria-label="Remove ingredient">✕</button>
   </div>`;
@@ -144,13 +176,13 @@ function lineHTML(r, i) {
 
 function drawLines() {
   $('fmLines').innerHTML = editing.rows.length ? editing.rows.map(lineHTML).join('')
-    : `<p class="note">${outletStock().length ? 'No ingredients yet. Tap + Add ingredient.' : 'This outlet has no stock items yet. Add them in Stock first.'}</p>`;
+    : `<p class="note">${outletStock().length ? 'No ingredients yet. Tap + Ingredient or + Lauk / menu.' : 'This outlet has no stock items yet. Add them in Stock first.'}</p>`;
   drawSum();
 }
 
 function drawSum() {
-  const valid = editing.rows.filter(r => r.item && Number(r.qty) > 0);
-  const c = costOf(valid, $('fmPortions').value);
+  const valid = editing.rows.filter(r => (r.item || r.menu) && Number(r.qty) > 0);
+  const c = costOf(valid, $('fmPortions').value, new Set(editing.id ? [editing.id] : []));
   const price = Number($('fmPrice').value);
   const pct = pctOf(c.perPlate, price);
   const suggest = c.perPlate > 0 ? c.perPlate / (TARGET / 100) : 0;
@@ -169,7 +201,7 @@ function openMenu(m) {
   editing = {
     id: m?.id || null,
     outlet: m?.outlet_id || defaultOutlet,
-    rows: m ? lines.filter(l => l.menu_item_id === m.id).map(l => ({ item: l.inventory_item_id, qty: Number(l.qty) })) : []
+    rows: m ? rowsOf(m.id) : []
   };
   $('fmTitle').textContent = m ? 'Edit menu' : 'Add menu';
   $('fmName').value = m?.name || '';
@@ -193,6 +225,12 @@ function bindDialog(refresh) {
     drawLines();
     $('fmLines').lastElementChild?.querySelector('select')?.focus();
   };
+  $('fmAddLauk').onclick = () => {
+    if (!outletLauk().length) { toast('No other menus in this outlet yet. Add the lauk (e.g. Ayam Goreng) as a menu first.', 'error'); return; }
+    editing.rows.push({ menu: '', qty: 1 });
+    drawLines();
+    $('fmLines').lastElementChild?.querySelector('select')?.focus();
+  };
   if ($('fmOutlet')) $('fmOutlet').onchange = e => { editing.outlet = e.target.value; editing.rows = []; drawLines(); };
   $('fmPrice').oninput = drawSum;
   $('fmPortions').oninput = drawSum;
@@ -203,12 +241,12 @@ function bindDialog(refresh) {
   });
   $('fmLines').addEventListener('change', e => {
     const f = e.target.dataset.f;
-    if (f !== 'item') return;
+    if (f !== 'item' && f !== 'menu') return;
     const i = Number(e.target.closest('[data-i]').dataset.i);
-    if (e.target.value && editing.rows.some((r, j) => j !== i && r.item === e.target.value)) {
-      toast('This ingredient is already in the recipe.', 'error'); e.target.value = editing.rows[i].item; return;
+    if (e.target.value && editing.rows.some((r, j) => j !== i && r[f] === e.target.value)) {
+      toast('This is already in the recipe.', 'error'); e.target.value = editing.rows[i][f]; return;
     }
-    editing.rows[i].item = e.target.value;
+    editing.rows[i][f] = e.target.value;
     const line = e.target.closest('[data-i]');
     line.outerHTML = lineHTML(editing.rows[i], i);
     drawSum();
@@ -217,9 +255,8 @@ function bindDialog(refresh) {
     if (e.target.dataset.f !== 'qty') return;
     const line = e.target.closest('[data-i]'), i = Number(line.dataset.i);
     editing.rows[i].qty = e.target.value;
-    const it = item(editing.rows[i].item);
-    line.querySelector('[data-cost]').textContent = it && prices.has(it.id) && Number(e.target.value) > 0
-      ? rm(Number(e.target.value) * prices.get(it.id)) : '—';
+    const c = lineCost(editing.rows[i]);
+    line.querySelector('[data-cost]').textContent = c == null ? '—' : rm(c);
     drawSum();
   });
 
@@ -231,17 +268,19 @@ function bindDialog(refresh) {
     if (!name) { toast('Enter the menu name.', 'error'); $('fmName').focus(); return; }
     if ($('fmPrice').value.trim() === '' || !(price >= 0)) { toast('Enter a valid selling price.', 'error'); return; }
     if (!(portions > 0)) { toast('"Recipe makes" must be more than 0.', 'error'); return; }
-    if (editing.rows.some(r => !r.item || !(Number(r.qty) > 0))) {
-      toast('Each ingredient needs an item and a quantity above 0 (or remove the line).', 'error'); return;
+    if (editing.rows.some(r => !(r.item || r.menu) || !(Number(r.qty) > 0))) {
+      toast('Each line needs an item or lauk and a quantity above 0 (or remove the line).', 'error'); return;
     }
     $('fmSave').disabled = true;
     const { error } = await sb.rpc('save_menu', {
       p_id: editing.id, p_outlet: editing.outlet, p_name: name, p_price: Math.round(price * 100) / 100, p_portions: portions,
-      p_lines: editing.rows.map(r => ({ item: r.item, qty: Number(r.qty) }))
+      p_lines: editing.rows.map(r => (isLauk(r) ? { menu: r.menu, qty: Number(r.qty) } : { item: r.item, qty: Number(r.qty) }))
     });
     $('fmSave').disabled = false;
     if (error) {
-      toast(error.code === '23505' ? 'A menu with this name already exists in this outlet.' : 'Not saved: ' + error.message, 'error');
+      toast(error.code === '23505' ? 'A menu with this name already exists in this outlet.'
+        : /loop/.test(error.message) ? 'Not saved: these menus would include each other (e.g. A uses B and B uses A).'
+        : 'Not saved: ' + error.message, 'error');
       return;
     }
     $('fmDialog').close();
@@ -255,6 +294,7 @@ function bindDialog(refresh) {
     $('fmDelete').disabled = true;
     const { data, error } = await sb.from('menu_items').delete().eq('id', editing.id).select('id');
     $('fmDelete').disabled = false;
+    if (error?.code === '23503') { toast('This is used as a lauk in other menus. Remove it from those menus first.', 'error'); return; }
     if (error || !data?.length) { toast('Not deleted: ' + (error?.message || 'no access.'), 'error'); return; }
     $('fmDialog').close();
     toast('Menu deleted.');

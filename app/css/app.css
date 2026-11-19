@@ -493,3 +493,4 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .fc-sum { padding-top: 6px; border-top: 1px solid var(--line); }
 @media (max-width: 380px) { .fc-line { grid-template-columns: minmax(0, 1fr) 80px 32px; } .fc-cost { display: none; } }
 .fc-menu .pill.rendah, .fc-big .pill.rendah { color: var(--gold); background: #4a3f1f; }
+.fc-line.lauk select { border-color: #e9c46a66; }
