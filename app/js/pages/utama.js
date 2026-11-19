@@ -112,7 +112,7 @@ async function load() {
 
 export default {
   async render(view) {
-    view.innerHTML = '<section class="card hero loading"><p class="greet-sub">Loading summary…</p></section>';
+    view.innerHTML = '<div class="skel-home" aria-busy="true" aria-label="Loading"><div class="skel hero-skel"></div><div class="stats3"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>';
     let d;
     try { d = await load(); }
     catch {

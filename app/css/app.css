@@ -438,8 +438,18 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 
 /* ---------- Kad muncul bila halaman dibuka / scroll ---------- */
 .rv:not(.in) { opacity: 0; }
-.rv.in { animation: rise .6s cubic-bezier(.16,1,.3,1) var(--d, 0ms) backwards; }
-@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+.rv.in { animation: rise .45s cubic-bezier(.16,1,.3,1) var(--d, 0ms) backwards; will-change: transform, opacity; }
+@keyframes rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } }
+
+/* ---------- Skeleton (Home sementara data dimuat) ---------- */
+.skel-home { display: grid; gap: 14px; }
+.skel {
+  min-height: 112px; border-radius: 18px; border: 1px solid var(--line);
+  background: linear-gradient(100deg, #ffffff06 30%, #ffffff12 50%, #ffffff06 70%) 0 0 / 300% 100%, var(--surface);
+  animation: shimmer 1.3s linear infinite;
+}
+.skel.hero-skel { min-height: 150px; border-radius: var(--radius); }
+@keyframes shimmer { from { background-position: 100% 0, 0 0; } to { background-position: 0 0, 0 0; } }
 
 /* ---------- Hover & tekan ---------- */
 .btn, .short, .row-btn, .tile, .seg-opt, .tx.editable, .step, .chip, .icon-btn {
