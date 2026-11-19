@@ -1,6 +1,6 @@
 // Format duit, nombor dan tarikh (waktu Malaysia).
-const fmt2 = new Intl.NumberFormat('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtQty = new Intl.NumberFormat('ms-MY', { maximumFractionDigits: 3 });
+const fmt2 = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtQty = new Intl.NumberFormat('en-MY', { maximumFractionDigits: 3 });
 
 export const rm = n => (n < 0 ? '−' : '') + 'RM ' + fmt2.format(Math.abs(Number(n) || 0));
 export const qty = n => fmtQty.format(Number(n) || 0);
@@ -21,13 +21,13 @@ export function endOfMonth(iso) {
   return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
 }
 
-export const DAYS = ['Aha', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'];
-export const MONTHS = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+export const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export const dayName = iso => DAYS[new Date(iso + 'T00:00:00Z').getUTCDay()];
 
-export const dateLong = iso => new Date(iso + 'T00:00:00').toLocaleDateString('ms-MY',
+export const dateLong = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-MY',
   { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-export const dateShort = iso => new Date(iso + 'T00:00:00').toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' });
+export const dateShort = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
 
 export function dateRange(from, to) {
   if (from === to) return dateLong(from);

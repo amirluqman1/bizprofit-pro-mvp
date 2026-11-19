@@ -3,14 +3,14 @@
 import { $, esc, icon } from '../ui.js';
 import { sb, session, ALL_OUTLETS } from '../session.js';
 
-const DAYS = ['Aha', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SERIES = {
-  sales:  { label: 'Jualan',       pick: d => d.sales },
+  sales:  { label: 'Sales',        pick: d => d.sales },
   profit: { label: 'Profit',       pick: d => d.profit },
-  out:    { label: 'Perbelanjaan', pick: d => d.out }
+  out:    { label: 'Expenses',     pick: d => d.out }
 };
 
-const fmt2 = new Intl.NumberFormat('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt2 = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const rm = n => (n < 0 ? '−' : '') + 'RM ' + fmt2.format(Math.abs(n));
 const rmTile = n => `<small>RM</small>${n < 0 ? '−' : ''}${fmt2.format(Math.abs(n))}`;
 function rmShort(n) {
@@ -33,7 +33,7 @@ function change(now, before) {
 }
 // higherIsGood: untuk Perbelanjaan, naik = buruk (merah).
 function badge(pct, higherIsGood = true) {
-  if (pct === null || !Number.isFinite(pct)) return '<span class="chg flat">— tiada data semalam</span>';
+  if (pct === null || !Number.isFinite(pct)) return '<span class="chg flat">— no data yesterday</span>';
   const up = pct >= 0;
   const good = up === higherIsGood;
   return `<span class="chg ${good ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${up ? '+' : ''}${pct.toFixed(1)}%</span>`;
@@ -79,7 +79,7 @@ function trendChart(days, key) {
   const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   const base = y(Math.max(bottom, 0));
   const desc = days.map((d, i) => `${dayName(d.date)} ${rm(vals[i])}`).join(', ');
-  return `<svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend ${esc(SERIES[key].label)} 7 hari: ${esc(desc)}">
+  return `<svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(SERIES[key].label)} trend, 7 days: ${esc(desc)}">
     <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fe08a" stop-opacity=".28"/><stop offset="1" stop-color="#5fe08a" stop-opacity="0"/></linearGradient></defs>
     ${ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" class="grid"/><text x="${L - 8}" y="${y(t) + 4}" class="ylab">${rmShort(t)}</text>`).join('')}
     <path d="${line} L${pts[pts.length - 1][0]} ${base} L${pts[0][0]} ${base} Z" fill="url(#tg)"/>
@@ -111,14 +111,13 @@ async function load() {
 }
 
 export default {
-  subtitle: 'Ringkasan prestasi perniagaan hari ini.',
   async render(view) {
-    view.innerHTML = '<section class="card hero loading"><p class="greet-sub">Memuatkan ringkasan…</p></section>';
+    view.innerHTML = '<section class="card hero loading"><p class="greet-sub">Loading summary…</p></section>';
     let d;
     try { d = await load(); }
     catch {
-      view.innerHTML = `<section class="card placeholder">${icon('chart')}<h2>Ringkasan tak dapat dimuatkan</h2>
-        <p>Semak sambungan internet dan cuba lagi.</p><button class="btn primary" id="retry" type="button">Cuba lagi</button></section>`;
+      view.innerHTML = `<section class="card placeholder">${icon('chart')}<h2>Could not load summary</h2>
+        <p>Check your internet connection and try again.</p><button class="btn primary" id="retry" type="button">Try again</button></section>`;
       $('retry').onclick = () => this.render(view);
       return;
     }
@@ -130,35 +129,35 @@ export default {
       <section class="card hero">
         ${COINS}
         <div class="hero-body">
-          <p class="hero-label">Profit Bersih <span class="info" title="Jualan + pendapatan lain − perbelanjaan operasi. Duit owner, pinjaman, cukai dan beli aset tidak dikira.">i</span></p>
+          <p class="hero-label">Net Profit <span class="info" title="Sales + other income − operating expenses. Owner money, loans, tax and asset purchases are not included.">i</span></p>
           <p class="hero-value ${today.profit < 0 ? 'neg' : ''}">${rm(today.profit)}</p>
-          <p class="hero-foot">${badge(change(today.profit, yesterday.profit))}<span>berbanding semalam</span></p>
+          <p class="hero-foot">${badge(change(today.profit, yesterday.profit))}</p>
         </div>
         ${sparkline(week.map(x => x.profit))}
       </section>
 
       <div class="stats3">
-        <div class="tile">${icon('cart')}<p class="tile-label">Jualan</p><p class="tile-value">${rmTile(today.sales)}</p>${badge(change(today.sales, yesterday.sales))}</div>
-        <div class="tile">${icon('layers')}<p class="tile-label">Perbelanjaan</p><p class="tile-value">${rmTile(today.out)}</p>${badge(change(today.out, yesterday.out), false)}</div>
-        <div class="tile">${icon('receipt')}<p class="tile-label">Transaksi</p><p class="tile-value"><small>Hari ini</small>${today.count}</p>${badge(change(today.count, yesterday.count))}</div>
+        <div class="tile">${icon('cart')}<p class="tile-label">Sales</p><p class="tile-value">${rmTile(today.sales)}</p>${badge(change(today.sales, yesterday.sales))}</div>
+        <div class="tile">${icon('layers')}<p class="tile-label">Expenses</p><p class="tile-value">${rmTile(today.out)}</p>${badge(change(today.out, yesterday.out), false)}</div>
+        <div class="tile">${icon('receipt')}<p class="tile-label">Transactions</p><p class="tile-value"><small>Today</small>${today.count}</p>${badge(change(today.count, yesterday.count))}</div>
       </div>
 
       <div class="shortcuts">
-        <a class="short" href="#/rekod">${icon('plus-box')}<span>Key In<br>Transaksi</span>${icon('chev-right')}</a>
-        <a class="short" href="#/stok">${icon('box')}<span>Inventori</span>${icon('chev-right')}</a>
-        <a class="short" href="#/laporan">${icon('chart')}<span>Laporan</span>${icon('chev-right')}</a>
-        <a class="short" href="#/rekod">${icon('history')}<span>Sejarah</span>${icon('chev-right')}</a>
+        <a class="short" href="#/rekod">${icon('plus-box')}<span>Key In<br>Transaction</span>${icon('chev-right')}</a>
+        <a class="short" href="#/stok">${icon('box')}<span>Inventory</span>${icon('chev-right')}</a>
+        <a class="short" href="#/laporan">${icon('chart')}<span>Report</span>${icon('chev-right')}</a>
+        <a class="short" href="#/rekod?t=sejarah">${icon('history')}<span>History</span>${icon('chev-right')}</a>
       </div>
 
       <section class="card trend">
         <div class="trend-head">
-          <h2>Trend <span id="trendName">Jualan</span> (7 Hari)</h2>
-          <label class="pill-select"><select id="trendSeries" aria-label="Pilih data graf">
+          <h2><span id="trendName">Sales</span> Trend (7 Days)</h2>
+          <label class="pill-select"><select id="trendSeries" aria-label="Choose chart data">
             ${Object.entries(SERIES).map(([k, s]) => `<option value="${k}">${s.label}</option>`).join('')}
           </select>${icon('chevron')}</label>
         </div>
         <div id="trendChart">${trendChart(week, series)}</div>
-        ${empty ? '<p class="greet-sub trend-empty">Belum ada transaksi dalam 7 hari ini. Graf akan terisi bila ada key in.</p>' : ''}
+        ${empty ? '<p class="greet-sub trend-empty">No transactions in the last 7 days. The chart fills in once you key in.</p>' : ''}
       </section>`;
 
     $('trendSeries').addEventListener('change', e => {

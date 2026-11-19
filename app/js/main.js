@@ -1,6 +1,6 @@
 // Titik mula app: login, rangka, outlet, navigasi.
 import { $, toast } from './ui.js';
-import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS, ROLE_NAME } from './session.js';
+import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS } from './session.js';
 import { startRouter, stopRouter, rerender } from './router.js';
 import { initPWA } from './pwa.js';
 
@@ -15,7 +15,7 @@ async function refreshBell() {
   const { data, error } = await q;
   lowStock = error ? 0 : (data || []).filter(x => Number(x.current_qty) < Number(x.target_qty) || Number(x.current_qty) <= 0).length;
   $('bellDot').hidden = lowStock === 0;
-  $('bellBtn').setAttribute('aria-label', lowStock ? `Notifikasi: ${lowStock} barang perlu tambah` : 'Notifikasi');
+  $('bellBtn').setAttribute('aria-label', lowStock ? `Notifications: ${lowStock} items need restocking` : 'Notifications');
 }
 
 function showLogin(message) {
@@ -28,7 +28,7 @@ function showLogin(message) {
 function fillOutletPicker() {
   const sel = $('outletSelect');
   const opts = [];
-  if (session.isOwner && session.outlets.length > 1) opts.push(new Option('Semua outlet', ALL_OUTLETS));
+  if (session.isOwner && session.outlets.length > 1) opts.push(new Option('All outlets', ALL_OUTLETS));
   session.outlets.forEach(o => opts.push(new Option(o.name, o.id)));
   sel.replaceChildren(...opts);
   sel.value = session.outletId;
@@ -38,8 +38,7 @@ function fillOutletPicker() {
 }
 
 async function enterApp() {
-  $('greet').textContent = session.isOwner ? 'Selamat datang, Boss 👋' : `Selamat datang, ${ROLE_NAME[session.role]} 👋`;
-  $('businessName').textContent = session.business?.name || 'Sistem Pengurusan F&B';
+  $('businessName').textContent = session.business?.name || 'F&B Management System';
   fillOutletPicker();
   $('boot').hidden = true;
   $('login').hidden = true;
@@ -49,11 +48,11 @@ async function enterApp() {
 }
 
 async function boot() {
-  if (!sb) { showLogin('config.js tidak dijumpai.'); return; }
+  if (!sb) { showLogin('config.js not found.'); return; }
   // Jangan tunggu selamanya jika sambungan/sesi tersekat.
   const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 10000));
   const res = await Promise.race([sb.auth.getSession(), timeout]);
-  if (res === 'timeout') { showLogin('Sambungan lambat. Sila log masuk semula.'); return; }
+  if (res === 'timeout') { showLogin('Slow connection. Please log in again.'); return; }
   const s = res.data?.session;
   if (!s) { showLogin(); return; }
   const err = await loadAccount(s.user);
@@ -65,11 +64,11 @@ $('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const email = $('loginEmail').value.trim();
   const password = $('loginPassword').value;
-  if (!email || !password) { toast('Isi emel dan kata laluan.', 'error'); return; }
+  if (!email || !password) { toast('Enter your email and password.', 'error'); return; }
   const btn = $('loginBtn');
   btn.disabled = true;
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) { btn.disabled = false; toast('Emel atau kata laluan salah.', 'error'); return; }
+  if (error) { btn.disabled = false; toast('Wrong email or password.', 'error'); return; }
   const err = await loadAccount(data.user);
   btn.disabled = false;
   if (err) { await sb.auth.signOut(); toast(err, 'error'); return; }
@@ -91,9 +90,9 @@ onOutletChange(() => { rerender(); refreshBell(); });
 window.addEventListener('bp:stock-changed', refreshBell);
 
 $('bellBtn').addEventListener('click', () => {
-  if (!lowStock) { toast('Tiada notifikasi. Semua stok mencukupi.'); return; }
-  toast(`${lowStock} barang habis atau perlu tambah stok.`);
+  if (!lowStock) { toast('No notifications. All stock is sufficient.'); return; }
+  toast(`${lowStock} items are out of stock or need restocking.`);
   location.hash = '#/stok';
 });
 
-boot().catch(e => showLogin('Ralat aplikasi: ' + e.message));
+boot().catch(e => showLogin('App error: ' + e.message));

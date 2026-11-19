@@ -36,7 +36,7 @@ export function setOutlet(id) {
 }
 
 export function outletName(id = session.outletId) {
-  if (id === ALL_OUTLETS) return 'Semua outlet';
+  if (id === ALL_OUTLETS) return 'All outlets';
   return session.outlets.find(o => o.id === id)?.name || '';
 }
 
@@ -51,18 +51,18 @@ export async function loadAccount(user) {
   session.user = user;
   const { data: p, error: pe } = await sb.from('staff_profiles')
     .select('role,outlet_id').eq('user_id', user.id).maybeSingle();
-  if (pe) return 'Profil tidak dapat dibaca. Semak internet dan cuba lagi.';
-  if (!p) return 'Akaun ini belum didaftarkan ke mana-mana outlet. Hubungi owner.';
+  if (pe) return 'Could not load profile. Check your internet and try again.';
+  if (!p) return 'This account is not assigned to any outlet. Contact the owner.';
   session.profile = p;
 
   const [{ data: biz }, { data: outlets, error: oe }] = await Promise.all([
     sb.from('businesses').select('id,name').maybeSingle(),
     sb.from('outlets').select('id,name,company_name,company_reg_no').order('name')
   ]);
-  if (oe) return 'Senarai outlet tidak dapat dibaca.';
+  if (oe) return 'Could not load the outlet list.';
   session.business = biz || null;
   session.outlets = session.isOwner ? (outlets || []) : (outlets || []).filter(o => o.id === p.outlet_id);
-  if (!session.outlets.length) return 'Tiada outlet yang boleh diakses.';
+  if (!session.outlets.length) return 'No outlets available for this account.';
 
   const saved = store.get('bp.outlet');
   const valid = id => id && (session.outlets.some(o => o.id === id) || (session.isOwner && id === ALL_OUTLETS));

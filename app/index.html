@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ms">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061a13">
-<meta name="description" content="BizProfit Pro — sistem pengurusan F&B: kewangan, stok dan pekerja.">
+<meta name="description" content="BizProfit Pro — F&B management system: finance, stock and staff.">
 <title>BizProfit Pro</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%230b2a1f'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%235fe08a' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -17,8 +17,8 @@
 </head>
 <body>
   <!-- Skrin memuat -->
-  <div id="boot" class="boot"><div class="logo-mark big" aria-hidden="true"></div><p id="bootMsg">Memuatkan…</p>
-    <button class="btn primary" id="bootReload" type="button" hidden>Muat semula</button>
+  <div id="boot" class="boot"><div class="logo-mark big" aria-hidden="true"></div><p id="bootMsg">Loading…</p>
+    <button class="btn primary" id="bootReload" type="button" hidden>Reload</button>
     <p id="bootErr" class="boot-err" hidden></p>
   </div>
   <script>
@@ -33,14 +33,14 @@
         if (errs.length) { var e = document.getElementById('bootErr'); e.textContent = errs.slice(-3).join(' | '); e.hidden = false; }
       }
       window.addEventListener('error', function (e) {
-        errs.push((e.message || 'Fail gagal dimuat') + (e.filename ? ' @ ' + e.filename.split('/').slice(-2).join('/') : (e.target && e.target.src ? ' @ ' + e.target.src.split('/').slice(-2).join('/') : '')));
-        show('App gagal dimuat.');
+        errs.push((e.message || 'File failed to load') + (e.filename ? ' @ ' + e.filename.split('/').slice(-2).join('/') : (e.target && e.target.src ? ' @ ' + e.target.src.split('/').slice(-2).join('/') : '')));
+        show('App failed to load.');
       }, true);
       window.addEventListener('unhandledrejection', function (e) {
         errs.push(String(e.reason && e.reason.message || e.reason));
-        show('App gagal dimuat.');
+        show('App failed to load.');
       });
-      setTimeout(function () { show('Lambat sangat. Semak internet, kemudian muat semula.'); }, 12000);
+      setTimeout(function () { show('Taking too long. Check your internet, then reload.'); }, 12000);
       document.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'bootReload') location.reload();
       });
@@ -52,14 +52,14 @@
     <div class="login-inner">
       <div class="brand">
         <div class="logo-mark big" aria-hidden="true"></div>
-        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub">Sistem Pengurusan F&amp;B</p></div>
+        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub">F&amp;B Management System</p></div>
       </div>
       <form id="loginForm" class="card stack" novalidate>
-        <h1>Log masuk</h1>
-        <label class="field">Emel<input id="loginEmail" type="email" autocomplete="username" required></label>
-        <label class="field">Kata laluan<input id="loginPassword" type="password" autocomplete="current-password" required></label>
-        <button class="btn primary block" id="loginBtn">Log masuk</button>
-        <p class="hint">Lupa kata laluan? Minta owner set semula.</p>
+        <h1>Log in</h1>
+        <label class="field">Email<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label class="field">Password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="btn primary block" id="loginBtn">Log in</button>
+        <p class="hint">Forgot password? Ask the owner to reset it.</p>
       </form>
     </div>
   </main>
@@ -69,29 +69,28 @@
     <header class="topbar">
       <div class="brand small">
         <div class="logo-mark" aria-hidden="true"></div>
-        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub" id="businessName">Sistem Pengurusan F&amp;B</p></div>
+        <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub" id="businessName">F&amp;B Management System</p></div>
       </div>
       <div class="top-actions">
-        <button class="icon-btn" id="bellBtn" type="button" aria-label="Notifikasi"><svg><use href="#i-bell"/></svg><span class="dot" id="bellDot" hidden></span></button>
-        <a class="icon-btn" href="#/menu" aria-label="Akaun"><svg><use href="#i-user"/></svg></a>
+        <button class="icon-btn" id="bellBtn" type="button" aria-label="Notifications"><svg><use href="#i-bell"/></svg><span class="dot" id="bellDot" hidden></span></button>
+        <a class="icon-btn" href="#/menu" aria-label="Account"><svg><use href="#i-user"/></svg></a>
       </div>
     </header>
 
     <div class="subbar">
-      <div><p class="greet" id="greet"></p><p class="greet-sub" id="pageTitle"></p></div>
       <label class="outlet-pill" id="outletWrap">
         <svg aria-hidden="true"><use href="#i-store"/></svg>
-        <select id="outletSelect" aria-label="Pilih outlet"></select>
+        <select id="outletSelect" aria-label="Choose outlet"></select>
         <svg class="chev" aria-hidden="true"><use href="#i-chevron"/></svg>
       </label>
     </div>
 
     <main id="view" class="view" tabindex="-1"></main>
 
-    <nav class="tabbar" id="tabbar" aria-label="Menu utama"></nav>
+    <nav class="tabbar" id="tabbar" aria-label="Main menu"></nav>
   </div>
 
-  <div id="offline" class="offline" role="status" hidden>Tiada internet. App masih boleh dibuka, tetapi data tidak boleh dibaca atau disimpan.</div>
+  <div id="offline" class="offline" role="status" hidden>No internet. The app still opens, but data cannot be loaded or saved.</div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <!-- Ikon -->
