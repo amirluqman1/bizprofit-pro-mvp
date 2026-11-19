@@ -1,5 +1,5 @@
 // Navigasi ikut hash (#/utama) supaya butang Back phone berfungsi.
-import { $, icon } from './ui.js';
+import { $, icon, animateIn } from './ui.js';
 import { session } from './session.js';
 import utama from './pages/utama.js';
 import rekod from './pages/rekod.js';
@@ -42,6 +42,7 @@ export async function render() {
   view.innerHTML = '';
   const cleanup = await entry.page.render(view);
   current = { path: entry.path, cleanup };
+  animateIn(view);
   window.scrollTo(0, 0);
 }
 

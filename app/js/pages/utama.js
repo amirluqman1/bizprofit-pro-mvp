@@ -1,6 +1,6 @@
 // Halaman Utama: Profit Bersih, Jualan, Perbelanjaan, Transaksi, pintasan, trend 7 hari.
 // Data dari view daily_summary (owner: semua outlet, manager: outlet sendiri; staff tidak dibenarkan masuk).
-import { $, esc, icon } from '../ui.js';
+import { $, esc, icon, countUp } from '../ui.js';
 import { sb, session, ALL_OUTLETS } from '../session.js';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -12,7 +12,7 @@ const SERIES = {
 
 const fmt2 = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const rm = n => (n < 0 ? '−' : '') + 'RM ' + fmt2.format(Math.abs(n));
-const rmTile = n => `<small>RM</small>${n < 0 ? '−' : ''}${fmt2.format(Math.abs(n))}`;
+const rmTile = n => `<small>RM</small><span data-count="${n}" data-fmt="money">${n < 0 ? '−' : ''}${fmt2.format(Math.abs(n))}</span>`;
 function rmShort(n) {
   const a = Math.abs(n);
   const s = a >= 1000 ? (a / 1000).toFixed(a % 1000 === 0 ? 0 : 1).replace(/\.0$/, '') + 'K' : String(Math.round(a));
@@ -130,7 +130,7 @@ export default {
         ${COINS}
         <div class="hero-body">
           <p class="hero-label">Net Profit <span class="info" title="Sales + other income − operating expenses. Owner money, loans, tax and asset purchases are not included.">i</span></p>
-          <p class="hero-value ${today.profit < 0 ? 'neg' : ''}">${rm(today.profit)}</p>
+          <p class="hero-value ${today.profit < 0 ? 'neg' : ''}" data-count="${today.profit}" data-fmt="rm">${rm(today.profit)}</p>
           <p class="hero-foot">${badge(change(today.profit, yesterday.profit))}</p>
         </div>
         ${sparkline(week.map(x => x.profit))}
@@ -139,7 +139,7 @@ export default {
       <div class="stats3">
         <div class="tile">${icon('cart')}<p class="tile-label">Sales</p><p class="tile-value">${rmTile(today.sales)}</p>${badge(change(today.sales, yesterday.sales))}</div>
         <div class="tile">${icon('layers')}<p class="tile-label">Expenses</p><p class="tile-value">${rmTile(today.out)}</p>${badge(change(today.out, yesterday.out), false)}</div>
-        <div class="tile">${icon('receipt')}<p class="tile-label">Transactions</p><p class="tile-value"><small>Today</small>${today.count}</p>${badge(change(today.count, yesterday.count))}</div>
+        <div class="tile">${icon('receipt')}<p class="tile-label">Transactions</p><p class="tile-value"><small>Today</small><span data-count="${today.count}" data-fmt="int">${today.count}</span></p>${badge(change(today.count, yesterday.count))}</div>
       </div>
 
       <div class="shortcuts">
@@ -159,6 +159,8 @@ export default {
         <div id="trendChart">${trendChart(week, series)}</div>
         ${empty ? '<p class="greet-sub trend-empty">No transactions in the last 7 days. The chart fills in once you key in.</p>' : ''}
       </section>`;
+
+    countUp(view);
 
     $('trendSeries').addEventListener('change', e => {
       series = e.target.value;
