@@ -273,7 +273,7 @@ export default {
         <button class="btn ghost" id="openSmartList" type="button">List</button>
         <button class="btn ghost" id="stokRefresh" type="button" aria-label="Refresh">↻</button>
       </div>
-      <div id="stokItems"><section class="card"><p class="greet-sub">Loading…</p></section></div>
+      <div id="stokItems"><div class="skel"></div></div>
       <p class="greet-sub center">Tap the number to type an exact quantity. Every change is recorded.</p>
       ${dialogsHTML()}
       ${smartListHTML()}`;

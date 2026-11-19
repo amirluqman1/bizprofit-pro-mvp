@@ -81,7 +81,7 @@ export default {
         <a class="seg-opt ${tab === 'sejarah' ? 'on' : ''}" href="#/rekod?t=sejarah" role="tab" aria-selected="${tab === 'sejarah'}">History</a>
         ${session.isAdminUp ? `<a class="seg-opt ${tab === 'log' ? 'on' : ''}" href="#/rekod?t=log" role="tab" aria-selected="${tab === 'log'}">Audit log</a>` : ''}
       </div>
-      <div id="rekodBody"><section class="card"><p class="greet-sub">Loading…</p></section></div>`;
+      <div id="rekodBody"><div class="skel"></div></div>`;
     if (tab === 'sejarah') return renderHistory($('rekodBody'));
     if (tab === 'log') return renderAudit($('rekodBody'));
     return renderKeyIn($('rekodBody'));
