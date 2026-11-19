@@ -25,7 +25,9 @@ export const store = {
 // ---------- Animasi masuk (sekali bila halaman dibuka) ----------
 const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Bekas ini tak dianimasikan sendiri; anak-anaknya yang muncul satu-satu.
-const WRAPPERS = '.stats3, .shortcuts, .list, #stokItems, #pkBody, #rekodBody, #atList, #pyList';
+// Senarai panjang (stok, pekerja) TIDAK dipecah: ia muncul sebagai satu blok
+// supaya phone tak perlu lukis puluhan animasi serentak (punca tersangkut).
+const WRAPPERS = '.stats3, .shortcuts, #pkBody, #rekodBody';
 let revealObs = null;
 
 export function animateIn(root) {
@@ -43,7 +45,7 @@ export function animateIn(root) {
     const shown = entries.filter(e => e.isIntersecting).map(e => e.target);
     shown.forEach((el, i) => {
       revealObs.unobserve(el);
-      el.style.setProperty('--d', Math.min(i * 60, 360) + 'ms');
+      el.style.setProperty('--d', Math.min(i * 50, 250) + 'ms');
       el.classList.add('in');
       el.addEventListener('animationend', () => { el.classList.remove('rv', 'in'); el.style.removeProperty('--d'); }, { once: true });
     });
