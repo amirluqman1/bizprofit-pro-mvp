@@ -88,6 +88,8 @@ begin
 
     -- ===== Padam barang stok -> harga & baris resipi ikut terpadam =====
     perform set_config('request.jwt.claims', json_build_object('sub', o)::text, true);
+    -- log stok tidak ikut terpadam (FK sedia ada), jadi buang log barang ujian dahulu
+    delete from public.inventory_stock_logs where inventory_item_id = itL;
     delete from public.inventory_items where id = itL;
     select (select count(*) from public.ingredient_costs where inventory_item_id = itL)
          + (select count(*) from public.menu_ingredients where inventory_item_id = itL) into n;
