@@ -404,3 +404,51 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 .sl-items { display: flex; flex-direction: column; gap: 12px; }
 .sl-name { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
 .sl-head-btns { display: flex; gap: 8px; }
+
+/* ---------- Loading screen: logo bar naik turun ---------- */
+.boot { gap: 18px; }
+.boot-logo {
+  position: relative; width: 76px; height: 76px; border-radius: 22px; padding: 16px 15px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  background: #0a2a1e; box-shadow: inset 0 0 0 1px var(--line);
+  animation: boot-in .45s cubic-bezier(.16,1,.3,1) both;
+}
+.boot-logo::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  animation: boot-glow 1.6s ease-in-out infinite;
+}
+.boot-logo i {
+  width: 8px; border-radius: 4px; background: var(--mint); transform-origin: bottom;
+  animation: boot-bar 1.1s cubic-bezier(.45,0,.25,1) infinite;
+}
+.boot-logo i:nth-child(1) { height: 32%; }
+.boot-logo i:nth-child(2) { height: 55%; animation-delay: .12s; }
+.boot-logo i:nth-child(3) { height: 78%; animation-delay: .24s; }
+.boot-logo i:nth-child(4) { height: 100%; animation-delay: .36s; background: var(--gold); }
+.boot.stuck .boot-logo i, .boot.stuck .boot-logo::after { animation: none; }
+#bootMsg { margin: 0; color: var(--muted); }
+@keyframes boot-in { from { opacity: 0; transform: scale(.8); } }
+@keyframes boot-bar { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@keyframes boot-glow {
+  0%, 100% { box-shadow: 0 0 0 0 #5fe08a00; }
+  50% { box-shadow: 0 0 0 6px #5fe08a22, 0 0 28px 4px #5fe08a33; }
+}
+.app:not([hidden]) { animation: app-in .35s ease-out both; }
+@keyframes app-in { from { opacity: 0; } }
+
+/* ---------- Kad muncul bila halaman dibuka / scroll ---------- */
+.rv:not(.in) { opacity: 0; }
+.rv.in { animation: rise .6s cubic-bezier(.16,1,.3,1) var(--d, 0ms) backwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+
+/* ---------- Hover & tekan ---------- */
+.btn, .short, .row-btn, .tile, .seg-opt, .tx.editable, .step, .chip, .icon-btn {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease;
+}
+@media (hover: hover) {
+  .short:hover, .row-btn:hover, .tile:hover { transform: translateY(-3px); border-color: #5fe08a55; box-shadow: 0 12px 26px #0007; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.primary:hover { box-shadow: 0 8px 22px #5fe08a40; }
+  .tx.editable:hover { background-color: #ffffff08; }
+}
+.btn:active, .short:active, .row-btn:active, .tile:active, .step:active, .chip:active, .icon-btn:active { transform: scale(.97); }

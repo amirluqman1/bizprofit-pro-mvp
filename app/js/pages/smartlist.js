@@ -17,7 +17,7 @@ const key = () => 'bp:smartlist:' + (session.user?.id || 'anon');
 const loadList = () => { try { list = JSON.parse(store.get(key()) || '[]'); } catch { list = []; } };
 const saveList = () => store.set(key(), JSON.stringify(list));
 const catOptions = () => [...CATEGORIES, OTHER].map(c => `<option>${c}</option>`).join('');
-const unitOptions = () => '<option value="">(tiada unit)</option>' + UNITS.map(u => `<option>${u}</option>`).join('');
+const unitOptions = () => '<option value="">(no unit)</option>' + UNITS.map(u => `<option>${u}</option>`).join('');
 
 function cardHTML(x) {
   return `<div class="item" data-id="${esc(x.id)}">
@@ -30,8 +30,8 @@ function cardHTML(x) {
     <div class="item-bottom">
       <div class="qty">${x.n}<small>${esc(x.unit)}</small></div>
       <div class="steppers">
-        <button class="step minus" type="button" data-step="-1" data-id="${esc(x.id)}" aria-label="Kurang satu ${esc(x.name)}" ${x.n <= 0 ? 'disabled' : ''}>−</button>
-        <button class="step plus" type="button" data-step="1" data-id="${esc(x.id)}" aria-label="Tambah satu ${esc(x.name)}">+</button>
+        <button class="step minus" type="button" data-step="-1" data-id="${esc(x.id)}" aria-label="One less ${esc(x.name)}" ${x.n <= 0 ? 'disabled' : ''}>−</button>
+        <button class="step plus" type="button" data-step="1" data-id="${esc(x.id)}" aria-label="One more ${esc(x.name)}">+</button>
       </div>
     </div>
   </div>`;
@@ -39,7 +39,7 @@ function cardHTML(x) {
 
 function render() {
   $('slItems').innerHTML = list.length ? list.map(cardHTML).join('')
-    : '<div class="empty">List kosong.<br>Tekan <b>+ Tambah</b> untuk masukkan barang.</div>';
+    : '<div class="empty">List is empty.<br>Tap <b>+ Add</b> to add items.</div>';
 }
 
 // Format WhatsApp ikut kategori; kuantiti 0 tak dimasukkan.
@@ -68,12 +68,12 @@ async function copyText(text) {
 // Salin ke clipboard (sandaran) dan terus buka WhatsApp dengan mesej siap ditaip.
 async function copyWhatsApp() {
   const count = list.filter(x => x.n > 0).length;
-  if (!count) { toast('Semua kuantiti 0. Tekan + dulu.'); return; }
+  if (!count) { toast('All quantities are 0. Tap + first.'); return; }
   const text = buildText();
   const copied = await copyText(text);
   list.forEach(x => { x.n = 0; });
   saveList(); render();
-  toast(copied ? `List disalin (${count} barang). Membuka WhatsApp…` : 'Membuka WhatsApp…');
+  toast(copied ? `List copied (${count} items). Opening WhatsApp…` : 'Opening WhatsApp…');
   location.href = 'whatsapp://send?text=' + encodeURIComponent(text);
 }
 
@@ -83,33 +83,33 @@ export function smartListHTML() {
     <div class="sl-head">
       <h2>List</h2>
       <div class="sl-head-btns">
-        <button class="btn ghost" type="button" id="slImport">Ambil dari Stok</button>
-        <button class="btn ghost" type="button" id="slClose">Tutup</button>
+        <button class="btn ghost" type="button" id="slImport">Import from Stock</button>
+        <button class="btn ghost" type="button" id="slClose">Close</button>
       </div>
     </div>
     <div class="sl-tools">
-      <button class="btn primary" id="slCopy" type="button">Copy ke WhatsApp</button>
-      <button class="btn white" id="slOpenAdd" type="button">+ Tambah</button>
+      <button class="btn primary" id="slCopy" type="button">Copy to WhatsApp</button>
+      <button class="btn white" id="slOpenAdd" type="button">+ Add</button>
     </div>
     <div id="slItems" class="sl-items"></div>
-    <p class="greet-sub center">Tekan lama nama barang untuk padam. Kuantiti jadi 0 selepas copy.</p>
+    <p class="greet-sub center">Long-press an item name to delete it. Quantities reset to 0 after copying.</p>
   </dialog>
 
   <dialog id="slAddDialog"><form id="slAddForm" class="stack" novalidate>
-    <h2>Tambah ke list</h2>
-    <label class="field">Nama barang<input id="slName" maxlength="120" placeholder="Contoh: Beras merong 10kg"></label>
+    <h2>Add to list</h2>
+    <label class="field">Item name<input id="slName" maxlength="120" placeholder="e.g. Rice 10kg"></label>
     <div class="two">
-      <label class="field">Kategori<select id="slCat">${catOptions()}</select></label>
+      <label class="field">Category<select id="slCat">${catOptions()}</select></label>
       <label class="field">Unit<select id="slUnit">${unitOptions()}</select></label>
     </div>
-    <div class="dialog-actions"><button class="btn ghost" type="button" id="slAddCancel">Batal</button><button class="btn primary">Simpan</button></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" id="slAddCancel">Cancel</button><button class="btn primary">Save</button></div>
   </form></dialog>`;
 }
 
 // Salin nama, kategori dan unit dari Smart Inventori (kuantiti mula 0).
 // Barang yang namanya dah ada dalam List dilangkau.
 function importFromStock(stock) {
-  if (!stock.length) { toast('Tiada barang dalam stok untuk diambil.'); return; }
+  if (!stock.length) { toast('No stock items to import.'); return; }
   const have = new Set(list.map(x => x.name.toLowerCase()));
   let added = 0;
   stock.forEach((s, i) => {
@@ -121,7 +121,7 @@ function importFromStock(stock) {
     added++;
   });
   saveList(); render();
-  toast(added ? `${added} barang diambil dari Stok.` : 'Semua barang stok dah ada dalam List.');
+  toast(added ? `${added} items imported from Stock.` : 'All stock items are already in the List.');
 }
 
 export function bindSmartList(getStock = () => []) {
@@ -140,8 +140,8 @@ export function bindSmartList(getStock = () => []) {
   $('slAddForm').addEventListener('submit', e => {
     e.preventDefault();
     const name = $('slName').value.trim();
-    if (!name) { toast('Isi nama barang.', 'error'); return; }
-    if (list.some(x => x.name.toLowerCase() === name.toLowerCase())) { toast('Barang ni dah ada dalam list.', 'error'); return; }
+    if (!name) { toast('Enter an item name.', 'error'); return; }
+    if (list.some(x => x.name.toLowerCase() === name.toLowerCase())) { toast('This item is already in the list.', 'error'); return; }
     list.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, cat: $('slCat').value, unit: $('slUnit').value, n: 0 });
     saveList(); render();
     $('slAddDialog').close();
@@ -166,10 +166,10 @@ export function bindSmartList(getStock = () => []) {
     holdTimer = setTimeout(() => {
       holdTimer = null;
       const x = list.find(i => i.id === hold.dataset.hold);
-      if (x && confirm(`Padam "${x.name}" dari list?`)) {
+      if (x && confirm(`Delete "${x.name}" from the list?`)) {
         list = list.filter(i => i !== x);
         saveList(); render();
-        toast('Barang dipadam dari list.');
+        toast('Item deleted from the list.');
       }
     }, LONG_PRESS);
   });

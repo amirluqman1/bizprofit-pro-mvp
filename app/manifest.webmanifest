@@ -1,8 +1,8 @@
 {
   "name": "BizProfit Pro",
   "short_name": "BizProfit",
-  "description": "Sistem pengurusan F&B: kewangan, stok dan pekerja.",
-  "lang": "ms",
+  "description": "F&B management system: finance, stock and staff.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
