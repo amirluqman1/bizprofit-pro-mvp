@@ -437,6 +437,7 @@ dialog h2 { margin: 0 0 4px; font-size: 19px; }
 @keyframes app-in { from { opacity: 0; } }
 
 /* ---------- Kad muncul bila halaman dibuka / scroll ---------- */
+.view.pending { opacity: 0; }
 .rv:not(.in) { opacity: 0; }
 .rv.in { animation: rise .45s cubic-bezier(.16,1,.3,1) var(--d, 0ms) backwards; will-change: transform, opacity; }
 @keyframes rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } }

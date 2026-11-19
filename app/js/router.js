@@ -40,9 +40,17 @@ export async function render() {
   });
   const view = $('view');
   view.innerHTML = '';
+  // Sembunyi halaman sampai data siap, kemudian muncul SEKALI dengan animasi.
+  // Jika lambat (> 0.4 s), tunjuk skeleton dahulu dan langkau animasi
+  // supaya kandungan tak berkelip (muncul → hilang → muncul).
+  view.classList.add('pending');
+  let slow = false;
+  const timer = setTimeout(() => { slow = true; view.classList.remove('pending'); }, 400);
   const cleanup = await entry.page.render(view);
+  clearTimeout(timer);
+  view.classList.remove('pending');
   current = { path: entry.path, cleanup };
-  animateIn(view);
+  if (!slow) animateIn(view);
   window.scrollTo(0, 0);
 }
 

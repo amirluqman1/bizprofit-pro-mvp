@@ -55,7 +55,7 @@ export default {
     view.innerHTML = `
       <div class="seg tabs" role="tablist">${Object.entries(tabs).map(([k, v]) =>
         `<a class="seg-opt ${state.tab === k ? 'on' : ''}" href="#/pekerja?t=${k}" role="tab" aria-selected="${state.tab === k}">${v}</a>`).join('')}</div>
-      <div id="pkBody"><section class="card"><p class="greet-sub">Loading…</p></section></div>
+      <div id="pkBody"><div class="skel"></div></div>
       ${dialogsHTML()}`;
     bindDialogs(view);
     try { await loadEmployees(); }
@@ -370,7 +370,7 @@ async function renderPayroll() {
     </section>
     <details class="card adv-box" id="pyAdvances"></details>
     <button class="btn ghost block" id="pyAdvanceBtn" type="button">+ Give advance (early pay)</button>
-    <div id="pyList" class="list"><section class="card"><p class="greet-sub">Calculating…</p></section></div>
+    <div id="pyList" class="list"><div class="skel"></div></div>
     <p class="note-line small">${icon('lock')}Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full; deduct absences manually under "Deduction". Paid payslips are locked.</p>`;
 
   $('pyAdvanceBtn').onclick = () => openAdvance(null);
