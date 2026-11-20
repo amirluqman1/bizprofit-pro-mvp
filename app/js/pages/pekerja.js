@@ -1,7 +1,7 @@
 // Pekerja: Kehadiran harian, senarai pekerja, payroll ringkas.
 // Owner: semua pekerja. Manager: pekerja outlet sendiri yang bukan peringkat pengurus.
 // Semua sekatan ini dikuatkuasa di database; UI hanya menyusun paparan.
-import { $, esc, icon, toast } from '../ui.js';
+import { $, esc, icon, toast, loadJsPdf, pdfText } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName, outletCompany } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, dateRange, dateLong } from '../format.js';
 
@@ -242,21 +242,6 @@ function slipData(r) {
   };
 }
 
-// jsPDF dimuat hanya bila diperlukan (tidak melambatkan app).
-const JSPDF_URL = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-function loadJsPdf() {
-  if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
-  return new Promise((resolve, reject) => {
-    const sc = document.createElement('script');
-    sc.src = JSPDF_URL;
-    sc.onload = () => (window.jspdf?.jsPDF ? resolve(window.jspdf.jsPDF) : reject(new Error('jsPDF')));
-    sc.onerror = () => reject(new Error('jsPDF'));
-    document.head.append(sc);
-  });
-}
-
-// Fon asas PDF tiada simbol tolak (−); guna "-" biasa.
-const pdfText = t => String(t).replace(/−/g, '-').replace(/—/g, '-');
 
 function drawSlip(doc, d) {
   const W = 148, M = 12, R = W - M;

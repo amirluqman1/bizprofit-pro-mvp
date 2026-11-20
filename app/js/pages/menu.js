@@ -21,7 +21,7 @@ export default {
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : 'Not set')}</small></span>${icon('chev-right')}</button>`).join('')}
       </div>` : ''}
 
-      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/foodcost">${icon('cart')}<span>Food Cost<small>Cost per plate, menu margins and food cost %</small></span>${icon('chev-right')}</a></div>` : ''}
+      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>Profit &amp; Loss statement<small>Yearly statement per business, laid out like LHDN Form B</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>Food Cost<small>Cost per plate, menu margins and food cost %</small></span>${icon('chev-right')}</a></div>` : ''}
 
       <div class="list">
         ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>Install app<small>Add BizProfit Pro to your phone home screen</small></span></button>`}

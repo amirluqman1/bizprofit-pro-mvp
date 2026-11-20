@@ -146,7 +146,7 @@ export default {
 
       <nav class="quick" aria-label="Shortcuts">
         <a href="#/laporan">${icon('chart')}Full report</a>
-        ${session.isAdminUp ? `<a href="#/foodcost">${icon('cart')}Food Cost</a>` : ''}
+        ${session.isAdminUp ? `<a href="#/pnl">${icon('receipt')}Profit &amp; Loss (Form B)</a><a href="#/foodcost">${icon('cart')}Food Cost</a>` : ''}
         <a href="#/rekod?t=sejarah">${icon('history')}Transaction history</a>
       </nav>`;
 

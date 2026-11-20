@@ -153,6 +153,7 @@ export default {
           <button type="button" id="repNext" aria-label="Next period">›</button>
         </div>
         <button class="share-btn" type="button" id="repShare">${icon('link')}Share summary</button>
+        ${session.isAdminUp ? `<a class="share-btn" href="#/pnl">${icon('receipt')}P&amp;L (Form B)</a>` : ''}
       </div>
       <div id="repBody" class="stack"><p class="loading-line">Loading…</p></div>`;
 
