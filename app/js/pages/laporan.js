@@ -76,7 +76,7 @@ const fetchSummary = (from, to) => fetchAll(() => forOutlet(sb.from('daily_summa
   .select('transaction_date,outlet_id,money_in,money_out,profit,bil_transaksi,sales')
   .gte('transaction_date', from).lte('transaction_date', to).order('transaction_date').order('outlet_id')));
 const fetchTx = (from, to) => fetchAll(() => forOutlet(sb.from('transactions')
-  .select('id,type,category,amount,payment_method')
+  .select('id,transaction_date,type,category,amount,payment_method,description')
   .gte('transaction_date', from).lte('transaction_date', to).order('id')));
 
 async function loadCategories() {
@@ -129,6 +129,48 @@ function breakdownHTML(items, total, empty) {
   if (rest) top.push(['Others', rest]);
   return `<div class="stackbar" aria-hidden="true">${top.map(([, v], i) => `<i style="width:${(v / total * 100).toFixed(2)}%;background:var(--c${i + 1})"></i>`).join('')}</div>
     <ul class="rows brk">${top.map(([n, v], i) => `<li><span class="dot" style="background:var(--c${i + 1})"></span><div class="t">${esc(n)}</div><span class="amt">${rmSen(v)}</span><span class="pct">${(v / total * 100).toFixed(1)}%</span></li>`).join('')}</ul>`;
+}
+
+// Ringkasan jualan harian ikut syif (format WhatsApp kedai), contoh:
+//   15/11/2026 (AHAD)
+//   SALE SIANG RM820.90
+//   • QR RM628.90
+//   • CASH RM182
+//   ...
+//   TOTAL SALE RM1992.80
+// Hanya untuk SATU outlet yang staffnya tulis "pagi"/"siang"/"malam" dalam keterangan jualan.
+// Selain itu pulangkan null (guna ringkasan biasa).
+const HARI = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
+const PAY_LABEL = { 'DuitNow QR': 'QR', Cash: 'CASH', Card: 'CARD', 'E-wallet': 'E-WALLET', 'Bank Transfer': 'TRANSFER', Other: 'LAIN' };
+const PAY_ORDER = ['QR', 'CASH'];
+const shiftOf = d => { const t = (d || '').toLowerCase(); return /\bmalam\b/.test(t) ? 'MALAM' : /\b(pagi|siang)\b/.test(t) ? 'SIANG' : null; };
+const waRm = c => 'RM' + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2));   // ikut gaya kedai: tiada koma, buang .00
+function shiftSalesText(saleRows, from, upTo) {
+  if (session.outletId === ALL_OUTLETS || !saleRows.some(r => shiftOf(r.description))) return null;
+  const lines = [`*${outletName().toUpperCase()}*`];
+  let grand = 0, days = 0;
+  for (let d = from; d <= upTo; d = addDays(d, 1)) {
+    const [y, m, dd] = d.split('-');
+    lines.push(`${dd}/${m}/${y} (${HARI[new Date(d + 'T00:00:00Z').getUTCDay()]})`);
+    const dayRows = saleRows.filter(r => r.transaction_date === d);
+    if (!dayRows.length) { lines.push('TIADA JUALAN DIREKOD', '----------------------'); continue; }
+    let dayTotal = 0;
+    for (const shift of ['SIANG', 'MALAM', null]) {
+      const rs = dayRows.filter(r => shiftOf(r.description) === shift);
+      if (!rs.length) continue;
+      const byPay = new Map();
+      rs.forEach(r => { const k = PAY_LABEL[r.payment_method] || (r.payment_method || 'LAIN').toUpperCase(); byPay.set(k, (byPay.get(k) || 0) + Math.round(Number(r.amount) * 100)); });
+      const sum = [...byPay.values()].reduce((a, b) => a + b, 0);
+      dayTotal += sum;
+      lines.push(`SALE ${shift || 'LAIN'} ${waRm(sum)}`);
+      [...byPay].sort((a, b) => (PAY_ORDER.indexOf(a[0]) + 1 || 9) - (PAY_ORDER.indexOf(b[0]) + 1 || 9))
+        .forEach(([k, v]) => lines.push(`• ${k} ${waRm(v)}`));
+    }
+    lines.push(`TOTAL SALE ${waRm(dayTotal)}`, '----------------------');
+    grand += dayTotal; days++;
+  }
+  if (from !== upTo) lines.push(`JUMLAH SALE (${days} hari) ${waRm(grand)}`);
+  return lines.join('\n');
 }
 
 const groupSum = (rows, keyFn) => {
@@ -307,7 +349,7 @@ export default {
           </section>
         </div>`;
 
-      shareText = [
+      shareText = shiftSalesText(saleRows, from, upTo) || [
         `${session.business?.name || 'BizProfit Pro'} · ${PERIODS[state.period]} report`,
         `${dateRange(from, to)} (${scope})`,
         `Sales: ${rmSen(t.sales)}`,
