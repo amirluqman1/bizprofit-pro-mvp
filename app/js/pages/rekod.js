@@ -37,11 +37,14 @@ function defaultOutlet() {
 }
 
 function keyInHTML() {
-  const outletPicker = session.isOwner && session.outlets.length > 1
-    ? `<label class="field">Outlet<select id="kiOutlet">${session.outlets.map(o =>
-        `<option value="${esc(o.id)}" ${o.id === defaultOutlet() ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>`
-    : `<p class="note-line">${icon('store')}For <b>${esc(outletName(defaultOutlet()))}</b></p>`;
+  // Tarikh & outlet dahulu: kebanyakan orang set "bila & di mana" sebelum isi amaun.
+  const date = '<label class="field">Date<input id="kiDate" type="date"></label>';
+  const top = session.isOwner && session.outlets.length > 1
+    ? `<div class="two ki-top">${date}<label class="field">Outlet<select id="kiOutlet">${session.outlets.map(o =>
+        `<option value="${esc(o.id)}" ${o.id === defaultOutlet() ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label></div>`
+    : `${date}<p class="note-line">${icon('store')}For <b>${esc(outletName(defaultOutlet()))}</b></p>`;
   return `<form id="kiForm" class="card stack" novalidate>
+    ${top}
     <div class="seg" role="radiogroup" aria-label="Transaction type">
       <label class="seg-opt in"><input type="radio" name="kiType" value="In" checked>${icon('plus-box')}Money in</label>
       <label class="seg-opt out"><input type="radio" name="kiType" value="Out">${icon('layers')}Money out</label>
@@ -51,11 +54,7 @@ function keyInHTML() {
     <label class="field">Category<select id="kiCategory"></select></label>
     <fieldset class="field plain"><legend>Payment method</legend><div class="chips" id="kiPay"></div></fieldset>
     <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales"></label>
-    <div class="two">
-      <label class="field">Date<input id="kiDate" type="date"></label>
-      <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
-    </div>
-    ${outletPicker}
+    <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
     <button class="btn primary block" id="kiSave">Save transaction</button>
   </form>`;
 }
