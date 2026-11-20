@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Konsep reka bentuk sahaja (data contoh). Bukan sebahagian app; app sebenar di app/. -->
+<title>BizProfit Emerald Concept</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sidebar (desktop) / bottom tabs (phone). Home = today at a glance; Report = full analysis. Mint = profit only, gold = brand */
+:root{
+  --bg:#070D0A; --panel:#0C1410; --raise:#131D18; --line:#1A2620; --line-2:#24342C;
+  --fg:#F1F8F3; --muted:#8FA89A; --faint:#5A6E63;
+  --accent:#E9C46A; --accent-soft:rgba(233,196,106,.14);
+  --good:#5FE08A; --good-soft:rgba(95,224,138,.12); --on-good:#05170D;
+  --bad:#FF7A6B; --bad-soft:rgba(255,122,107,.13);
+  --warn:#F7C56B; --warn-soft:rgba(247,197,107,.13);
+  --bar-exp:#1F2B25; --bar-out:#5A6E63; --glow:rgba(47,138,99,.20); --logo-bg:#0D3326;
+  --c1:#5FE08A; --c2:#3FA66B; --c3:#2A7A50; --c4:#E9C46A; --c5:#8FA89A; --c6:#46564D;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#F7FAF8; --panel:#FFFFFF; --raise:#EEF3F0; --line:#E2EAE5; --line-2:#CFDAD3;
+  --fg:#0F1F17; --muted:#5B6F64; --faint:#8A9B91;
+  --accent:#B7861F; --accent-soft:#F7EFD9;
+  --good:#13804A; --good-soft:#E3F4EA; --on-good:#FFFFFF; --bad:#C2412F; --bad-soft:#FCECE9; --warn:#A35F00; --warn-soft:#FFF3DF;
+  --bar-exp:#DFE7E2; --bar-out:#AEBDB4; --glow:rgba(19,128,74,.07); --logo-bg:#0D3326;
+  --c1:#13804A; --c2:#3E9E6A; --c3:#7CC09A; --c4:#C9962A; --c5:#8A9B91; --c6:#C9D3CD; color-scheme:light; } }
+:root[data-theme="light"]{
+  --bg:#F7FAF8; --panel:#FFFFFF; --raise:#EEF3F0; --line:#E2EAE5; --line-2:#CFDAD3;
+  --fg:#0F1F17; --muted:#5B6F64; --faint:#8A9B91;
+  --accent:#B7861F; --accent-soft:#F7EFD9;
+  --good:#13804A; --good-soft:#E3F4EA; --on-good:#FFFFFF; --bad:#C2412F; --bad-soft:#FCECE9; --warn:#A35F00; --warn-soft:#FFF3DF;
+  --bar-exp:#DFE7E2; --bar-out:#AEBDB4; --glow:rgba(19,128,74,.07); --logo-bg:#0D3326;
+  --c1:#13804A; --c2:#3E9E6A; --c3:#7CC09A; --c4:#C9962A; --c5:#8A9B91; --c6:#C9D3CD; color-scheme:light; }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:radial-gradient(1100px 460px at 75% -160px,var(--glow),transparent 70%) no-repeat,var(--bg);color:var(--fg);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.side{border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px;font-weight:600;letter-spacing:-.2px}
+.logo{width:24px;height:24px;border-radius:7px;background:var(--logo-bg);display:grid;place-items:center}
+.logo svg{width:16px;height:16px}
+.outlet{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);width:100%;text-align:left}
+.outlet small{display:block;color:var(--muted);font-size:11px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--muted);font-weight:500}
+.nav a:hover{background:var(--raise);color:var(--fg)}
+.nav a[aria-current="page"]{background:var(--raise);color:var(--fg)}
+.nav a[aria-current="page"] svg{color:var(--accent)}
+.nav svg{width:16px;height:16px;flex:none}
+.side-foot{margin-top:auto;font-size:12px;color:var(--faint);padding:0 10px}
+
+main{padding-block:28px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.page-title{margin:0;font-size:22px;font-weight:600;letter-spacing:-.4px;line-height:1.2}
+.crumb{color:var(--muted);font-size:13px}
+.chip-note{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);border-radius:999px;padding:3px 10px}
+.actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-weight:500;font-size:13px;border:1px solid var(--line-2);background:var(--panel)}
+.btn:hover{background:var(--raise)}
+.btn svg{width:14px;height:14px}
+
+.seg{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--panel);width:max-content;max-width:100%;overflow-x:auto}
+.seg button{border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:7px;font-size:13px;font-weight:500;white-space:nowrap}
+.seg button[aria-selected="true"]{background:var(--raise);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line-2)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.kpi{padding:18px 20px;display:flex;flex-direction:column;gap:6px;border-left:1px solid var(--line);min-width:0}
+.kpi:first-child{border-left:0}
+.kpi .lbl{color:var(--muted);font-size:12px}
+.kpi .val{font-size:24px;line-height:1.25;font-weight:500;letter-spacing:-.5px}
+.kpi .val small{font-size:13px;color:var(--muted);margin-right:3px;font-weight:400}
+.kpi-main .val{font-size:32px;color:var(--good);letter-spacing:-1px}
+.kpi-main .row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.spark{width:120px;height:40px;flex:none}
+.spark-cap{font-size:10.5px;color:var(--faint);text-align:right}
+.delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:999px;width:max-content;max-width:100%}
+.up{color:var(--good);background:var(--good-soft)}
+.down{color:var(--bad);background:var(--bad-soft)}
+.neutral{color:var(--muted);background:var(--raise)}
+
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--panel);min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:16px 18px 0;flex-wrap:wrap}
+.ph h2{margin:0;font-size:14px;font-weight:500}
+.ph .sub{color:var(--muted);font-size:12px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.chart{padding:8px 10px 12px}
+.chart svg{width:100%;height:auto;display:block}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.rows{list-style:none;margin:0;padding:6px 0}
+.rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 18px;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0}
+.rows .t{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rows .m{color:var(--muted);font-size:12px}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.amt.in{color:var(--good)}
+.pill{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.crit{color:var(--bad);background:var(--bad-soft)}
+.pill.warn{color:var(--warn);background:var(--warn-soft)}
+.panel-foot{padding:10px 18px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.panel-foot a{color:var(--fg);font-weight:500}
+
+/* Utama */
+.u-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.alert-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none}
+.alert-ic svg{width:15px;height:15px}
+.alert-ic.crit{background:var(--bad-soft);color:var(--bad)}
+.alert-ic.warn{background:var(--warn-soft);color:var(--warn)}
+.alerts li{grid-template-columns:auto minmax(0,1fr) auto}
+.alerts .t{white-space:normal}
+.more-link{display:flex;justify-content:flex-end}
+.more-link a{font-size:13px;color:var(--muted);font-weight:500}
+.more-link a:hover{color:var(--fg)}
+
+/* Laporan */
+.rep-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.datenav{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:3px}
+.datenav span{padding:0 10px;font-weight:500;font-size:13px;min-width:120px;text-align:center}
+.datenav button{border:0;background:transparent;width:30px;height:30px;border-radius:7px;font-size:16px;color:var(--muted)}
+.datenav button:hover:not(:disabled){background:var(--raise);color:var(--fg)}
+.datenav button:disabled{opacity:.35;cursor:default}
+.rep-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:16px;align-items:start}
+.rep-grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.stmt{padding:10px 18px 6px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line-2);align-items:baseline}
+.kv span{color:var(--muted)}
+.kv b{font-weight:500;text-align:right}
+.kv b.neg{color:var(--bad)}
+.kv em{font-style:normal;font-family:var(--mono);font-size:10.5px;margin-left:8px}
+.kv.total{border-bottom:0;padding-top:14px}
+.kv.total span{color:var(--fg);font-weight:500}
+.kv.total b{font-size:28px;letter-spacing:-.8px;color:var(--good)}
+.stmt-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);padding:2px 0 12px}
+.note{display:flex;gap:8px;align-items:flex-start;margin:0;padding:12px 18px 14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.note svg{width:14px;height:14px;flex:none;margin-top:2px}
+.detail{margin:0 18px 16px;padding:10px 12px;border-radius:8px;background:var(--raise);font-size:12.5px;display:flex;flex-wrap:wrap;gap:4px 16px}
+.detail b{font-weight:500}
+.bar-g{cursor:pointer;outline:none}
+.bar-g:focus-visible .hit{stroke:var(--accent);stroke-width:1.5}
+.insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.ins{padding:14px 18px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}
+.ins:first-child{border-left:0}
+.ins .lbl{font-size:12px;color:var(--muted)}
+.ins .v{font-size:18px;font-weight:500;letter-spacing:-.3px}
+.ins .s{font-size:12px;color:var(--muted)}
+.stackbar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:14px 18px 6px;gap:2px}
+.stackbar i{display:block;height:100%}
+.brk li{grid-template-columns:auto minmax(0,1fr) auto auto}
+.dot{width:9px;height:9px;border-radius:3px}
+.pct{font-family:var(--mono);font-size:11.5px;color:var(--muted);min-width:44px;text-align:right}
+.tbl-wrap{overflow-x:auto;padding:6px 0 4px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+th,td{padding:10px 18px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:12px;border-top:0}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--sans);font-weight:500}
+td.p{color:var(--good)}
+tfoot td{font-weight:500;border-top:1px solid var(--line-2)}
+.best{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:1px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;z-index:20}
+
+.tabbar{display:none}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .u-grid,.rep-grid,.rep-grid-2{grid-template-columns:minmax(0,1fr)}
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kpi-main{grid-column:1/-1}
+  .kpi:nth-child(2){border-left:0}
+  .kpi:nth-child(n+2){border-top:1px solid var(--line)}
+  .kpi .delta{font-size:10px;padding:2px 6px;white-space:normal}
+  .insights{grid-template-columns:minmax(0,1fr)}
+  .ins{border-left:0;border-top:1px solid var(--line)}
+  .ins:first-child{border-top:0}
+  .rep-controls .seg,.datenav{width:100%}
+  .datenav{justify-content:space-between}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:10;
+    background:var(--panel);border-top:1px solid var(--line);
+    padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);padding:6px 0}
+  .tabbar a[aria-current="page"]{color:var(--fg)}
+  .tabbar a[aria-current="page"] svg{color:var(--accent)}
+  .tabbar svg{width:20px;height:20px}
+}
+@media (max-width:420px){ .kpi{padding:12px 14px} .kpi .val{font-size:18px} .kpi .val small{font-size:11px} .kpi-main .val{font-size:34px} .spark{width:96px} }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side" aria-label="Navigation">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 16 16" aria-hidden="true"><g stroke-linecap="round" stroke-width="2"><path d="M3 13v-2" stroke="#5FE08A"/><path d="M6.3 13V9" stroke="#5FE08A"/><path d="M9.7 13V6.5" stroke="#5FE08A"/><path d="M13 13V3.5" stroke="#E9C46A"/></g></svg></span>
+      BizProfit Pro
+    </div>
+    <button class="outlet" type="button" id="outlet-switch">
+      <span><small>Outlet</small>All outlets (3)</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <nav class="nav" id="side-nav"></nav>
+    <div class="side-foot">Owner · Kedai Makan Pak Long</div>
+  </aside>
+
+  <main>
+    <!-- ============ HOME ============ -->
+    <div class="wrap" id="v-home">
+      <div class="top">
+        <div><h1 class="page-title">Home</h1><div class="crumb">Today · Sun, 15 Nov 2026 · All outlets</div></div>
+        <div class="actions"><span class="chip-note">Sample data</span></div>
+      </div>
+
+      <section class="kpis" aria-label="Today at a glance">
+        <div class="kpi kpi-main">
+          <span class="lbl">Net profit today</span>
+          <div class="row">
+            <span class="val num"><small>RM</small>1,284</span>
+            <div><svg class="spark" id="spark" viewBox="0 0 120 40" aria-label="7-day profit trend"></svg><div class="spark-cap">7 days</div></div>
+          </div>
+          <span class="delta up">▲ 12.0% vs yesterday</span>
+        </div>
+        <div class="kpi"><span class="lbl">Sales</span><span class="val num"><small>RM</small>4,680</span><span class="delta up">▲ 11.2%</span></div>
+        <div class="kpi"><span class="lbl">Expenses</span><span class="val num"><small>RM</small>3,396</span><span class="delta down">▲ 10.8%</span></div>
+        <div class="kpi"><span class="lbl">Transactions</span><span class="val num">186</span><span class="delta neutral">+15</span></div>
+      </section>
+
+      <div class="u-grid">
+        <section class="panel">
+          <div class="ph"><h2>Needs attention</h2><span class="sub">4 items</span></div>
+          <ul class="rows alerts" id="alerts"></ul>
+          <div class="panel-foot"><span>Shopping list ready</span><a href="#" id="wa-link">Send to WhatsApp →</a></div>
+        </section>
+
+        <section class="panel">
+          <div class="ph"><h2>Recent transactions</h2><span class="sub">All outlets</span></div>
+          <ul class="rows" id="txns"></ul>
+          <div class="panel-foot"><span>5 of 186 today</span><a href="#records">View all →</a></div>
+        </section>
+      </div>
+
+      <div class="more-link"><a href="#report">Charts, outlets &amp; full analysis in Report →</a></div>
+    </div>
+
+    <!-- ============ REPORT ============ -->
+    <div class="wrap" id="v-report" hidden>
+      <div class="top">
+        <div><h1 class="page-title">Report</h1><div class="crumb">1 – 15 Nov 2026 · All outlets</div></div>
+        <div class="actions">
+          <span class="chip-note">Sample data</span>
+          <button class="btn" type="button" id="share-btn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Share summary</button>
+        </div>
+      </div>
+
+      <div class="rep-controls">
+        <div class="seg" role="tablist" aria-label="Report period">
+          <button type="button" role="tab" aria-selected="false">Daily</button>
+          <button type="button" role="tab" aria-selected="false">Weekly</button>
+          <button type="button" role="tab" aria-selected="true">Monthly</button>
+          <button type="button" role="tab" aria-selected="false">Yearly</button>
+        </div>
+        <div class="datenav">
+          <button type="button" aria-label="Previous month">‹</button>
+          <span>November 2026</span>
+          <button type="button" aria-label="Next month" disabled>›</button>
+        </div>
+      </div>
+
+      <section class="insights" aria-label="Highlights">
+        <div class="ins"><span class="lbl">vs 1–15 Oct</span><span class="v" style="color:var(--good)">▲ 19.6% profit</span><span class="s">RM 16,150 vs RM 13,500</span></div>
+        <div class="ins"><span class="lbl">Average daily profit</span><span class="v num">RM 1,076.67</span><span class="s">Over 15 days so far</span></div>
+        <div class="ins"><span class="lbl">Best day</span><span class="v">Sat, 7 Nov</span><span class="s">Profit RM 1,512.00 · Seksyen 7 led sales</span></div>
+      </section>
+
+      <div class="rep-grid">
+        <section class="panel">
+          <div class="ph"><h2>Profit summary</h2><span class="sub">vs 1–15 Oct</span></div>
+          <div class="stmt">
+            <div class="kv"><span>Sales</span><b class="num">RM 51,900.00<em class="up delta">▲ 10.0%</em></b></div>
+            <div class="kv"><span>Other income</span><b class="num">RM 500.00<em class="neutral delta">+100</em></b></div>
+            <div class="kv"><span>Expenses</span><b class="num neg">− RM 36,250.00<em class="down delta">▲ 6.3%</em></b></div>
+            <div class="kv total"><span>Profit</span><b class="num">RM 16,150.00</b></div>
+            <div class="stmt-meta mono"><span>2,604 transactions (▲ 7.8%)</span><span>Margin 31.1%</span><span>Food cost 31.8%</span></div>
+          </div>
+          <p class="note"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Owner money, loans, tax and asset purchases are not counted in profit.</p>
+        </section>
+
+        <section class="panel">
+          <div class="ph">
+            <div><h2>Money in &amp; out</h2><div class="sub">By week · tap a bar for details</div></div>
+            <div class="legend"><span><i style="background:var(--good)"></i>In</span><span><i style="background:var(--bar-out)"></i>Out</span></div>
+          </div>
+          <div class="chart" id="rep-chart"></div>
+          <div class="detail" id="rep-detail" role="status"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="ph"><h2>Outlet performance</h2><span class="sub">Best margin tagged</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Outlet</th><th>Sales</th><th>Expenses</th><th>Profit</th><th>Margin</th></tr></thead>
+            <tbody id="outlet-tbl"></tbody>
+            <tfoot><tr><td>Total</td><td>51,900.00</td><td>36,250.00</td><td class="p">16,150.00</td><td>31.1%</td></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="rep-grid-2">
+        <section class="panel">
+          <div class="ph"><h2>Expenses by category</h2><span class="sub">RM 36,250.00</span></div>
+          <div class="stackbar" id="exp-bar" aria-hidden="true"></div>
+          <ul class="rows brk" id="exp-list"></ul>
+        </section>
+        <section class="panel">
+          <div class="ph"><h2>Sales by payment method</h2><span class="sub">RM 51,900.00</span></div>
+          <div class="stackbar" id="pay-bar" aria-hidden="true"></div>
+          <ul class="rows brk" id="pay-list"></ul>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav class="tabbar" id="tab-nav" aria-label="Navigation"></nav>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const icons={
+  home:'<path d="M3 10.5 10 4l7 6.5V17H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  records:'<rect x="4" y="3" width="12" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 7h6M7 10h6M7 13h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  stock:'<path d="M3 6.5 10 3l7 3.5v7L10 17l-7-3.5z M3 6.5 10 10l7-3.5 M10 10v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  report:'<path d="M4 16V9M10 16V4M16 16v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  staff:'<circle cx="10" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 17c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+};
+const navItems=[['home','Home'],['records','Records'],['stock','Stock'],['report','Report'],['staff','Staff']];
+const navHTML=navItems.map(([k,l])=>`<a href="#${k}" data-k="${k}"><svg viewBox="0 0 20 20" aria-hidden="true">${icons[k]}</svg>${l}</a>`).join('');
+document.getElementById('side-nav').innerHTML=navHTML;
+document.getElementById('tab-nav').innerHTML=navHTML;
+
+const views={home:'v-home',report:'v-report'};
+function route(){
+  let k=(location.hash||'#home').slice(1); if(!views[k]) k='home';
+  for(const [n,id] of Object.entries(views)) document.getElementById(id).hidden=n!==k;
+  document.querySelectorAll('[data-k]').forEach(a=>a.dataset.k===k?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href^="#"]'); if(!a) return;
+  const k=a.getAttribute('href').slice(1);
+  if(!views[k]){ e.preventDefault(); toast('This page is not in the sample'); }
+});
+window.addEventListener('hashchange',()=>{route();window.scrollTo(0,0)}); route();
+
+let tt;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
+const rm=n=>n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------- Utama ---------- */
+(function(){
+  const p=[1070,990,1100,910,1210,1146,1284], W=120,H=40,pad=4, mn=800,mx=1350;
+  const x=i=>pad+i*(W-2*pad)/(p.length-1), y=v=>H-pad-(v-mn)/(mx-mn)*(H-2*pad);
+  const line=p.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  document.getElementById('spark').innerHTML=
+    `<path d="${line} L${x(6)} ${H} L${x(0)} ${H} Z" fill="var(--good-soft)"/>`+
+    `<path d="${line}" fill="none" stroke="var(--good)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`+
+    `<circle cx="${x(6)}" cy="${y(p[6])}" r="3" fill="var(--good)"/><title>7-day profit: ${p.map(v=>'RM '+v).join(', ')}</title>`;
+})();
+
+const ic={
+  box:'<svg viewBox="0 0 16 16"><path d="M2.5 5 8 2.5 13.5 5v6L8 13.5 2.5 11z M2.5 5 8 7.5 13.5 5 M8 7.5v6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  pct:'<svg viewBox="0 0 16 16"><path d="M12 4 4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="5" cy="5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="11" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
+};
+const alerts=[
+  ['crit','box','Ayam','Almost out · 2.5 kg left, minimum 10 kg','Critical'],
+  ['crit','box','Minyak masak','Almost out · 1 tin left, minimum 3 tin','Critical'],
+  ['warn','pct','Food cost at Bangi: 36.2%','Above the 35% target this week','Review'],
+  ['warn','box','Beras','Running low · 8 kg left, minimum 20 kg','Low']
+];
+document.getElementById('alerts').innerHTML=alerts.map(([c,i,t,m,l])=>`<li><span class="alert-ic ${c}" aria-hidden="true">${ic[i]}</span><div style="min-width:0"><div class="t">${t}</div><div class="m">${m}</div></div><span class="pill ${c}">${l}</span></li>`).join('');
+
+const txns=[
+  ['Jualan tunai','Seksyen 7 · 10:42 · Aiman',386,1],
+  ['Beli ayam, Pasar Borong','Bangi · 09:15 · Farah',-420,0],
+  ['Jualan QR (DuitNow)','Kajang · 09:02 · Siti',212.5,1],
+  ['Gas memasak 14kg','Seksyen 7 · 08:30 · Aiman',-62,0],
+  ['Gaji harian, 2 pekerja','Bangi · 08:05 · Farah',-160,0]
+];
+document.getElementById('txns').innerHTML=txns.map(([t,m,a,i])=>`<li><div style="min-width:0"><div class="t">${t}</div><div class="m">${m}</div></div><div class="amt ${i?'in':''}">${a>0?'+':'−'}RM ${rm(Math.abs(a))}</div></li>`).join('');
+
+/* ---------- Laporan ---------- */
+(function(){
+  const g=[['1–7','1 – 7 Nov',23180,16240],['8–14','8 – 14 Nov',24540,16614],['15–21','15 – 21 Nov',4680,3396],['22–28','22 – 28 Nov',0,0],['29–30','29 – 30 Nov',0,0]];
+  const W=640,H=240,L=44,R=8,T=14,B=30,max=25000;
+  const iw=W-L-R, ih=H-T-B, gw=iw/g.length, bw=Math.min(30,gw*0.26);
+  const y=v=>T+ih-(v/max)*ih;
+  const el=document.getElementById('rep-chart'), det=document.getElementById('rep-detail');
+  let sel=1;
+  function draw(){
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Money in and out by week, November 2026">`;
+    for(let v=0;v<=max;v+=5000){
+      s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/>`;
+      s+=`<text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--faint)">${v/1000}k</text>`;
+    }
+    g.forEach(([lab,,inn,out],i)=>{
+      const cx=L+gw*i+gw/2, on=i===sel, empty=!inn&&!out;
+      s+=`<g class="bar-g" data-i="${i}" tabindex="0" role="button" aria-pressed="${on}" aria-label="${g[i][1]}">`;
+      s+=`<rect class="hit" x="${cx-gw/2+4}" y="${T}" width="${gw-8}" height="${ih}" rx="8" fill="${on?'var(--raise)':'transparent'}" stroke="none"/>`;
+      if(!empty){
+        s+=`<rect x="${cx-bw-2}" y="${y(inn)}" width="${bw}" height="${y(0)-y(inn)}" rx="3" fill="var(--good)" opacity="${on?1:.6}"/>`;
+        s+=`<rect x="${cx+2}" y="${y(out)}" width="${bw}" height="${y(0)-y(out)}" rx="3" fill="var(--bar-out)" opacity="${on?1:.6}"/>`;
+      } else {
+        s+=`<text x="${cx}" y="${y(0)-8}" text-anchor="middle" font-size="10.5" fill="var(--faint)" font-family="var(--sans)">no data yet</text>`;
+      }
+      s+=`<text x="${cx}" y="${H-9}" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="${on?'var(--fg)':'var(--muted)'}">${lab}</text></g>`;
+    });
+    el.innerHTML=s+'</svg>';
+    const [,full,inn,out]=g[sel];
+    det.innerHTML=inn||out
+      ? `<b>${full}</b><span>In <span class="num">RM ${rm(inn)}</span></span><span>Out <span class="num">RM ${rm(out)}</span></span><span style="color:var(--good)">Profit <span class="num">RM ${rm(inn-out)}</span></span>`
+      : `<b>${full}</b><span style="color:var(--muted)">No transactions for this week yet.</span>`;
+  }
+  el.addEventListener('click',e=>{const b=e.target.closest('.bar-g'); if(b){sel=+b.dataset.i; draw();}});
+  el.addEventListener('keydown',e=>{const b=e.target.closest('.bar-g'); if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); sel=+b.dataset.i; draw(); el.querySelector(`[data-i="${sel}"]`).focus();}});
+  draw();
+
+  const outs=[['Seksyen 7, Shah Alam',23740,17020,7020],['Bangi',16720,11610,5310],['Kajang',11440,7620,3820]];
+  const best=Math.max(...outs.map(o=>o[3]/o[1]));
+  document.getElementById('outlet-tbl').innerHTML=outs.map(([n,s,o,p])=>{const m=p/s*100;return `<tr><td>${n}${p/s===best?'<span class="best">best margin</span>':''}</td><td>${rm(s)}</td><td>${rm(o)}</td><td class="p">${rm(p)}</td><td>${m.toFixed(1)}%</td></tr>`}).join('');
+
+  function breakdown(barId,listId,items,total){
+    document.getElementById(barId).innerHTML=items.map(([,v],i)=>`<i style="width:${(v/total*100).toFixed(2)}%;background:var(--c${i+1})"></i>`).join('');
+    document.getElementById(listId).innerHTML=items.map(([n,v],i)=>`<li><span class="dot" style="background:var(--c${i+1})"></span><div class="t">${n}</div><span class="amt">RM ${rm(v)}</span><span class="pct">${(v/total*100).toFixed(1)}%</span></li>`).join('');
+  }
+  breakdown('exp-bar','exp-list',[['Bahan mentah',17400],['Gaji',8520],['Sewa & utiliti',4950],['Gas & minyak',2180],['Pembungkusan',1620],['Lain-lain',1580]],36250);
+  breakdown('pay-bar','pay-list',[['Tunai',23355],['DuitNow QR',19722],['Kad debit/kredit',6228],['GrabFood / Foodpanda',2595]],51900);
+
+  const summary=`BizProfit Pro · Report 1–15 Nov 2026 (All outlets)
+Sales: RM 51,900.00
+Expenses: RM 36,250.00
+Profit: RM 16,150.00 (▲ 19.6% vs Oct)
+Margin: 31.1% · 2,604 transactions`;
+  document.getElementById('share-btn').addEventListener('click',()=>{
+    try{ navigator.clipboard.writeText(summary).then(()=>toast('Summary copied. Paste it in WhatsApp.'),()=>toast('Could not copy here')); }
+    catch{ toast('Could not copy here'); }
+  });
+})();
+</script>
+
+</body>
+</html>
