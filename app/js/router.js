@@ -1,6 +1,7 @@
 // Navigasi ikut hash (#/utama) supaya butang Back phone berfungsi.
 import { $, icon, animateIn } from './ui.js';
 import { session } from './session.js';
+import { todayKL } from './format.js';
 import utama from './pages/utama.js';
 import rekod from './pages/rekod.js';
 import stok from './pages/stok.js';
@@ -14,11 +15,11 @@ const PAGES = [
   { path: 'utama',   label: 'Home',   icon: 'home',    page: utama,   roles: ['owner', 'admin', 'manager'] },
   { path: 'rekod',   label: 'Records',   icon: 'receipt', page: rekod,   roles: ['owner', 'admin', 'manager', 'staff'] },
   { path: 'stok',    label: 'Stock',    icon: 'box',     page: stok,    roles: ['owner', 'admin', 'manager', 'staff'] },
+  { path: 'laporan', label: 'Report', icon: 'chart',   page: laporan, roles: ['owner', 'admin', 'manager'] },
   { path: 'pekerja', label: 'Staff', icon: 'users',   page: pekerja, roles: ['owner', 'admin', 'manager'] },
   { path: 'menu',    label: 'Menu',    icon: 'menu',    page: menu,    roles: ['owner', 'admin', 'manager', 'staff'] },
-  // Tiada tab: dibuka dari butang pintas di Utama.
-  { path: 'foodcost', label: 'Food Cost', icon: 'chart', page: foodcost, roles: ['owner', 'admin'], tab: false },
-  { path: 'laporan', label: 'Report', icon: 'chart',   page: laporan, roles: ['owner', 'admin', 'manager'], tab: false }
+  // Tiada tab: dibuka dari pautan di Home dan Menu.
+  { path: 'foodcost', label: 'Food Cost', icon: 'cart', page: foodcost, roles: ['owner', 'admin'], tab: false }
 ];
 
 const allowed = () => PAGES.filter(p => p.roles.includes(session.role));
@@ -42,6 +43,9 @@ export async function render() {
   });
   const view = $('view');
   view.innerHTML = '';
+  view.dataset.page = entry.path;
+  $('greet').textContent = entry.label;
+  $('greetSub').textContent = new Date(todayKL() + 'T00:00:00').toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   // Sembunyi halaman sampai data siap, kemudian muncul SEKALI dengan animasi.
   // Jika lambat (> 0.4 s), tunjuk skeleton dahulu dan langkau animasi
   // supaya kandungan tak berkelip (muncul → hilang → muncul).

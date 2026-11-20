@@ -6,10 +6,10 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 **App:** https://amirluqman1.github.io/bizprofit-pro-mvp/
 
 ## Ciri
-- **Utama** — Profit Bersih, Jualan, Perbelanjaan, Transaksi (berbanding semalam), graf 7 hari
+- **Home** — sekilas hari ini: Profit Bersih (dengan trend 7 hari), Jualan, Perbelanjaan, Transaksi; *Needs attention* (stok habis/rendah, food cost outlet > 35%); transaksi terkini
 - **Rekod** — Key In transaksi dan sejarah
 - **Stok** — inventori dengan − / +, senarai beli untuk WhatsApp, sejarah perubahan
-- **Laporan** — harian, mingguan, bulanan, tahunan; pecahan ikut outlet
+- **Report** — harian, mingguan, bulanan, tahunan; banding tempoh sebelum, purata & hari terbaik, prestasi outlet, perbelanjaan ikut kategori, jualan ikut kaedah bayaran, kongsi ringkasan ke WhatsApp
 - **Pekerja** — kehadiran harian, gaji harian/mingguan/bulanan, OT, elaun, potongan, advance, slip gaji
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
 
@@ -33,6 +33,7 @@ Semua sekatan dikuatkuasa di database (Row Level Security), bukan sekadar di UI.
 - `config.js` — URL Supabase dan publishable key (selamat untuk awam; dilindungi RLS)
 - `supabase/migrations/` — perubahan database ikut urutan; `supabase/tests/` — ujian keselamatan (rollback)
 - `index.html`, `inventory-emerald-v1.html` — hanya melencong ke `app/`
+- `design/` — konsep reka bentuk (`concept-2-emerald.html`) dan salinan design lama (`legacy-v1/`)
 
 ## Aliran kerja
 Kerja dibuat di branch `development`, diuji, kemudian digabung ke `main` (yang disiarkan oleh GitHub Pages).

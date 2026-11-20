@@ -3,16 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#061a13">
+<meta name="theme-color" content="#070d0a">
 <meta name="description" content="BizProfit Pro — F&B management system: finance, stock and staff.">
 <title>BizProfit Pro</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%230b2a1f'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%235fe08a' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%230d3326'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%235fe08a' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BizProfit">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
@@ -81,7 +84,7 @@
     </header>
 
     <div class="subbar">
-      <div><p class="greet" id="greet"></p></div>
+      <div><h1 class="greet" id="greet"></h1><p class="greet-sub" id="greetSub"></p></div>
       <label class="outlet-pill" id="outletWrap">
         <svg aria-hidden="true"><use href="#i-store"/></svg>
         <select id="outletSelect" aria-label="Choose outlet"></select>
