@@ -1,6 +1,6 @@
 // Titik mula app: login, rangka, outlet, navigasi.
 import { $, toast } from './ui.js';
-import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS, ROLE_NAME } from './session.js';
+import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS } from './session.js';
 import { startRouter, stopRouter, rerender } from './router.js';
 import { initPWA } from './pwa.js';
 
@@ -38,7 +38,6 @@ function fillOutletPicker() {
 }
 
 async function enterApp() {
-  $('greet').textContent = session.isOwner ? 'Welcome, Boss 👋' : `Welcome, ${ROLE_NAME[session.role]} 👋`;
   $('businessName').textContent = session.business?.name || 'F&B Management System';
   fillOutletPicker();
   $('boot').hidden = true;
