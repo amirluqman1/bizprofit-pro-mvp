@@ -348,6 +348,8 @@ a.pill { text-decoration: none; }
 .chip:has(input:checked) { background: var(--good-soft); border-color: rgba(95, 224, 138, .4); color: var(--mint); }
 .chip:has(input:focus-visible) { outline: 2px solid var(--gold); }
 #rekodBody { display: grid; gap: 14px; }
+/* Tarikh & outlet di atas: atas-bawah di phone supaya nama outlet panjang tak terpotong */
+@media (max-width: 480px) { .two.ki-top { grid-template-columns: minmax(0, 1fr); } }
 .card.filter-bar { gap: 12px; padding: 14px; }
 
 /* Senarai transaksi */
