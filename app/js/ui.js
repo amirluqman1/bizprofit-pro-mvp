@@ -76,3 +76,19 @@ export function countUp(root, ms = 900) {
     requestAnimationFrame(step);
   });
 }
+
+// jsPDF dimuat hanya bila diperlukan (tidak melambatkan app). Diguna oleh slip gaji & penyata untung rugi.
+const JSPDF_URL = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+export function loadJsPdf() {
+  if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = JSPDF_URL;
+    sc.onload = () => (window.jspdf?.jsPDF ? resolve(window.jspdf.jsPDF) : reject(new Error('jsPDF')));
+    sc.onerror = () => reject(new Error('jsPDF'));
+    document.head.append(sc);
+  });
+}
+
+// Fon asas PDF tiada simbol tolak (−) atau sengkang panjang; guna "-" biasa.
+export const pdfText = t => String(t).replace(/−/g, '-').replace(/[—–]/g, '-');

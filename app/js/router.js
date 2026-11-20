@@ -9,6 +9,7 @@ import pekerja from './pages/pekerja.js';
 import menu from './pages/menu.js';
 import laporan from './pages/laporan.js';
 import foodcost from './pages/foodcost.js';
+import pnl from './pages/pnl.js';
 
 // roles: siapa boleh buka halaman. Staff tidak boleh nampak Utama (ada profit) atau Pekerja.
 const PAGES = [
@@ -19,7 +20,9 @@ const PAGES = [
   { path: 'pekerja', label: 'Staff', icon: 'users',   page: pekerja, roles: ['owner', 'admin', 'manager'] },
   { path: 'menu',    label: 'Menu',    icon: 'menu',    page: menu,    roles: ['owner', 'admin', 'manager', 'staff'] },
   // Tiada tab: dibuka dari pautan di Home dan Menu.
-  { path: 'foodcost', label: 'Food Cost', icon: 'cart', page: foodcost, roles: ['owner', 'admin'], tab: false }
+  { path: 'foodcost', label: 'Food Cost', icon: 'cart', page: foodcost, roles: ['owner', 'admin'], tab: false },
+  // Penyata untung rugi (Borang B): pemilik bisnes (admin) & owner.
+  { path: 'pnl', label: 'Profit & Loss', icon: 'receipt', page: pnl, roles: ['owner', 'admin'], tab: false }
 ];
 
 const allowed = () => PAGES.filter(p => p.roles.includes(session.role));
