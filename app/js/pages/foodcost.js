@@ -5,6 +5,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, dateRange } from '../format.js';
+import { isPro, lockCard } from '../plan.js';
 
 const TARGET = 30;                       // % food cost sasaran untuk harga cadangan
 const PERIODS = { week: 'This week', month: 'This month', last: 'Last month' };
@@ -305,6 +306,7 @@ function bindDialog(refresh) {
 // ---------------- Halaman ----------------
 export default {
   async render(view) {
+    if (!isPro()) { view.innerHTML = lockCard('Food Cost', 'See the cost per plate, menu margins and food cost % for every outlet, so you know which menu really makes money.'); return; }
     view.innerHTML = `
       <section class="card stack">
         <div class="seg" role="group" aria-label="Period">

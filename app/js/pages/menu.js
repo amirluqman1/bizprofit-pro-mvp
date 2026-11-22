@@ -2,6 +2,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ROLE_NAME } from '../session.js';
 import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
+import { planName, trialDaysLeft, isPro, proTag } from '../plan.js';
 
 export default {
   render(view) {
@@ -21,7 +22,9 @@ export default {
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : 'Not set')}</small></span>${icon('chev-right')}</button>`).join('')}
       </div>` : ''}
 
-      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>Profit &amp; Loss statement<small>Yearly statement per business, laid out like LHDN Form B</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>Food Cost<small>Cost per plate, menu margins and food cost %</small></span>${icon('chev-right')}</a></div>` : ''}
+      <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>Plan: ${esc(planName())}<small>${trialDaysLeft() ? `Pro trial · ${trialDaysLeft()} days left` : 'Compare plans and upgrade'}</small></span>${icon('chev-right')}</a></div>
+
+      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>Profit &amp; Loss statement ${isPro() ? '' : proTag()}<small>Yearly statement per business, laid out like LHDN Form B</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>Food Cost ${isPro() ? '' : proTag()}<small>Cost per plate, menu margins and food cost %</small></span>${icon('chev-right')}</a></div>` : ''}
 
       <div class="list">
         ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>Install app<small>Add BizProfit Pro to your phone home screen</small></span></button>`}

@@ -19,6 +19,7 @@ export const session = {
   business: null,   // { id, name }
   outlets: [],      // [{ id, name, company_name, company_reg_no }] yang boleh diakses
   outletId: null,   // outlet dipilih, atau ALL_OUTLETS (owner sahaja)
+  plan: null,       // pakej berkuat kuasa: 'free' | 'pro' | 'business' (dari current_plan())
   get role() { return this.profile?.role; },
   get isOwner() { return this.role === 'owner'; },
   // Admin = kuasa owner, tetapi untuk outlet sendiri sahaja (dikunci di database).
@@ -56,11 +57,14 @@ export async function loadAccount(user) {
   session.profile = p;
 
   const [{ data: biz }, { data: outlets, error: oe }] = await Promise.all([
-    sb.from('businesses').select('id,name').maybeSingle(),
+    sb.from('businesses').select('*').maybeSingle(),   // '*' supaya tak gagal sebelum kolum pakej wujud
     sb.from('outlets').select('id,name,company_name,company_reg_no').order('name')
   ]);
   if (oe) return 'Could not load the outlet list.';
   session.business = biz || null;
+  // Pakej berkuat kuasa. Jika fungsi belum wujud (migration Fasa 12 belum dijalankan), jangan kunci apa-apa.
+  const { data: plan, error: planErr } = await sb.rpc('current_plan');
+  session.plan = !planErr && ['free', 'pro', 'business'].includes(plan) ? plan : 'business';
   session.outlets = session.isOwner ? (outlets || []) : (outlets || []).filter(o => o.id === p.outlet_id);
   if (!session.outlets.length) return 'No outlets available for this account.';
 
@@ -73,5 +77,5 @@ export async function loadAccount(user) {
 }
 
 export function clearSession() {
-  Object.assign(session, { user: null, profile: null, business: null, outlets: [], outletId: null });
+  Object.assign(session, { user: null, profile: null, business: null, outlets: [], outletId: null, plan: null });
 }

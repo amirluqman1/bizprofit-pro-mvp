@@ -4,6 +4,7 @@
 import { $, esc, icon, toast, loadJsPdf, pdfText } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName, outletCompany } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, dateRange, dateLong } from '../format.js';
+import { isPro, lockCard, proTag } from '../plan.js';
 
 const STATUS = { hadir: 'Present', separuh: 'Half day', cuti: 'Leave', tidak_hadir: 'Absent' };
 const DAY_VALUE = { hadir: 1, separuh: 0.5, cuti: 0, tidak_hadir: 0 };
@@ -51,7 +52,7 @@ export default {
     state.tab = tabFromHash();
     state.date = state.date || todayKL();
     if (!state.from) [state.from, state.to] = presetRange(state.preset);
-    const tabs = { kehadiran: 'Attendance', pekerja: 'Staff', gaji: 'Payroll' };
+    const tabs = { kehadiran: 'Attendance', pekerja: 'Staff', gaji: isPro() ? 'Payroll' : `Payroll ${proTag()}` };
     view.innerHTML = `
       <div class="seg tabs" role="tablist">${Object.entries(tabs).map(([k, v]) =>
         `<a class="seg-opt ${state.tab === k ? 'on' : ''}" href="#/pekerja?t=${k}" role="tab" aria-selected="${state.tab === k}">${v}</a>`).join('')}</div>
@@ -339,6 +340,7 @@ let payrollVersion = 0;   // hanya pemuatan terkini dipaparkan (elak paparan ber
 async function renderPayroll() {
   const v = ++payrollVersion;
   const box = $('pkBody');
+  if (!isPro()) { box.innerHTML = lockCard('Payroll', 'Calculate daily, weekly or monthly pay with OT, allowances, deductions and advances, then share a PDF payslip.'); return; }
   box.innerHTML = `
     <section class="card stack">
       <div class="seg" role="group" aria-label="Pay period">
