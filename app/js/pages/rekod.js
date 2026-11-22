@@ -4,7 +4,8 @@
 // direkod dalam log audit oleh database, bukan oleh app.
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
-import { rm, todayKL, dateShort } from '../format.js';
+import { rm, todayKL, dateShort, addDays } from '../format.js';
+import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 
 const PAGE_SIZE = 30;
 // Pilihan susunan Sejarah: [kolum, menaik?] — kolum seterusnya jadi pemutus seri.
@@ -140,7 +141,8 @@ async function renderHistory(box) {
   let offset = 0, runId = 0;
   const rows = new Map();
   box.innerHTML = `
-    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'You only see transactions you entered today.</p>' : ''}
+    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'You only see transactions you entered today.</p>'
+      : isPro() ? '' : `<p class="note-line">${icon('lock')}Free plan shows the last ${HISTORY_DAYS_FREE} days. Older records are kept. <a href="#/pakej">Upgrade to see all</a></p>`}
     <section class="card stack filter-bar" aria-label="Sort and filter transactions">
       <div class="seg" role="radiogroup" aria-label="Transaction type">
         <label class="seg-opt"><input type="radio" name="fType" value="" checked>All</label>
@@ -172,6 +174,7 @@ async function renderHistory(box) {
     sort.order.forEach(([col, asc]) => { q = q.order(col, { ascending: asc }); });
     q = q.order('id', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
+    if (!isPro()) q = q.gte('transaction_date', addDays(todayKL(), -(HISTORY_DAYS_FREE - 1)));   // Percuma: sebulan terakhir
     if (type) q = q.eq('type', type);
     if (cat) q = q.eq('category', cat);
     const { data, error, count } = await q;

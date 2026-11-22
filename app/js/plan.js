@@ -17,7 +17,7 @@ export const FEATURES = [
   ['Daily report', true, true, true],
   ['Weekly report', 'This week', true, true],
   ['Monthly & yearly report', false, true, true],
-  ['Report history', '30 days', 'Unlimited', 'Unlimited'],
+  ['Report & transaction history', '1 month', 'Unlimited', 'Unlimited'],
   ['Staff attendance', true, true, true],
   ['Audit log (owner & admin)', true, true, true],
   ['Food Cost & menu recipes', false, true, true],
