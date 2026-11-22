@@ -73,7 +73,7 @@ $('loginForm').addEventListener('submit', async e => {
   if (error) { btn.disabled = false; toast(t('Wrong email or password.'), 'error'); return; }
   const err = await loadAccount(data.user);
   btn.disabled = false;
-  if (err) { await sb.auth.signOut(); toast(err, 'error'); return; }
+  if (err) { await sb.auth.signOut({ scope: 'local' }); toast(err, 'error'); return; }
   $('loginPassword').value = '';
   await enterApp();
 });
@@ -84,7 +84,9 @@ window.addEventListener('bp:logout', async () => {
   history.replaceState(null, '', location.pathname);   // buang #/menu
   showLogin();
   $('loginForm').reset();
-  try { await sb.auth.signOut(); } catch { /* sesi tempatan tetap dibuang */ }
+  // scope 'local': keluar dari peranti ini sahaja. Asal Supabase ialah 'global', yang menendang keluar
+  // SEMUA peranti yang guna akaun sama (masalah bila satu akaun dikongsi, contoh akaun outlet).
+  try { await sb.auth.signOut({ scope: 'local' }); } catch { /* sesi tempatan tetap dibuang */ }
 });
 
 $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));
