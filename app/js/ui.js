@@ -27,7 +27,7 @@ const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 // Bekas ini tak dianimasikan sendiri; anak-anaknya yang muncul satu-satu.
 // Senarai panjang (stok, pekerja) TIDAK dipecah: ia muncul sebagai satu blok
 // supaya phone tak perlu lukis puluhan animasi serentak (punca tersangkut).
-const WRAPPERS = '.stats3, .shortcuts, #pkBody, #rekodBody';
+const WRAPPERS = '.stats3, .shortcuts, #pkBody, #rekodBody, .h-bento, .home-grid';
 let revealObs = null;
 
 export function animateIn(root) {
