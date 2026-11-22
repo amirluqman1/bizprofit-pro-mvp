@@ -611,4 +611,17 @@ export const MS = {
   'Next year': 'Tahun seterusnya',
   'Could not load the statement': 'Penyata tak dapat dimuat',
   'Statement is still loading.': 'Penyata masih dimuatkan.',
+
+  // ----- Tambah outlet -----
+  '+ Add outlet': '+ Tambah outlet',
+  '{n} of {max} outlets on the {plan} plan': '{n} daripada {max} outlet dalam pakej {plan}',
+  'Add outlet': 'Tambah outlet',
+  'Outlet name': 'Nama outlet',
+  'e.g. Outlet Bangi': 'cth. Outlet Bangi',
+  'Staff accounts for this outlet are still added by BizProfit for now.': 'Akaun staf untuk outlet ini masih ditambah oleh BizProfit buat masa ini.',
+  'Your {plan} plan allows {max} outlet(s). Upgrade to add more.': 'Pakej {plan} anda benarkan {max} outlet. Naik taraf untuk tambah lagi.',
+  'Enter the outlet name.': 'Masukkan nama outlet.',
+  'An outlet with this name already exists.': 'Outlet dengan nama ini sudah ada.',
+  'Outlet not added: ': 'Outlet tidak ditambah: ',
+  'Outlet \"{x}\" added.': 'Outlet \"{x}\" ditambah.',
 };

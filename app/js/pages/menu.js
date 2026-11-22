@@ -2,7 +2,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ROLE_NAME } from '../session.js';
 import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
-import { planName, trialDaysLeft, isPro, proTag } from '../plan.js';
+import { planName, trialDaysLeft, isPro, proTag, PLANS, planKey } from '../plan.js';
 import { t, getLang, setLang } from '../i18n.js';
 
 export default {
@@ -21,6 +21,7 @@ export default {
       ${session.isAdminUp ? `
       <div class="list" id="coList">
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : t('Not set'))}</small></span>${icon('chev-right')}</button>`).join('')}
+        ${session.isOwner ? `<button class="row-btn add-outlet" type="button" id="olAdd">${icon('plus-box')}<span>${t('+ Add outlet')}<small>${t('{n} of {max} outlets on the {plan} plan', { n: session.outlets.length, max: PLANS[planKey()].outlets, plan: planName() })}</small></span></button>` : ''}
       </div>` : ''}
 
       <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>${t('Plan')}: ${esc(planName())}<small>${trialDaysLeft() ? t('Pro trial · {n} days left', { n: trialDaysLeft() }) : t('Compare plans and upgrade')}</small></span>${icon('chev-right')}</a></div>
@@ -44,6 +45,20 @@ export default {
           <p class="note" id="installSteps"></p>
           <div class="dialog-actions"><button class="btn primary" type="button" id="installClose">${t('Got it')}</button></div>
         </div>
+      </dialog>
+
+      <dialog id="olDialog">
+        <form id="olForm" class="stack" novalidate>
+          <h2>${t('Add outlet')}</h2>
+          <label class="field">${t('Outlet name')}<input id="olName" maxlength="80" autocomplete="off" placeholder="${t('e.g. Outlet Bangi')}"></label>
+          <label class="field">${t('Company name')} <small>${t('optional')}</small><input id="olCo" maxlength="120"></label>
+          <label class="field">${t('Registration no. (SSM)')} <small>${t('optional')}</small><input id="olReg" maxlength="60"></label>
+          <p class="note">${t('Staff accounts for this outlet are still added by BizProfit for now.')}</p>
+          <div class="dialog-actions">
+            <button class="btn ghost" type="button" id="olCancel">${t('Cancel')}</button>
+            <button class="btn primary" id="olSave">${t('Save')}</button>
+          </div>
+        </form>
       </dialog>
 
       <dialog id="coDialog">
@@ -102,6 +117,40 @@ export default {
       $('pwDialog').close();
       toast(t('Password changed.'));
     });
+
+    if ($('olAdd')) {
+      $('olAdd').onclick = () => {
+        if (session.outlets.length >= PLANS[planKey()].outlets) {
+          toast(t('Your {plan} plan allows {max} outlet(s). Upgrade to add more.', { plan: planName(), max: PLANS[planKey()].outlets }), 'error');
+          location.hash = '#/pakej';
+          return;
+        }
+        $('olForm').reset(); $('olDialog').showModal(); $('olName').focus();
+      };
+      $('olCancel').onclick = () => $('olDialog').close();
+      $('olForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = $('olName').value.trim();
+        if (!name) { toast(t('Enter the outlet name.'), 'error'); return; }
+        $('olSave').disabled = true;
+        const { data, error } = await sb.from('outlets')
+          .insert({ name, company_name: $('olCo').value.trim() || null, company_reg_no: $('olReg').value.trim() || null })
+          .select('id,name,company_name,company_reg_no').single();
+        $('olSave').disabled = false;
+        if (error) {
+          toast(error.code === '23505' ? t('An outlet with this name already exists.')
+            : /Had outlet/.test(error.message) ? t('Your {plan} plan allows {max} outlet(s). Upgrade to add more.', { plan: planName(), max: PLANS[planKey()].outlets })
+            : t('Outlet not added: ') + error.message, 'error');
+          return;
+        }
+        session.outlets.push(data);
+        session.outlets.sort((a, b) => a.name.localeCompare(b.name, 'ms-MY'));
+        $('olDialog').close();
+        window.dispatchEvent(new Event('bp:outlets-changed'));
+        toast(t('Outlet "{x}" added.', { x: data.name }));
+        this.render(view);
+      });
+    }
 
     if ($('coList')) {
       let editing = null;

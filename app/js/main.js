@@ -91,6 +91,8 @@ $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));
 onOutletChange(() => { rerender(); refreshBell(); });
 window.addEventListener('bp:stock-changed', refreshBell);
 // Tukar bahasa: lukis semula menu, pemilih outlet dan halaman semasa.
+// Owner tambah outlet: kemas kini pemilih outlet (pilihan "Semua outlet" muncul bila lebih dari 1).
+window.addEventListener('bp:outlets-changed', fillOutletPicker);
 window.addEventListener('bp:lang', () => {
   if ($('app').hidden) return;
   fillOutletPicker(); refreshBell(); rebuildNav();
