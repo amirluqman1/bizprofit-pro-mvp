@@ -4,6 +4,7 @@
 import { $, esc, icon, toast, loadJsPdf, pdfText } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName, outletCompany } from '../session.js';
 import { rm, todayKL, MONTHS } from '../format.js';
+import { isPro, lockCard } from '../plan.js';
 
 const PAGE = 1000;
 
@@ -266,6 +267,7 @@ async function makePdf() {
 
 export default {
   render(view) {
+    if (!isPro()) { view.innerHTML = lockCard('Profit & Loss (Form B)', 'Get a yearly profit and loss statement laid out like LHDN Form B, ready as PDF for your tax filing.'); return; }
     const today = todayKL();
     const thisYear = Number(today.slice(0, 4));
     state.year = state.year || thisYear;

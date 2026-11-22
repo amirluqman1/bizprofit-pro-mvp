@@ -5,6 +5,7 @@ import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { qty, rm } from '../format.js';
 import { smartListHTML, bindSmartList, openSmartList } from './smartlist.js';
+import { isPro } from '../plan.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
 const UNITS = ['kg', 'pcs', 'biji', 'pack', 'kotak', 'botol', 'ekor', 'papan', 'liter', 'g'];
@@ -152,7 +153,7 @@ async function savePrice(id, raw) {
   return error;
 }
 const priceOk = raw => String(raw ?? '').trim() === '' || (Number.isFinite(Number(raw)) && Number(raw) >= 0);
-const priceField = id => session.isAdminUp
+const priceField = id => session.isAdminUp && isPro()
   ? `<label class="field">Price per unit (RM) <small>optional · for food cost · only owner &amp; admin see this</small><input id="${id}" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 9.50"></label>` : '';
 
 function flushAll() { return Promise.all([...[...pending.keys()].map(save), ...inflight]); }

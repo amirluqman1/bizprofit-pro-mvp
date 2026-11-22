@@ -4,6 +4,7 @@
 import { $, esc, icon, countUp } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, qty, todayKL, addDays, dayName } from '../format.js';
+import { isPro, PLANS } from '../plan.js';
 
 const FC_LIMIT = 35;   // sama dengan Food Cost: hijau ≤ 35%
 
@@ -119,7 +120,7 @@ async function load() {
 
   // Food cost keseluruhan 7 hari (admin ke atas sahaja), hanya outlet yang ada jualan.
   let fcAll = null;
-  if (session.isAdminUp && !fc.error) {
+  if (session.isAdminUp && isPro() && !fc.error) {
     let ing = 0, sales = 0;
     for (const [id, v] of ingByOutlet) if (salesByOutlet.get(id)) { ing += v; sales += salesByOutlet.get(id); }
     const each = [...ingByOutlet].filter(([id]) => salesByOutlet.get(id)).map(([id, v]) => ({ id, pct: v / salesByOutlet.get(id) * 100 })).sort((x, y) => y.pct - x.pct);
@@ -183,7 +184,8 @@ export default {
     const attnCount = stock === null ? 0 : stock.length + fcAlerts.length;
     const margin = today.sales ? today.profit / today.sales * 100 : null;
     const avgBill = today.count ? today.sales / today.count : null;
-    const showFc = fcAll !== null;
+    const fcLocked = session.isAdminUp && !isPro();
+    const showFc = fcAll !== null || fcLocked;
     const C = 2 * Math.PI * 28;   // lilitan gelang food cost
     const fcPct = fcAll?.pct;
 
@@ -226,7 +228,11 @@ export default {
           <div class="h-foot"><span class="chg flat">${today.count - yesterday.count >= 0 ? '+' : '−'}${Math.abs(today.count - yesterday.count)} vs yesterday</span>${mini(week.map(w => w.count))}</div>
           <p class="h-note">Average bill <b>${avgBill === null ? '–' : esc(rm(avgBill))}</b></p>
         </a>
-        ${showFc ? `<a class="h-tile h-fc" href="#/foodcost">
+        ${fcLocked ? `<a class="h-tile h-fc h-locked" href="#/pakej">
+          <p class="h-lbl">${icon('cart')}Food cost · 7 days</p>
+          <p class="h-note">See your food cost % and which menu makes money.</p>
+          <span class="chg flat" style="align-self:flex-start">${icon('lock')} Pro · RM ${PLANS.pro.price}/month</span>
+        </a>` : showFc ? `<a class="h-tile h-fc" href="#/foodcost">
           <p class="h-lbl">${icon('cart')}Food cost · 7 days</p>
           <div class="h-ring-row">
             <svg class="h-ring${fcPct > FC_LIMIT ? ' over' : ''}" viewBox="0 0 70 70" aria-hidden="true">

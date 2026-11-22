@@ -4,6 +4,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
+import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 
 const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly' };
 const PAGE = 1000;
@@ -183,15 +184,22 @@ export default {
   render(view) {
     const today = todayKL();
     state.date = state.date || today;
+    // Pakej Percuma: harian (30 hari terakhir) dan minggu ini sahaja; bulanan/tahunan perlu Pro.
+    const pro = isPro();
+    const minDate = pro ? '2000-01-01' : addDays(today, -(HISTORY_DAYS_FREE - 1));
+    const locked = k => !pro && (k === 'bulanan' || k === 'tahunan');
+    if (locked(state.period)) state.period = 'harian';
+    if (!pro && state.date < minDate) state.date = today;
+    if (!pro && state.period === 'mingguan') state.date = today;
 
     view.innerHTML = `
       <div class="rep-controls">
         <div class="seg four" role="group" aria-label="Report period">
-          ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${v}</button>`).join('')}
+          ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${locked(k) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${v}${locked(k) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}
         </div>
         <div class="datenav">
           <button type="button" id="repPrev" aria-label="Previous period">‹</button>
-          <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="2000-01-01" aria-label="Choose date"></label>
+          <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="${minDate}" aria-label="Choose date"></label>
           <button type="button" id="repNext" aria-label="Next period">›</button>
         </div>
         <button class="share-btn" type="button" id="repShare">${icon('link')}Share summary</button>
@@ -209,6 +217,7 @@ export default {
       $('repDate').max = today;
       $('repDate').hidden = state.period === 'tahunan';
       $('repNext').disabled = buildPeriod(state.period, state.date).to >= today;
+      $('repPrev').disabled = !pro && (state.period === 'mingguan' || shiftDate(state.period, state.date, -1) < minDate);
     };
 
     let shareText = '';
@@ -228,7 +237,7 @@ export default {
         const chartFrom = groups[0].from < from ? groups[0].from : from;
         [rows, prevRows, tx, cats, fcRows] = await Promise.all([
           fetchSummary(chartFrom, to), fetchSummary(prevFrom, prevTo), fetchTx(from, upTo), loadCategories(),
-          session.isAdminUp
+          session.isAdminUp && pro
             ? fetchAll(() => forOutlet(sb.from('daily_food_cost').select('transaction_date,outlet_id,ingredients').gte('transaction_date', from).lte('transaction_date', upTo).order('transaction_date')))
             : Promise.resolve(null)
         ]);
@@ -379,7 +388,8 @@ export default {
     }
 
     view.querySelectorAll('[data-period]').forEach(b => b.addEventListener('click', () => {
-      state.period = b.dataset.period; show();
+      if (locked(b.dataset.period)) { location.hash = '#/pakej'; return; }
+      state.period = b.dataset.period; if (!pro && state.period === 'mingguan') state.date = today; show();
     }));
     $('repPrev').addEventListener('click', () => { state.date = shiftDate(state.period, state.date, -1); show(); });
     $('repNext').addEventListener('click', () => {
@@ -387,7 +397,7 @@ export default {
       state.date = next > today ? today : next; show();
     });
     $('repDate').addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama: biar lalai */ } });
-    $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value > today ? today : e.target.value; show(); } });
+    $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value > today ? today : e.target.value < minDate ? minDate : e.target.value; show(); } });
     $('repShare').addEventListener('click', async () => {
       if (!shareText) { toast('Report is still loading.'); return; }
       try {
