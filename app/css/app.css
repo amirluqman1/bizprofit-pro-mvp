@@ -808,3 +808,10 @@ a.h-tile:active { transform: scale(.99); }
 .seg-lock { display: inline-flex; margin-right: 4px; vertical-align: -2px; color: var(--blue-hi); }
 .seg-lock svg { width: 13px; height: 13px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Suis bahasa (Menu) */
+.lang-row { cursor: default; }
+.lang-seg { flex: 0 0 auto; }
+.lang-seg .seg-opt { min-width: 48px; min-height: 36px; }
+/* Label graf 7 hari: "Hari ini" lebih panjang dari "Today"; sorok label sebelah di skrin kecil supaya tak bertindih */
+@media (max-width: 480px) { .h-days span:nth-last-child(2) { display: none; } }

@@ -5,6 +5,7 @@ import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
 import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
+import { t, locale } from '../i18n.js';
 
 const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly' };
 const PAGE = 1000;
@@ -57,9 +58,9 @@ function buildPeriod(period, date) {
 function periodLabel(period, date) {
   const { from, to } = buildPeriod(period, date);
   if (period === 'tahunan') return from.slice(0, 4);
-  if (period === 'bulanan') return new Date(from + 'T00:00:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
+  if (period === 'bulanan') return new Date(from + 'T00:00:00').toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   if (period === 'mingguan') return `${dateShort(from)} – ${dateShort(to)}`;
-  return new Date(date + 'T00:00:00').toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(date + 'T00:00:00').toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const forOutlet = q => (session.outletId !== ALL_OUTLETS ? q.eq('outlet_id', session.outletId) : q);
@@ -110,13 +111,13 @@ const perOutletProfit = rows => {
 
 function chartHTML(groups, rows, today) {
   const vals = groups.map(g => {
-    const t = totals(rows.filter(r => r.transaction_date >= g.from && r.transaction_date <= g.to));
-    return { ...g, inn: t.moneyIn, out: t.out, future: g.from > today };
+    const tt = totals(rows.filter(r => r.transaction_date >= g.from && r.transaction_date <= g.to));
+    return { ...g, inn: tt.moneyIn, out: tt.out, future: g.from > today };
   });
   const max = Math.max(1, ...vals.flatMap(v => [v.inn, v.out]));
   return vals.map((v, i) => {
-    const text = v.future ? `${dateRange(v.from, v.to)} · No data yet`
-      : `${dateRange(v.from, v.to)} · In ${rmSen(v.inn)} · Out ${rmSen(v.out)} · Profit ${rmSen(v.inn - v.out)}`;
+    const text = v.future ? `${dateRange(v.from, v.to)} · ${t('No data yet')}`
+      : `${dateRange(v.from, v.to)} · ${t('In')} ${rmSen(v.inn)} · ${t('Out')} ${rmSen(v.out)} · ${t('Profit')} ${rmSen(v.inn - v.out)}`;
     return `<button class="bar-group" type="button" data-i="${i}" data-text="${esc(text)}" aria-label="${esc(text)}">
       <span class="bars" aria-hidden="true"><span class="bar in" style="height:${v.inn / max * 100}%"></span><span class="bar out" style="height:${v.out / max * 100}%"></span></span>
       <span class="bar-label">${esc(v.label)}</span></button>`;
@@ -124,12 +125,12 @@ function chartHTML(groups, rows, today) {
 }
 
 function breakdownHTML(items, total, empty) {
-  if (!total) return `<p class="loading-line">${empty}</p>`;
+  if (!total) return `<p class="loading-line">${t(empty)}</p>`;
   const top = items.slice(0, COLORS - 1);
   const rest = items.slice(COLORS - 1).reduce((t, [, v]) => t + v, 0);
   if (rest) top.push(['Others', rest]);
   return `<div class="stackbar" aria-hidden="true">${top.map(([, v], i) => `<i style="width:${(v / total * 100).toFixed(2)}%;background:var(--c${i + 1})"></i>`).join('')}</div>
-    <ul class="rows brk">${top.map(([n, v], i) => `<li><span class="dot" style="background:var(--c${i + 1})"></span><div class="t">${esc(n)}</div><span class="amt">${rmSen(v)}</span><span class="pct">${(v / total * 100).toFixed(1)}%</span></li>`).join('')}</ul>`;
+    <ul class="rows brk">${top.map(([n, v], i) => `<li><span class="dot" style="background:var(--c${i + 1})"></span><div class="t">${esc(t(n))}</div><span class="amt">${rmSen(v)}</span><span class="pct">${(v / total * 100).toFixed(1)}%</span></li>`).join('')}</ul>`;
 }
 
 // Ringkasan jualan harian ikut syif (format WhatsApp kedai), contoh:
@@ -194,18 +195,18 @@ export default {
 
     view.innerHTML = `
       <div class="rep-controls">
-        <div class="seg four" role="group" aria-label="Report period">
-          ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${locked(k) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${v}${locked(k) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}
+        <div class="seg four" role="group" aria-label="${t('Report period')}">
+          ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${locked(k) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${t(v)}${locked(k) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}
         </div>
         <div class="datenav">
-          <button type="button" id="repPrev" aria-label="Previous period">‹</button>
-          <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="${minDate}" aria-label="Choose date"></label>
-          <button type="button" id="repNext" aria-label="Next period">›</button>
+          <button type="button" id="repPrev" aria-label="${t('Previous period')}">‹</button>
+          <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="${minDate}" aria-label="${t('Choose date')}"></label>
+          <button type="button" id="repNext" aria-label="${t('Next period')}">›</button>
         </div>
-        <button class="share-btn" type="button" id="repShare">${icon('link')}Share summary</button>
+        <button class="share-btn" type="button" id="repShare">${icon('link')}${t('Share summary')}</button>
         ${session.isAdminUp ? `<a class="share-btn" href="#/pnl">${icon('receipt')}P&amp;L (Form B)</a>` : ''}
       </div>
-      <div id="repBody" class="stack"><p class="loading-line">Loading…</p></div>`;
+      <div id="repBody" class="stack"><p class="loading-line">${t('Loading…')}</p></div>`;
 
     const syncControls = () => {
       view.querySelectorAll('[data-period]').forEach(b => {
@@ -229,7 +230,7 @@ export default {
       const upTo = to < today ? to : today;                 // tempoh berjalan: banding hari yang sama
       const prevFrom = shiftDate(state.period, from, -1);
       const prevTo = shiftDate(state.period, upTo, -1);
-      $('repBody').innerHTML = '<p class="loading-line">Loading…</p>';
+      $('repBody').innerHTML = `<p class="loading-line">${t('Loading…')}</p>`;
       shareText = '';
 
       let rows, prevRows, tx, cats, fcRows;
@@ -243,17 +244,17 @@ export default {
         ]);
       } catch {
         if (v !== version) return;
-        $('repBody').innerHTML = '<section class="card placeholder"><h2>Could not load report</h2><p>Check your internet and try again.</p></section>';
+        $('repBody').innerHTML = `<section class="card placeholder"><h2>${t('Could not load report')}</h2><p>${t('Check your internet and try again.')}</p></section>`;
         return;
       }
       if (v !== version) return;   // pengguna dah tukar tempoh
 
       const inRange = rows.filter(r => r.transaction_date >= from && r.transaction_date <= to);
-      const t = totals(inRange), p = totals(prevRows);
-      const other = t.moneyIn - t.sales, pOther = p.moneyIn - p.sales;
-      const margin = t.sales ? t.profit / t.sales * 100 : null;
+      const tt = totals(inRange), p = totals(prevRows);
+      const other = tt.moneyIn - tt.sales, pOther = p.moneyIn - p.sales;
+      const margin = tt.sales ? tt.profit / tt.sales * 100 : null;
       const ing = fcRows ? fcRows.reduce((s, r) => s + Math.round(Number(r.ingredients) * 100), 0) : null;
-      const fcPct = ing != null && t.sales ? ing / t.sales * 100 : null;
+      const fcPct = ing != null && tt.sales ? ing / tt.sales * 100 : null;
 
       // Sorotan
       const byDay = new Map();
@@ -267,9 +268,9 @@ export default {
       const best = [...byDay].sort((a, b) => b[1].profit - a[1].profit)[0];
       const bestOutlet = best && session.outletId === ALL_OUTLETS && best[1].outlets.size > 1
         ? [...best[1].outlets].sort((a, b) => b[1] - a[1])[0][0] : null;
-      const profitChg = pctChange(t.profit, p.profit);
-      const prevName = state.period === 'harian' ? 'previous day' : state.period === 'mingguan' ? 'previous week'
-        : state.period === 'bulanan' ? 'previous month' : 'previous year';
+      const profitChg = pctChange(tt.profit, p.profit);
+      const prevName = t(state.period === 'harian' ? 'previous day' : state.period === 'mingguan' ? 'previous week'
+        : state.period === 'bulanan' ? 'previous month' : 'previous year');
       const prevSpan = prevFrom === prevTo ? `${dayName(prevFrom)}, ${dateShort(prevFrom)}` : dateRange(prevFrom, prevTo);
       const bestOutletAll = [...perOutletProfit(inRange)].sort((a, b) => b[1] - a[1])[0];
 
@@ -289,82 +290,82 @@ export default {
       const expRows = tx.filter(r => r.type === 'Out' && info(r, 'counts_in_profit'));
       const saleRows = tx.filter(r => r.type === 'In' && info(r, 'is_sales'));
       const expItems = groupSum(expRows, r => r.category);
-      const payItems = groupSum(saleRows, r => r.payment_method || 'Not set');
+      const payItems = groupSum(saleRows, r => r.payment_method || t('Not set'));
       const expTotal = expItems.reduce((s, [, x]) => s + x, 0);
       const payTotal = payItems.reduce((s, [, x]) => s + x, 0);
 
       const scope = outletName();
       $('repBody').innerHTML = `
-        <section class="insights" aria-label="Highlights">
-          <div class="ins"><span class="lbl">vs ${esc(prevName)}</span>
-            ${profitChg == null ? '<span class="v">—</span><span class="s">No data to compare</span>'
-              : `<span class="v ${profitChg >= 0 ? 'up' : 'down'}">${profitChg >= 0 ? '▲' : '▼'} ${Math.abs(profitChg).toFixed(1)}% profit</span><span class="s">${rmSen(t.profit)} vs ${rmSen(p.profit)} (${esc(prevSpan)})</span>`}</div>
+        <section class="insights" aria-label="${t('Highlights')}">
+          <div class="ins"><span class="lbl">${t('vs {x}', { x: esc(prevName) })}</span>
+            ${profitChg == null ? `<span class="v">—</span><span class="s">${t('No data to compare')}</span>`
+              : `<span class="v ${profitChg >= 0 ? 'up' : 'down'}">${profitChg >= 0 ? '▲' : '▼'} ${Math.abs(profitChg).toFixed(1)}% ${t('profit')}</span><span class="s">${rmSen(tt.profit)} ${t('vs')} ${rmSen(p.profit)} (${esc(prevSpan)})</span>`}</div>
           ${days === 1
-            ? `<div class="ins"><span class="lbl">Profit margin</span><span class="v num">${margin == null ? '—' : margin.toFixed(1) + '%'}</span><span class="s">Profit ÷ sales</span></div>
-          <div class="ins"><span class="lbl">Best outlet</span>${session.outletId === ALL_OUTLETS && bestOutletAll && bestOutletAll[1] > 0
-              ? `<span class="v">${esc(outletName(bestOutletAll[0]))}</span><span class="s">Profit ${rmSen(bestOutletAll[1])}</span>`
-              : `<span class="v">${esc(outletName())}</span><span class="s">${session.outletId === ALL_OUTLETS ? 'No profit yet' : 'Selected outlet only'}</span>`}</div>`
-            : `<div class="ins"><span class="lbl">Average daily profit</span><span class="v num">${rmSen(Math.round(t.profit / days))}</span><span class="s">Over ${days} days${to > today ? ' so far' : ''}</span></div>
-          <div class="ins"><span class="lbl">Best day</span>${best && best[1].profit > 0
-            ? `<span class="v">${esc(dayName(best[0]))}, ${esc(dateShort(best[0]))}</span><span class="s">Profit ${rmSen(best[1].profit)}${bestOutlet ? ' · ' + esc(outletName(bestOutlet)) + ' led sales' : ''}</span>`
-            : '<span class="v">—</span><span class="s">No profitable day yet</span>'}</div>`}
+            ? `<div class="ins"><span class="lbl">${t('Profit margin')}</span><span class="v num">${margin == null ? '—' : margin.toFixed(1) + '%'}</span><span class="s">${t('Profit ÷ sales')}</span></div>
+          <div class="ins"><span class="lbl">${t('Best outlet')}</span>${session.outletId === ALL_OUTLETS && bestOutletAll && bestOutletAll[1] > 0
+              ? `<span class="v">${esc(outletName(bestOutletAll[0]))}</span><span class="s">${t('Profit')} ${rmSen(bestOutletAll[1])}</span>`
+              : `<span class="v">${esc(outletName())}</span><span class="s">${session.outletId === ALL_OUTLETS ? t('No profit yet') : t('Selected outlet only')}</span>`}</div>`
+            : `<div class="ins"><span class="lbl">${t('Average daily profit')}</span><span class="v num">${rmSen(Math.round(tt.profit / days))}</span><span class="s">${t(to > today ? 'Over {n} days so far' : 'Over {n} days', { n: days })}</span></div>
+          <div class="ins"><span class="lbl">${t('Best day')}</span>${best && best[1].profit > 0
+            ? `<span class="v">${esc(dayName(best[0]))}, ${esc(dateShort(best[0]))}</span><span class="s">${t('Profit')} ${rmSen(best[1].profit)}${bestOutlet ? ' · ' + t('{o} led sales', { o: esc(outletName(bestOutlet)) }) : ''}</span>`
+            : `<span class="v">—</span><span class="s">${t('No profitable day yet')}</span>`}</div>`}
         </section>
 
         <div class="rep-grid">
           <section class="panel">
-            <div class="ph"><h2>Profit summary</h2><span class="sub">${esc(dateRange(from, to))}</span></div>
+            <div class="ph"><h2>${t('Profit summary')}</h2><span class="sub">${esc(dateRange(from, to))}</span></div>
             <div class="stmt">
-              <div class="kv"><span>Sales</span><b>${rmSen(t.sales)}${chip(pctChange(t.sales, p.sales))}</b></div>
-              <div class="kv"><span>Other income</span><b>${rmSen(other)}${chip(pctChange(other, pOther))}</b></div>
-              <div class="kv"><span>Expenses</span><b class="neg">${rmSen(t.out)}${chip(pctChange(t.out, p.out), false)}</b></div>
-              <div class="kv total"><span>Profit</span><b class="${t.profit < 0 ? 'neg' : ''}">${rmSen(t.profit)}</b></div>
-              <div class="stmt-meta"><span>${t.count} transactions</span>${margin != null ? `<span>Margin ${margin.toFixed(1)}%</span>` : ''}${fcPct != null ? `<span>Food cost ${fcPct.toFixed(1)}%${fcPct > FC_GOOD ? ' ⚠' : ''}</span>` : ''}</div>
+              <div class="kv"><span>${t('Sales')}</span><b>${rmSen(tt.sales)}${chip(pctChange(tt.sales, p.sales))}</b></div>
+              <div class="kv"><span>${t('Other income')}</span><b>${rmSen(other)}${chip(pctChange(other, pOther))}</b></div>
+              <div class="kv"><span>${t('Expenses')}</span><b class="neg">${rmSen(tt.out)}${chip(pctChange(tt.out, p.out), false)}</b></div>
+              <div class="kv total"><span>${t('Profit')}</span><b class="${tt.profit < 0 ? 'neg' : ''}">${rmSen(tt.profit)}</b></div>
+              <div class="stmt-meta"><span>${t('{n} transactions', { n: tt.count })}</span>${margin != null ? `<span>${t('Margin')} ${margin.toFixed(1)}%</span>` : ''}${fcPct != null ? `<span>${t('Food cost')} ${fcPct.toFixed(1)}%${fcPct > FC_GOOD ? ' ⚠' : ''}</span>` : ''}</div>
             </div>
-            <p class="note-line">${icon('lock')}Owner money, loans, tax and asset purchases are not counted in profit.</p>
+            <p class="note-line">${icon('lock')}${t('Owner money, loans, tax and asset purchases are not counted in profit.')}</p>
           </section>
 
           <section class="panel">
-            <div class="ph"><div><h2>Money in &amp; out</h2><div class="sub">Tap a bar for details</div></div>
-              <span class="legend"><i class="in"></i>In <i class="out"></i>Out</span></div>
+            <div class="ph"><div><h2>${t('Money in &amp; out')}</h2><div class="sub">${t('Tap a bar for details')}</div></div>
+              <span class="legend"><i class="in"></i>${t('In')} <i class="out"></i>${t('Out')}</span></div>
             <div class="chart-wrap">
               ${rows.length ? `<div class="bar-chart" id="repChart" style="--groups:${groups.length}">${chartHTML(groups, rows, today)}</div>
-              <p class="rep-detail" id="repDetail" role="status"></p>` : '<p class="loading-line">No transactions for this period.</p>'}
+              <p class="rep-detail" id="repDetail" role="status"></p>` : `<p class="loading-line">${t('No transactions for this period.')}</p>`}
             </div>
           </section>
         </div>
 
         ${showOutlets ? `<section class="panel">
-          <div class="ph"><h2>Outlet performance</h2><span class="sub">Best margin tagged</span></div>
+          <div class="ph"><h2>${t('Outlet performance')}</h2><span class="sub">${t('Best margin tagged')}</span></div>
           <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th>Outlet</th><th>Sales</th><th>Expenses</th><th>Profit</th><th>Margin</th></tr></thead>
+            <thead><tr><th>${t('Outlet')}</th><th>${t('Sales')}</th><th>${t('Expenses')}</th><th>${t('Profit')}</th><th>${t('Margin')}</th></tr></thead>
             <tbody>${outletRows.map(([id, o]) => {
               const m = o.sales ? o.profit / o.sales : null;
-              return `<tr><td>${esc(outletName(id))}${m != null && m === bestMargin ? '<span class="best">best margin</span>' : ''}</td>
+              return `<tr><td>${esc(outletName(id))}${m != null && m === bestMargin ? `<span class="best">${t('best margin')}</span>` : ''}</td>
                 <td>${esc(rmSen(o.sales).replace('RM ', ''))}</td><td>${esc(rmSen(o.out).replace('RM ', ''))}</td>
                 <td class="${o.profit < 0 ? 'n' : 'p'}">${esc(rmSen(o.profit).replace('RM ', ''))}</td><td>${m == null ? '—' : (m * 100).toFixed(1) + '%'}</td></tr>`;
             }).join('')}</tbody>
-            <tfoot><tr><td>Total</td><td>${esc(rmSen(t.sales).replace('RM ', ''))}</td><td>${esc(rmSen(t.out).replace('RM ', ''))}</td><td class="${t.profit < 0 ? 'n' : 'p'}">${esc(rmSen(t.profit).replace('RM ', ''))}</td><td>${margin == null ? '—' : margin.toFixed(1) + '%'}</td></tr></tfoot>
+            <tfoot><tr><td>${t('Total')}</td><td>${esc(rmSen(tt.sales).replace('RM ', ''))}</td><td>${esc(rmSen(tt.out).replace('RM ', ''))}</td><td class="${tt.profit < 0 ? 'n' : 'p'}">${esc(rmSen(tt.profit).replace('RM ', ''))}</td><td>${margin == null ? '—' : margin.toFixed(1) + '%'}</td></tr></tfoot>
           </table></div>
         </section>` : ''}
 
         <div class="rep-grid-2">
           <section class="panel">
-            <div class="ph"><h2>Expenses by category</h2><span class="sub">${rmSen(expTotal)}</span></div>
-            ${breakdownHTML(expItems, expTotal, 'No expenses for this period.')}
+            <div class="ph"><h2>${t('Expenses by category')}</h2><span class="sub">${rmSen(expTotal)}</span></div>
+            ${breakdownHTML(expItems, expTotal, t('No expenses for this period.'))}
           </section>
           <section class="panel">
-            <div class="ph"><h2>Sales by payment method</h2><span class="sub">${rmSen(payTotal)}</span></div>
-            ${breakdownHTML(payItems, payTotal, 'No sales for this period.')}
+            <div class="ph"><h2>${t('Sales by payment method')}</h2><span class="sub">${rmSen(payTotal)}</span></div>
+            ${breakdownHTML(payItems, payTotal, t('No sales for this period.'))}
           </section>
         </div>`;
 
       shareText = shiftSalesText(saleRows, from, upTo) || [
-        `${session.business?.name || 'BizProfit Pro'} · ${PERIODS[state.period]} report`,
+        `${session.business?.name || 'BizProfit Pro'} · ${t('{p} report', { p: t(PERIODS[state.period]) })}`,
         `${dateRange(from, to)} (${scope})`,
-        `Sales: ${rmSen(t.sales)}`,
-        `Expenses: ${rmSen(t.out)}`,
-        `Profit: ${rmSen(t.profit)}${profitChg == null ? '' : ` (${profitChg >= 0 ? '▲' : '▼'} ${Math.abs(profitChg).toFixed(1)}% vs ${prevName})`}`,
-        `${margin != null ? `Margin: ${margin.toFixed(1)}% · ` : ''}${t.count} transactions`
+        `${t('Sales')}: ${rmSen(tt.sales)}`,
+        `${t('Expenses')}: ${rmSen(tt.out)}`,
+        `${t('Profit')}: ${rmSen(tt.profit)}${profitChg == null ? '' : ` (${profitChg >= 0 ? '▲' : '▼'} ${Math.abs(profitChg).toFixed(1)}% ${t('vs')} ${prevName})`}`,
+        `${margin != null ? `${t('Margin')}: ${margin.toFixed(1)}% · ` : ''}${t('{n} transactions', { n: tt.count })}`
       ].join('\n');
 
       if (!rows.length) return;
@@ -399,12 +400,12 @@ export default {
     $('repDate').addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama: biar lalai */ } });
     $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value > today ? today : e.target.value < minDate ? minDate : e.target.value; show(); } });
     $('repShare').addEventListener('click', async () => {
-      if (!shareText) { toast('Report is still loading.'); return; }
+      if (!shareText) { toast(t('Report is still loading.')); return; }
       try {
         if (navigator.share) { await navigator.share({ text: shareText }); return; }
       } catch (e) { if (e && e.name === 'AbortError') return; }
-      try { await navigator.clipboard.writeText(shareText); toast('Summary copied. Paste it in WhatsApp.'); }
-      catch { toast('Could not copy on this device.', 'error'); }
+      try { await navigator.clipboard.writeText(shareText); toast(t('Summary copied. Paste it in WhatsApp.')); }
+      catch { toast(t('Could not copy on this device.'), 'error'); }
     });
     show();
     return () => { version++; };
