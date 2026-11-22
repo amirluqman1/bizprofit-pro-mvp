@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<title>BizProfit Concept 3 Blue</title>
+<meta name="description" content="Contoh reka bentuk Home BizProfit Pro menggunakan skill ui-ux-pro-max dan taste-skill. Data rekaan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Lexend:wght@500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* =====================================================================
+   BizProfit Pro · Konsep 3 (contoh, belum masuk app)
+   Skill: ui-ux-pro-max (bento grid, glass pada kad utama, stagger masuk,
+   bullet chart untuk sasaran, peraturan a11y) + taste-skill (satu sistem,
+   hover lift 2px, tekan = step, hero masuk sekali, tiada fade on scroll,
+   tiada tilt, tiada ungu).
+   Versi biru: palet cadangan ui-ux-pro-max (Trust blue + profit green on dark).
+   Biru = jenama, hijau = profit / wang masuk / CTA, merah = masalah.
+   Hijau & merah teks dicerahkan sikit (#10B981, #F87171) supaya lulus kontras 4.5:1.
+   ===================================================================== */
+:root {
+  color-scheme: dark;
+  --bg: #0F172A;
+  --panel: #192134;
+  --raise: #222D45;
+  --line: rgba(255, 255, 255, .08);
+  --line-2: rgba(255, 255, 255, .16);
+  --text: #FFFFFF;
+  --muted: #94A3B8;
+  --faint: #64748B;
+  --mint: #10B981;
+  --mint-2: #059669;
+  --mint-soft: rgba(16, 185, 129, .14);
+  --gold: #3B82F6;
+  --blue-1: #1E40AF;
+  --blue-hi: #60A5FA;
+  --cta: #059669;
+  --gold-soft: rgba(59, 130, 246, .16);
+  --red: #F87171;
+  --red-soft: rgba(220, 38, 38, .18);
+  --amber: #f7c56b;
+  --amber-soft: rgba(247, 197, 107, .13);
+  --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
+  --gap: 14px;
+  --font: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: "Lexend", var(--font);
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --side-w: 236px;
+  --tab-h: 64px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100dvh; font-family: var(--font); font-size: 14px; line-height: 1.5;
+  color: var(--text); -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(900px 420px at 70% -120px, rgba(30, 64, 175, .38), transparent 70%) no-repeat,
+    var(--bg);
+}
+svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+a { color: inherit; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Jalur contoh */
+.demo-note {
+  margin: 12px 0 0; display: inline-block; padding: 4px 12px; border-radius: 999px;
+  font-size: 11.5px; color: #FFFFFF; background: var(--blue-1); font-weight: 600;
+}
+
+/* ---------- Rangka ---------- */
+.shell { padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 24px); }
+.main { width: min(1120px, 100%); margin-inline: auto; padding: 0 16px; }
+
+.side {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: rgba(25, 33, 52, .88); border-top: 1px solid var(--line);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.side .brand { display: none; }
+.tab {
+  display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 50px; padding: 4px 2px;
+  border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 500;
+  transition: color .2s, background-color .2s;
+}
+.tab svg { width: 21px; height: 21px; }
+.tab[aria-current="page"] { color: var(--text); }
+.tab[aria-current="page"] svg { color: var(--gold); }
+.tab:active { transform: scale(.96); }
+
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  background:
+    linear-gradient(var(--mint), var(--mint)) 7px 22px / 4px 6px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 13px 17px / 4px 11px no-repeat,
+    linear-gradient(var(--mint), var(--mint)) 19px 12px / 4px 16px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 25px 7px / 4px 21px no-repeat,
+    #1E3A8A;
+}
+.brand-name { margin: 0; font-family: var(--display); font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+.brand-name span { color: var(--blue-hi); }
+.brand-sub { margin: 0; font-size: 12px; color: var(--muted); }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 16px; }
+.top-actions { display: flex; gap: 8px; }
+.icon-btn {
+  position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  transition: color .2s, border-color .2s, transform .15s;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--line-2); }
+.icon-btn:active { transform: scale(.95); }
+.icon-btn .dot { position: absolute; top: 10px; right: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 2px var(--panel); }
+
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 14px; margin: 26px 0 18px; }
+.greet { margin: 0; font-family: var(--display); font-size: clamp(24px, 3.2vw, 32px); font-weight: 600; letter-spacing: -.03em; line-height: 1.15; }
+.greet-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.seg {
+  display: inline-flex; padding: 4px; gap: 2px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+}
+.seg button {
+  min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500;
+  transition: background-color .2s, color .2s;
+}
+.seg button[aria-pressed="true"] { background: var(--raise); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.seg button:hover { color: var(--text); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px;
+  border-radius: 12px; border: 1px solid transparent; font-weight: 600; font-size: 14px; text-decoration: none;
+  transition: transform .15s var(--ease-out), box-shadow .2s, background-color .2s;
+}
+.btn svg { width: 18px; height: 18px; }
+.btn.primary { background: var(--cta); color: #000000; box-shadow: 0 6px 20px -8px rgba(5, 150, 105, .6); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 26px -8px rgba(5, 150, 105, .75); }
+.btn:active { transform: translateY(0) scale(.97); }
+
+/* ---------- Bento ---------- */
+.bento {
+  display: grid; gap: var(--gap);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-areas:
+    "hero hero sales exp"
+    "hero hero tx    fc"
+    "attn attn recent recent"
+    "outlet outlet recent recent";
+}
+.card {
+  position: relative; min-width: 0; border-radius: var(--r-lg); background: var(--panel); border: 1px solid var(--line);
+  padding: 18px; transition: transform .25s var(--ease-out), border-color .25s, box-shadow .25s;
+}
+a.card { text-decoration: none; display: block; }
+a.card.kpi { display: flex; }
+a.card:hover { transform: translateY(-2px); border-color: rgba(59, 130, 246, .45); box-shadow: 0 14px 30px -18px rgba(0, 0, 0, .8); }
+a.card:active { transform: translateY(0) scale(.99); }
+.card h2 { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.card h2 svg { width: 16px; height: 16px; color: var(--faint); }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.more { font-size: 12.5px; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+.more svg { width: 14px; height: 14px; transition: transform .2s var(--ease-out); }
+.more:hover { color: var(--text); }
+.more:hover svg { transform: translateX(2px); }
+
+/* Kad utama: profit (glass) */
+.hero-card {
+  grid-area: hero; padding: 22px 22px 18px; overflow: hidden; isolation: isolate;
+  background: linear-gradient(155deg, rgba(30, 64, 175, .42), rgba(25, 33, 52, .7));
+  border-color: rgba(255, 255, 255, .18);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.hero-card::before {
+  content: ""; position: absolute; z-index: -1; inset: -40% -10% auto auto; width: 70%; aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(59, 130, 246, .35), transparent 62%);
+}
+.hero-card::after {
+  content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 30%);
+}
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.big {
+  margin: 6px 0 0; font-family: var(--display); font-weight: 600; letter-spacing: -.04em; line-height: 1;
+  font-size: clamp(40px, 6.2vw, 64px); color: var(--mint); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.big small { font-size: .38em; letter-spacing: 0; color: var(--muted); font-weight: 500; margin-right: 6px; vertical-align: .9em; }
+.chg {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px;
+  font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap;
+}
+.chg svg { width: 12px; height: 12px; stroke-width: 2.4; }
+.chg.good { color: var(--mint); background: var(--mint-soft); }
+.chg.bad { color: var(--red); background: var(--red-soft); }
+.chg.flat { color: var(--muted); background: var(--raise); }
+.hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; color: var(--muted); font-size: 12.5px; }
+
+/* Sasaran (bullet chart) */
+.target { display: grid; gap: 7px; min-width: 200px; flex: 0 1 260px; }
+.target-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); }
+.target-row b { color: var(--text); font-weight: 500; }
+.bar { position: relative; height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .06); overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: inherit; background: linear-gradient(90deg, var(--mint-2), var(--mint)); transform-origin: left; }
+.bar.gold i { background: linear-gradient(90deg, var(--blue-1), var(--gold)); }
+
+/* Graf 7 hari */
+.chart-wrap { position: relative; flex: 1; min-height: 170px; display: flex; flex-direction: column; }
+.readout { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--muted); min-height: 20px; }
+.readout b { color: var(--text); font-family: var(--mono); font-weight: 500; }
+.chart { width: 100%; height: 100%; flex: 1; min-height: 150px; display: block; overflow: visible; }
+.chart .grid line { stroke: rgba(255, 255, 255, .05); stroke-width: 1; }
+.chart .area { fill: url(#areaFill); stroke: none; }
+.chart .line { fill: none; stroke: var(--mint); stroke-width: 2.2; }
+.chart .pt { fill: var(--bg); stroke: var(--mint); stroke-width: 2; transition: r .15s; }
+.chart .hit { fill: transparent; stroke: none; cursor: pointer; outline: none; }
+.chart .hit:focus-visible + .pt, .chart .pt.on { r: 5.5; fill: var(--mint); }
+.chart .guide { stroke: rgba(16, 185, 129, .45); stroke-dasharray: 3 4; stroke-width: 1; opacity: 0; transition: opacity .15s; }
+.chart .guide.on { opacity: 1; }
+.days { position: relative; height: 18px; margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.days span { position: absolute; transform: translateX(-50%); }
+.days span:first-child { transform: none; } .days span:last-child { transform: translateX(-100%); color: var(--text); }
+
+/* Kad KPI kecil */
+.kpi { display: flex; flex-direction: column; gap: 10px; }
+.kpi .val { margin: 0; font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.3vw, 27px); letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpi .val small { font-size: 13px; color: var(--muted); font-weight: 500; margin-right: 4px; letter-spacing: 0; }
+.kpi .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; margin-top: auto; }
+.kpi .note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.kpi .note b { color: var(--text); font-weight: 500; font-family: var(--mono); }
+.mini { display: flex; align-items: flex-end; gap: 4px; height: 56px; }
+.mini i { width: 8px; border-radius: 2px; background: #334155; height: var(--h); transform-origin: bottom; }
+.mini i:last-child { background: var(--mint); }
+.mini.out i:last-child { background: var(--gold); }
+.sales { grid-area: sales; } .exp { grid-area: exp; } .tx { grid-area: tx; } .fc { grid-area: fc; }
+
+/* Gelang food cost */
+.ring-row { display: flex; align-items: center; gap: 14px; }
+.ring { width: 64px; height: 64px; flex: none; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 7; }
+.ring .track { stroke: rgba(255, 255, 255, .07); }
+.ring .prog { stroke: var(--mint); stroke-linecap: round; }
+.ring .limit { stroke: #FFFFFF; stroke-width: 9; }
+.ring-txt { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
+.ring-txt b { font-family: var(--display); color: var(--text); font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+
+/* Senarai */
+.attn { grid-area: attn; } .recent { grid-area: recent; } .outlet { grid-area: outlet; }
+.rows { list-style: none; margin: 10px -18px -8px; padding: 0; }
+.rows li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 18px; border-top: 1px solid var(--line); }
+.rows li:first-child { border-top: 0; }
+.rows.plain li { grid-template-columns: minmax(0, 1fr) auto; }
+.rows .t { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .m { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; }
+.ic svg { width: 16px; height: 16px; }
+.ic.crit { background: var(--red-soft); color: var(--red); }
+.ic.warn { background: var(--amber-soft); color: var(--amber); }
+.pill { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid transparent; transition: transform .15s, background-color .2s; }
+.pill.crit { color: var(--red); background: var(--red-soft); border-color: rgba(220, 38, 38, .38); }
+.pill.warn { color: var(--amber); background: var(--amber-soft); border-color: rgba(247, 197, 107, .25); }
+a.pill:hover { transform: translateY(-1px); }
+a.pill:active { transform: scale(.96); }
+.amt { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.amt.in { color: var(--mint); }
+.tag { display: inline-block; padding: 1px 7px; margin-left: 6px; border-radius: 6px; background: var(--raise); color: var(--muted); font-size: 11px; font-weight: 500; vertical-align: 1px; }
+
+.outlets { display: grid; gap: 14px; margin-top: 14px; }
+.o-row { display: grid; gap: 6px; }
+.o-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.o-top span:last-child { font-family: var(--mono); color: var(--muted); }
+.o-top b { font-weight: 500; }
+
+/* ---------- Masuk (sekali, bila page dibuka) ---------- */
+.enter { opacity: 0; transform: translateY(14px) scale(.985); }
+.ready .enter { animation: rise .6s var(--ease-out) forwards; animation-delay: calc(var(--i, 0) * 60ms); }
+@keyframes rise { to { opacity: 1; transform: none; } }
+.ready .bar i { animation: grow 1s .35s var(--ease-out) both; }
+.ready .mini i { animation: growY .7s var(--ease-out) both; animation-delay: calc(.3s + var(--k, 0) * 40ms); }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes growY { from { transform: scaleY(0); } }
+.chart .line { stroke-dasharray: var(--len, 1200); stroke-dashoffset: var(--len, 1200); }
+.ready .chart .line { animation: draw 1.3s .25s var(--ease-out) forwards; }
+.chart .area, .chart .pt { opacity: 0; }
+.ready .chart .area { animation: fade .8s .9s ease forwards; }
+.ready .chart .pt { animation: fade .3s ease forwards; animation-delay: calc(.5s + var(--k, 0) * 90ms); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fade { to { opacity: 1; } }
+.ring .prog { transition: stroke-dashoffset 1.2s .4s var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .enter, .chart .area, .chart .pt { opacity: 1; transform: none; }
+  .chart .line { stroke-dashoffset: 0; }
+}
+
+/* ---------- Responsif ---------- */
+@media (max-width: 1023px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "hero hero" "sales exp" "tx fc" "attn attn" "recent recent" "outlet outlet";
+  }
+  .hero-card { min-height: 380px; }
+}
+@media (max-width: 560px) {
+  .main { padding: 0 16px; }
+  .card { padding: 16px; border-radius: 18px; }
+  .rows { margin-inline: -16px; }
+  .rows li { padding-inline: 16px; }
+  .hero-card { padding: 18px 16px 14px; min-height: 360px; }
+  .target { flex-basis: 100%; }
+  .head-actions { width: 100%; }
+  .head-actions .btn { flex: 1; }
+  .seg { width: 100%; } .seg button { flex: 1; }
+  .kpi .foot .mini { height: 34px; }
+  .kpi .foot .mini i { width: 5px; }
+  .ring-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .ring { width: 54px; height: 54px; }
+  .exp .foot .mini, .tx .foot .mini { display: none; }
+}
+@media (min-width: 1024px) {
+  .shell { padding-bottom: 40px; padding-left: var(--side-w); }
+  .side {
+    top: 0; right: auto; width: var(--side-w); bottom: 0; grid-auto-flow: row; grid-auto-rows: max-content;
+    align-content: start; gap: 2px; padding: 18px 12px; background: rgba(15, 23, 42, .6);
+    border-top: 0; border-right: 1px solid var(--line);
+  }
+  .side .brand { display: flex; padding: 0 8px 22px; }
+  .tab { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; font-size: 14px; }
+  .tab svg { width: 18px; height: 18px; }
+  .tab:hover { background: var(--raise); color: var(--text); }
+  .tab[aria-current="page"] { background: var(--raise); box-shadow: inset 0 0 0 1px var(--line); }
+  .top .brand { visibility: hidden; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side" aria-label="Main menu">
+    <div class="brand"><div class="logo" aria-hidden="true"></div><div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub">F&amp;B Management</p></div></div>
+    <a class="tab" href="#" aria-current="page"><svg aria-hidden="true"><use href="#i-home"/></svg>Home</a>
+    <a class="tab" href="#"><svg aria-hidden="true"><use href="#i-receipt"/></svg>Key In</a>
+    <a class="tab" href="#"><svg aria-hidden="true"><use href="#i-box"/></svg>Stock</a>
+    <a class="tab" href="#"><svg aria-hidden="true"><use href="#i-chart"/></svg>Report</a>
+    <a class="tab" href="#"><svg aria-hidden="true"><use href="#i-menu"/></svg>Menu</a>
+  </nav>
+
+  <div class="main">
+    <p class="demo-note">CONTOH REKA BENTUK · data rekaan · belum disambung ke app</p>
+    <header class="top">
+      <div class="brand"><div class="logo" aria-hidden="true"></div><div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub">Warung Selera Kampung</p></div></div>
+      <div class="top-actions">
+        <button class="icon-btn" type="button" aria-label="Notifications, 3 new"><svg aria-hidden="true"><use href="#i-bell"/></svg><span class="dot"></span></button>
+        <button class="icon-btn" type="button" aria-label="Account"><svg aria-hidden="true"><use href="#i-user"/></svg></button>
+      </div>
+    </header>
+
+    <div class="head enter" style="--i:0">
+      <div>
+        <h1 class="greet">Good afternoon, Owner</h1>
+        <p class="greet-sub">Saturday, 21 November · all 3 outlets</p>
+      </div>
+      <div class="head-actions">
+        <div class="seg" role="group" aria-label="Period">
+          <button type="button" aria-pressed="true">Today</button>
+          <button type="button" aria-pressed="false">7 days</button>
+          <button type="button" aria-pressed="false">Month</button>
+        </div>
+        <a class="btn primary" href="#"><svg aria-hidden="true"><use href="#i-plus"/></svg>Key in transaction</a>
+      </div>
+    </div>
+
+    <main class="bento" aria-label="Today at a glance">
+      <!-- Profit -->
+      <section class="card hero-card enter" style="--i:1" aria-labelledby="h-profit">
+        <div class="hero-top">
+          <div>
+            <h2 id="h-profit"><svg aria-hidden="true"><use href="#i-spark"/></svg>Net profit today</h2>
+            <p class="big"><small>RM</small><span data-count="1284.50">0.00</span></p>
+            <div class="hero-meta">
+              <span class="chg good"><svg aria-hidden="true"><use href="#i-up"/></svg>12.4%</span>
+              <span>vs yesterday (RM 1,142.80)</span>
+            </div>
+          </div>
+          <div class="target">
+            <div class="target-row"><span>Daily target</span><b class="num">86%</b></div>
+            <div class="bar" role="img" aria-label="86% of the RM 1,500 daily target"><i style="--w:86%"></i></div>
+            <div class="target-row"><span class="num">RM 1,284</span><span class="num">RM 1,500</span></div>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="readout" aria-live="polite"><span id="ro-day">Last 7 days</span><b id="ro-val">RM 7,642 total</b></div>
+          <svg class="chart" id="chart" viewBox="0 0 600 190" preserveAspectRatio="none" role="group" aria-label="Net profit, last 7 days">
+            <defs>
+              <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#10B981" stop-opacity=".28"/>
+                <stop offset="1" stop-color="#10B981" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="days" id="days" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <!-- KPI -->
+      <a class="card kpi sales enter" style="--i:2" href="#" aria-label="Sales today RM 3,920.00, up 8.1%">
+        <h2><svg aria-hidden="true"><use href="#i-in"/></svg>Sales</h2>
+        <p class="val"><small>RM</small><span data-count="3920">0.00</span></p>
+        <div class="foot"><span class="chg good"><svg aria-hidden="true"><use href="#i-up"/></svg>8.1%</span>
+          <span class="mini" aria-hidden="true"><i style="--h:40%;--k:0"></i><i style="--h:55%;--k:1"></i><i style="--h:48%;--k:2"></i><i style="--h:70%;--k:3"></i><i style="--h:62%;--k:4"></i><i style="--h:80%;--k:5"></i><i style="--h:92%;--k:6"></i></span></div>
+      </a>
+      <a class="card kpi exp enter" style="--i:3" href="#" aria-label="Expenses today RM 2,635.50, up 5.9%">
+        <h2><svg aria-hidden="true"><use href="#i-out"/></svg>Expenses</h2>
+        <p class="val"><small>RM</small><span data-count="2635.5">0.00</span></p>
+        <div class="foot"><span class="chg bad"><svg aria-hidden="true"><use href="#i-up"/></svg>5.9%</span>
+          <span class="mini out" aria-hidden="true"><i style="--h:60%;--k:0"></i><i style="--h:52%;--k:1"></i><i style="--h:66%;--k:2"></i><i style="--h:58%;--k:3"></i><i style="--h:70%;--k:4"></i><i style="--h:64%;--k:5"></i><i style="--h:74%;--k:6"></i></span></div>
+      </a>
+      <a class="card kpi tx enter" style="--i:4" href="#" aria-label="142 transactions today, 9 more than yesterday, average bill RM 27.61">
+        <h2><svg aria-hidden="true"><use href="#i-receipt"/></svg>Transactions</h2>
+        <p class="val"><span data-count="142" data-int>0</span></p>
+        <div class="foot"><span class="chg flat">+9 vs yesterday</span>
+          <span class="mini" aria-hidden="true"><i style="--h:30%;--k:0"></i><i style="--h:62%;--k:1"></i><i style="--h:88%;--k:2"></i><i style="--h:45%;--k:3"></i><i style="--h:35%;--k:4"></i><i style="--h:70%;--k:5"></i><i style="--h:52%;--k:6"></i></span></div>
+        <p class="note">Average bill <b>RM 27.61</b></p>
+      </a>
+      <a class="card kpi fc enter" style="--i:5" href="#" aria-label="Food cost 31.2%, under the 35% guide">
+        <h2><svg aria-hidden="true"><use href="#i-cart"/></svg>Food cost · 7 days</h2>
+        <div class="ring-row">
+          <svg class="ring" viewBox="0 0 70 70" aria-hidden="true">
+            <circle class="track" cx="35" cy="35" r="28"/>
+            <circle class="prog" id="ringProg" cx="35" cy="35" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+            <circle class="limit" cx="35" cy="35" r="28" stroke-dasharray="1.4 174.5" stroke-dashoffset="-61.6"/>
+          </svg>
+          <div class="ring-txt"><b class="num">31.2%</b><span>Guide 35%</span><span class="chg good" style="justify-self:start">On track</span></div>
+        </div>
+        <p class="note" style="margin-top:auto">Highest: <b>Seri Kembangan 37.8%</b></p>
+      </a>
+
+      <!-- Perlu perhatian -->
+      <section class="card attn enter" style="--i:6" aria-labelledby="h-attn">
+        <div class="card-head"><h2 id="h-attn"><svg aria-hidden="true"><use href="#i-alert"/></svg>Needs attention · 3</h2><a class="more" href="#">Open stock<svg aria-hidden="true"><use href="#i-right"/></svg></a></div>
+        <ul class="rows">
+          <li><span class="ic crit" aria-hidden="true"><svg><use href="#i-box"/></svg></span>
+            <div style="min-width:0"><div class="t">Santan kotak</div><div class="m">Out of stock · target 24 box · Outlet Bangi</div></div>
+            <span class="pill crit">Out</span></li>
+          <li><span class="ic warn" aria-hidden="true"><svg><use href="#i-box"/></svg></span>
+            <div style="min-width:0"><div class="t">Beras basmathi</div><div class="m">6 kg left · target 25 kg · Outlet Kajang</div></div>
+            <span class="pill warn">Low</span></li>
+          <li><span class="ic warn" aria-hidden="true"><svg><use href="#i-chart"/></svg></span>
+            <div style="min-width:0"><div class="t">Food cost at Outlet Seri Kembangan: 37.8%</div><div class="m">Above the 35% guide, last 7 days</div></div>
+            <a class="pill warn" href="#">Review</a></li>
+        </ul>
+      </section>
+
+      <!-- Transaksi terkini -->
+      <section class="card recent enter" style="--i:7" aria-labelledby="h-recent">
+        <div class="card-head"><h2 id="h-recent"><svg aria-hidden="true"><use href="#i-history"/></svg>Recent transactions</h2><a class="more" href="#">View all<svg aria-hidden="true"><use href="#i-right"/></svg></a></div>
+        <ul class="rows plain">
+          <li><div style="min-width:0"><div class="t">Jualan tengah hari<span class="tag">QR</span></div><div class="m">Outlet Bangi · 14:32</div></div><div class="amt in">+RM 865.00</div></li>
+          <li><div style="min-width:0"><div class="t">Ayam segar 20 kg</div><div class="m">Outlet Kajang · 13:10 · Ingredients</div></div><div class="amt">−RM 236.00</div></li>
+          <li><div style="min-width:0"><div class="t">Jualan pagi<span class="tag">Cash</span></div><div class="m">Outlet Seri Kembangan · 11:45</div></div><div class="amt in">+RM 612.40</div></li>
+          <li><div style="min-width:0"><div class="t">Gas memasak</div><div class="m">Outlet Bangi · 10:20 · Utilities</div></div><div class="amt">−RM 78.00</div></li>
+          <li><div style="min-width:0"><div class="t">Sayur pasar</div><div class="m">Outlet Kajang · 08:05 · Ingredients</div></div><div class="amt">−RM 142.50</div></li>
+          <li><div style="min-width:0"><div class="t">Jualan sarapan<span class="tag">Card</span></div><div class="m">Outlet Bangi · 07:58</div></div><div class="amt in">+RM 398.00</div></li>
+        </ul>
+      </section>
+
+      <!-- Prestasi outlet -->
+      <section class="card outlet enter" style="--i:8" aria-labelledby="h-outlet">
+        <div class="card-head"><h2 id="h-outlet"><svg aria-hidden="true"><use href="#i-store"/></svg>Profit by outlet · today</h2><a class="more" href="#">Full report<svg aria-hidden="true"><use href="#i-right"/></svg></a></div>
+        <div class="outlets">
+          <div class="o-row"><div class="o-top"><b>Outlet Bangi</b><span>RM 612.30</span></div><div class="bar" role="img" aria-label="Outlet Bangi, RM 612.30"><i style="--w:100%"></i></div></div>
+          <div class="o-row"><div class="o-top"><b>Outlet Kajang</b><span>RM 438.70</span></div><div class="bar" role="img" aria-label="Outlet Kajang, RM 438.70"><i style="--w:72%"></i></div></div>
+          <div class="o-row"><div class="o-top"><b>Outlet Seri Kembangan</b><span>RM 233.50</span></div><div class="bar gold" role="img" aria-label="Outlet Seri Kembangan, RM 233.50"><i style="--w:38%"></i></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Ikon -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7zM4 7l8 4 8-4M12 11v10"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9 5.5 4h13L20 9M4 9h16v2a3 3 0 0 1-5 2 3 3 0 0 1-6 0 3 3 0 0 1-5-2zM5 13v7h14v-7M10 20v-4h4v4"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 7H6.2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><path d="M12 4v13M6 11l6 6 6-6M5 21h14"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M12 20V7M6 13l6-6 6 6M5 3h14"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8M15 8h5v5"/></symbol>
+</svg>
+
+<script>
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fmt2 = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var fmt0 = new Intl.NumberFormat('en-MY');
+
+  // ---- Graf profit 7 hari (data rekaan) ----
+  var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var vals = [948, 1012, 876, 1105, 1273, 1143, 1285];
+  var svg = document.getElementById('chart'), NS = 'http://www.w3.org/2000/svg';
+  var W = 600, H = 190, padX = 14, top = 14, bot = 6;
+  var max = Math.max.apply(null, vals) * 1.08, min = Math.min.apply(null, vals) * .82;
+  var x = function (i) { return padX + i * (W - 2 * padX) / (vals.length - 1); };
+  var y = function (v) { return top + (1 - (v - min) / (max - min)) * (H - top - bot); };
+  function el(tag, attrs, parent) { var n = document.createElementNS(NS, tag); for (var k in attrs) n.setAttribute(k, attrs[k]); (parent || svg).appendChild(n); return n; }
+
+  var g = el('g', { class: 'grid' });
+  [0, .5, 1].forEach(function (f) { var yy = top + f * (H - top - bot); el('line', { x1: 0, x2: W, y1: yy, y2: yy }, g); });
+
+  // Lengkung licin (Catmull-Rom → Bezier)
+  var pts = vals.map(function (v, i) { return [x(i), y(v)]; });
+  var d = 'M' + pts[0][0] + ' ' + pts[0][1];
+  for (var i = 0; i < pts.length - 1; i++) {
+    var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += ' C' + (p1[0] + (p2[0] - p0[0]) / 6) + ' ' + (p1[1] + (p2[1] - p0[1]) / 6) + ',' + (p2[0] - (p3[0] - p1[0]) / 6) + ' ' + (p2[1] - (p3[1] - p1[1]) / 6) + ',' + p2[0] + ' ' + p2[1];
+  }
+  el('path', { class: 'area', d: d + ' L' + x(6) + ' ' + (H - bot) + ' L' + x(0) + ' ' + (H - bot) + ' Z' });
+  var line = el('path', { class: 'line', d: d, 'vector-effect': 'non-scaling-stroke' });
+  line.style.setProperty('--len', Math.ceil(line.getTotalLength() + 20));
+  var guide = el('line', { class: 'guide', y1: top, y2: H - bot, x1: 0, x2: 0, 'vector-effect': 'non-scaling-stroke' });
+
+  var roDay = document.getElementById('ro-day'), roVal = document.getElementById('ro-val');
+  var dots = [];
+  vals.forEach(function (v, i) {
+    var label = days[i] + (i === 6 ? ' (today)' : '') + ': RM ' + fmt2.format(v);
+    var hit = el('rect', { class: 'hit', x: x(i) - (W / 14), y: 0, width: W / 7, height: H, tabindex: 0, role: 'img', 'aria-label': label });
+    var dot = el('circle', { class: 'pt', cx: x(i), cy: y(v), r: 4, 'vector-effect': 'non-scaling-stroke' });
+    dot.style.setProperty('--k', i); dots.push(dot);
+    var lab = document.createElement('span'); lab.textContent = i === 6 ? 'Today' : days[i];
+    lab.style.left = (x(i) / W * 100) + '%'; document.getElementById('days').appendChild(lab);
+    function on() {
+      dots.forEach(function (o) { o.classList.remove('on'); }); dot.classList.add('on');
+      guide.setAttribute('x1', x(i)); guide.setAttribute('x2', x(i)); guide.classList.add('on');
+      roDay.textContent = days[i] + (i === 6 ? ' · today' : '');
+      roVal.textContent = 'RM ' + fmt2.format(v);
+    }
+    function off() { dot.classList.remove('on'); guide.classList.remove('on'); roDay.textContent = 'Last 7 days'; roVal.textContent = 'RM ' + fmt0.format(vals.reduce(function (a, b) { return a + b; }, 0)) + ' total'; }
+    hit.addEventListener('pointerenter', on); hit.addEventListener('focus', on);
+    hit.addEventListener('pointerleave', off); hit.addEventListener('blur', off);
+  });
+  // Bulatan atas garis, kotak sentuh di bawah: susun semula supaya hit di atas
+  svg.querySelectorAll('.hit').forEach(function (h) { svg.appendChild(h); });
+
+  // ---- Nombor naik (count-up) ----
+  function countUp(node) {
+    var to = parseFloat(node.dataset.count), isInt = node.hasAttribute('data-int');
+    var f = isInt ? fmt0 : fmt2;
+    if (reduce) { node.textContent = f.format(to); return; }
+    var t0 = performance.now(), dur = 1100;
+    (function step(t) {
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 4);
+      node.textContent = f.format(isInt ? Math.round(to * e) : to * e);
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+
+  // ---- Segmen tempoh (contoh sahaja) ----
+  document.querySelectorAll('.seg button').forEach(function (b, _, all) {
+    b.addEventListener('click', function () { all.forEach(function (o) { o.setAttribute('aria-pressed', o === b); }); });
+  });
+
+  // ---- Mula ----
+  requestAnimationFrame(function () {
+    document.body.classList.add('ready');
+    document.querySelectorAll('[data-count]').forEach(countUp);
+    document.getElementById('ringProg').setAttribute('stroke-dashoffset', (175.9 * (1 - .312)).toFixed(1));
+  });
+})();
+</script>
+</body>
+</html>
