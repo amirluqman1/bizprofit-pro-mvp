@@ -1,6 +1,7 @@
 // Titik mula app: login, rangka, outlet, navigasi.
 import { $, toast } from './ui.js';
-import { sb, session, loadAccount, setOutlet, onOutletChange, clearSession, ALL_OUTLETS } from './session.js';
+import { sb, session, setOutlet, onOutletChange, clearSession, ALL_OUTLETS } from './session.js';
+import { initAuth, showAuth, afterAuth } from './auth.js';
 import { startRouter, stopRouter, rerender, rebuildNav } from './router.js';
 import { initPWA } from './pwa.js';
 import { t, applyStatic } from './i18n.js';
@@ -20,12 +21,11 @@ async function refreshBell() {
   $('bellBtn').setAttribute('aria-label', lowStock ? t('Notifications: {n} items need restocking', { n: lowStock }) : t('Notifications'));
 }
 
-function showLogin(message) {
-  $('boot').hidden = true;
-  $('app').hidden = true;
-  $('login').hidden = false;
-  if (message) toast(message, 'error');
-}
+const showLogin = message => showAuth('login', undefined, message);
+
+// Pautan e-mel "set semula kata laluan": Supabase beri sesi khas + peristiwa PASSWORD_RECOVERY.
+let recovery = !!window.BP_RECOVERY;
+sb?.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery = true; showAuth('reset'); } });
 
 function fillOutletPicker() {
   const sel = $('outletSelect');
@@ -51,39 +51,23 @@ async function enterApp() {
 
 async function boot() {
   if (!sb) { showLogin(t('config.js not found.')); return; }
+  const inv = await initAuth({ ready: enterApp });
   // Jangan tunggu selamanya jika sambungan/sesi tersekat.
   const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 10000));
   const res = await Promise.race([sb.auth.getSession(), timeout]);
   if (res === 'timeout') { showLogin(t('Slow connection. Please log in again.')); return; }
   const s = res.data?.session;
-  if (!s) { showLogin(); return; }
-  const err = await loadAccount(s.user);
-  if (err) { showLogin(err); return; }
-  await enterApp();
+  if (s && recovery) { showAuth('reset'); return; }
+  // Dibuka dari pautan jemputan: tunjuk borang daftar (atau log masuk) dengan maklumat jemputan.
+  if (!s) { showAuth(inv?.valid ? 'signup' : 'login'); return; }
+  await afterAuth(s.user);
 }
-
-$('loginForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const email = $('loginEmail').value.trim();
-  const password = $('loginPassword').value;
-  if (!email || !password) { toast(t('Enter your email and password.'), 'error'); return; }
-  const btn = $('loginBtn');
-  btn.disabled = true;
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) { btn.disabled = false; toast(t('Wrong email or password.'), 'error'); return; }
-  const err = await loadAccount(data.user);
-  btn.disabled = false;
-  if (err) { await sb.auth.signOut({ scope: 'local' }); toast(err, 'error'); return; }
-  $('loginPassword').value = '';
-  await enterApp();
-});
 
 window.addEventListener('bp:logout', async () => {
   stopRouter();
   clearSession();
   history.replaceState(null, '', location.pathname);   // buang #/menu
   showLogin();
-  $('loginForm').reset();
   // scope 'local': keluar dari peranti ini sahaja. Asal Supabase ialah 'global', yang menendang keluar
   // SEMUA peranti yang guna akaun sama (masalah bila satu akaun dikongsi, contoh akaun outlet).
   try { await sb.auth.signOut({ scope: 'local' }); } catch { /* sesi tempatan tetap dibuang */ }

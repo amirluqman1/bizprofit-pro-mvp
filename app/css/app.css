@@ -815,3 +815,32 @@ a.h-tile:active { transform: scale(.99); }
 .lang-seg .seg-opt { min-width: 48px; min-height: 36px; }
 /* Label graf 7 hari: "Hari ini" lebih panjang dari "Today"; sorok label sebelah di skrin kecil supaya tak bertindih */
 @media (max-width: 480px) { .h-days span:nth-last-child(2) { display: none; } }
+
+/* ===== Log masuk, daftar, jemputan ===== */
+.auth-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; }
+.link-btn { background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--blue-hi); font-weight: 600; font-size: 14px; text-align: left; }
+.link-btn:hover { text-decoration: underline; }
+.hint.left { text-align: left; }
+.auth-invite { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--gold-soft); border: 1px solid rgba(59, 130, 246, .35); }
+.auth-invite b { font-size: 14px; }
+.auth-invite span { color: var(--muted); font-size: 13.5px; }
+.auth-invite.bad { background: var(--red-bg); border-color: rgba(220, 38, 38, .38); }
+
+/* ===== Akaun pengguna (Menu) ===== */
+.members { display: grid; gap: 10px; }
+.members .section-row { margin: 0; }
+.mb-list { display: grid; }
+.mb-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.mb-row:first-child { border-top: 0; }
+.mb-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--raise); color: var(--muted); }
+.mb-ic svg { width: 17px; height: 17px; }
+.mb-row.pending .mb-ic { background: var(--gold-soft); color: var(--blue-hi); }
+.mb-main { min-width: 0; display: grid; gap: 2px; }
+.mb-main b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb-main small { color: var(--muted); font-size: 12.5px; }
+.mb-acts { display: flex; gap: 6px; }
+.btn.sm { padding: 0 12px; min-height: 36px; font-size: 13px; }
+.btn.ghost.danger { color: var(--red); border-color: rgba(220, 38, 38, .38); }
+#mbLink { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--input); color: var(--muted); font-size: 13px; }
+#mbWa { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; text-decoration: none; }
+@media (max-width: 420px) { .mb-row { grid-template-columns: auto minmax(0, 1fr); } .mb-acts, .mb-row > .btn { grid-column: 2; justify-self: start; } }

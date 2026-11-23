@@ -4,6 +4,8 @@ import { t } from './i18n.js';
 
 export const ROLE_NAME = { owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 'Staff' };   // tukar dengan t() semasa papar
 export const ALL_OUTLETS = 'all';
+// loadAccount(): akaun log masuk tanpa profil (baru daftar / baru dijemput) -> lihat auth.js
+export const NO_PROFILE = 'NO_PROFILE';
 
 /* global SUPABASE_URL, SUPABASE_KEY, supabase */
 export const sb = (typeof SUPABASE_URL === 'string' && typeof SUPABASE_KEY === 'string')
@@ -54,7 +56,7 @@ export async function loadAccount(user) {
   const { data: p, error: pe } = await sb.from('staff_profiles')
     .select('role,outlet_id').eq('user_id', user.id).maybeSingle();
   if (pe) return t('Could not load profile. Check your internet and try again.');
-  if (!p) return t('This account is not assigned to any outlet. Contact the owner.');
+  if (!p) return NO_PROFILE;
   session.profile = p;
 
   const [{ data: biz }, { data: outlets, error: oe }] = await Promise.all([
