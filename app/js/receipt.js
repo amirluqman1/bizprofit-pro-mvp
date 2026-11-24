@@ -61,26 +61,35 @@ export async function discardReceipt(path) {
   if (path) await sb.storage.from(BUCKET).remove([path]).catch(() => {});
 }
 
-// Pemilih gambar dengan pratonton. Pulangkan { get(): Blob|null, reset() }.
-export function bindPicker(input, preview, img, removeBtn, label) {
+// Pemilih gambar dengan pratonton. `inputs`: satu atau lebih <input type="file">
+// (contoh kamera + galeri). `hideEl` disorok semasa ada gambar dipilih.
+// Pulangkan { get(): Blob|null, reset() }.
+export function bindPicker(inputs, preview, img, removeBtn, hideEl) {
   let blob = null, url = null;
   const show = () => {
     if (url) URL.revokeObjectURL(url);
     url = blob ? URL.createObjectURL(blob) : null;
     preview.hidden = !blob;
-    if (label) label.hidden = !!blob;
+    if (hideEl) hideEl.hidden = !!blob;
     if (url) img.src = url; else img.removeAttribute('src');
   };
-  input.addEventListener('change', async () => {
+  [].concat(inputs).forEach(input => input.addEventListener('change', async () => {
     const file = input.files[0];
     input.value = '';
     if (!file) return;
     try { blob = await compressImage(file); show(); }
     catch (e) { toast(e.message, 'error'); }
-  });
+  }));
   removeBtn.addEventListener('click', () => { blob = null; show(); });
   return { get: () => blob, reset: () => { blob = null; show(); } };
 }
+
+// Dua butang: kamera terus (capture) dan galeri/fail. Android 14+ tak tunjuk
+// pilihan kamera jika hanya satu input tanpa capture, jadi kena asingkan.
+export const pickerButtons = (prefix, block = false) => `<div class="rc-pickers${block ? ' block' : ''}" id="${prefix}Pick">
+  <label class="btn ghost rc-pick">${icon('camera')}Take photo<input type="file" id="${prefix}Cam" accept="image/*" capture="environment"></label>
+  <label class="btn ghost rc-pick">${icon('image')}Gallery<input type="file" id="${prefix}Gal" accept="image/*"></label>
+</div>`;
 
 // Lihat resit dalam dialog (pautan sementara 10 minit).
 export async function viewReceipt(path) {

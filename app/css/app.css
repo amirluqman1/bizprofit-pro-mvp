@@ -494,6 +494,8 @@ a.h-tile:active { transform: scale(.99); }
 .rc-pick svg { width: 18px; height: 18px; }
 .rc-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .rc-pick:has(input:focus-visible) { outline: 2px solid var(--gold); }
+.rc-pickers { display: flex; gap: 8px; }
+.rc-pickers.block > .rc-pick { flex: 1 1 0; }
 .rc-preview { display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--input); }
 .rc-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; background: var(--raise); }
 .rc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
