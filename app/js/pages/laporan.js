@@ -1,4 +1,5 @@
-// Report ikut tempoh: Harian, Mingguan, Bulanan, Tahunan, atau Custom (dari tarikh – hingga tarikh). Owner, admin & manager sahaja.
+// Report ikut tempoh. Satu butang kalendar buka panel: pilihan cepat (hari ini, minggu ini,
+// bulan lepas, ...) atau Custom (dari tarikh – hingga tarikh). ‹ › anjak ke tempoh sebelum/seterusnya. Owner, admin & manager sahaja.
 // Ringkasan profit + perbandingan tempoh sebelum, sorotan, graf masuk/keluar,
 // prestasi outlet, perbelanjaan ikut kategori, jualan ikut kaedah bayaran, kongsi ringkasan.
 import { $, esc, icon, toast } from '../ui.js';
@@ -6,7 +7,18 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
 import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 
-const PERIODS = { julat: 'Custom', harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly' };
+const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly', julat: 'Custom' };
+// Pilihan cepat dalam panel kalendar. pro: perlu pakej Pro.
+const PRESETS = [
+  { k: 'today', label: 'Today', period: 'harian', date: t => t },
+  { k: 'yesterday', label: 'Yesterday', period: 'harian', date: t => addDays(t, -1) },
+  { k: 'thisweek', label: 'This week', period: 'mingguan', date: t => t },
+  { k: 'lastweek', label: 'Last week', period: 'mingguan', date: t => addDays(t, -7), pro: true },
+  { k: 'thismonth', label: 'This month', period: 'bulanan', date: t => t, pro: true },
+  { k: 'lastmonth', label: 'Last month', period: 'bulanan', date: t => shiftDate('bulanan', t, -1), pro: true },
+  { k: 'thisyear', label: 'This year', period: 'tahunan', date: t => t, pro: true },
+  { k: 'lastyear', label: 'Last year', period: 'tahunan', date: t => shiftDate('tahunan', t, -1), pro: true }
+];
 const PAGE = 1000;
 const FC_GOOD = 35;
 const COLORS = 6;    // --c1..--c6 dalam CSS
@@ -225,44 +237,50 @@ export default {
     state.to = clampDay(state.to || today);
     state.from = clampDay(state.from || today.slice(0, 8) + '01');
     if (state.from > state.to) [state.from, state.to] = [state.to, state.from];
+    const presetLocked = p => !pro && p.pro;
 
     view.innerHTML = `
       <div class="rep-controls">
-        <div class="seg four five" role="group" aria-label="Report period">
-          ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${locked(k) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${v}${locked(k) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}
-        </div>
         <div class="datenav">
           <button type="button" id="repPrev" aria-label="Previous period">‹</button>
-          <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="${minDate}" aria-label="Choose date"></label>
+          <button type="button" class="rep-pick" id="repPick" aria-haspopup="dialog">${icon('calendar')}<span id="repLabel"></span><span class="rep-chev" aria-hidden="true">▾</span></button>
           <button type="button" id="repNext" aria-label="Next period">›</button>
-        </div>
-        <div class="range-pick" id="repRange" hidden>
-          <label>From<input id="repFrom" type="date" min="${minDate}"></label>
-          <span aria-hidden="true">–</span>
-          <label>To<input id="repTo" type="date" min="${minDate}"></label>
         </div>
         <button class="share-btn" type="button" id="repShare">${icon('link')}Share summary</button>
         ${session.isAdminUp ? `<a class="share-btn" href="#/pnl">${icon('receipt')}P&amp;L (Form B)</a>` : ''}
       </div>
-      <div id="repBody" class="stack"><p class="loading-line">Loading…</p></div>`;
+      <div id="repBody" class="stack"><p class="loading-line">Loading…</p></div>
+      <dialog id="repDlg" class="range-dialog" aria-labelledby="repDlgTitle"><div class="stack">
+        <h2 id="repDlgTitle">Choose period</h2>
+        <div class="preset-grid">${PRESETS.map(p => `<button type="button" class="preset" data-preset="${p.k}">${presetLocked(p) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${p.label}${presetLocked(p) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}</div>
+        <div class="custom-range">
+          <p class="custom-lbl">Custom range${pro ? '' : ' <span class="muted-inline">(last 30 days)</span>'}</p>
+          <div class="two">
+            <label class="field">From<input id="repFrom" type="date" min="${minDate}"></label>
+            <label class="field">To<input id="repTo" type="date" min="${minDate}"></label>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn ghost" type="button" id="repCancel">Cancel</button>
+          <button class="btn primary" type="button" id="repApply">Show custom range</button>
+        </div>
+      </div></dialog>`;
 
+    const isPreset = p => state.period === p.period && state.period !== 'julat'
+      && buildPeriod(p.period, p.date(today)).from === buildPeriod(state.period, state.date).from;
     const syncControls = () => {
-      view.querySelectorAll('[data-period]').forEach(b => {
-        b.classList.toggle('on', b.dataset.period === state.period);
-        b.setAttribute('aria-pressed', String(b.dataset.period === state.period));
-      });
       const custom = state.period === 'julat';
-      view.querySelector('.datenav').hidden = custom;
-      $('repRange').hidden = !custom;
-      $('repFrom').value = state.from; $('repFrom').max = today;
-      $('repTo').value = state.to; $('repTo').max = today;
-      if (custom) return;
-      $('repLabel').textContent = periodLabel(state.period, state.date);
-      $('repDate').value = state.date;
-      $('repDate').max = today;
-      $('repDate').hidden = state.period === 'tahunan';
-      $('repNext').disabled = buildPeriod(state.period, state.date).to >= today;
-      $('repPrev').disabled = !pro && (state.period === 'mingguan' || shiftDate(state.period, state.date, -1) < minDate);
+      if (custom) {
+        $('repLabel').textContent = state.from === state.to ? periodLabel('harian', state.from) : dateRange(state.from, state.to);
+        const n = daysBetween(state.from, state.to);
+        $('repNext').disabled = state.to >= today;
+        $('repPrev').disabled = addDays(state.from, -n) < minDate;
+      } else {
+        const hit = PRESETS.find(isPreset);
+        $('repLabel').textContent = hit ? `${hit.label} · ${periodLabel(state.period, state.date)}` : periodLabel(state.period, state.date);
+        $('repNext').disabled = buildPeriod(state.period, state.date).to >= today;
+        $('repPrev').disabled = !pro && (state.period === 'mingguan' || shiftDate(state.period, state.date, -1) < minDate);
+      }
     };
 
     let shareText = '';
@@ -437,27 +455,53 @@ export default {
       pick(chart.children[focus]);
     }
 
-    view.querySelectorAll('[data-period]').forEach(b => b.addEventListener('click', () => {
-      if (locked(b.dataset.period)) { location.hash = '#/pakej'; return; }
-      state.period = b.dataset.period; if (!pro && state.period === 'mingguan') state.date = today; show();
-    }));
-    $('repPrev').addEventListener('click', () => { state.date = shiftDate(state.period, state.date, -1); show(); });
-    $('repNext').addEventListener('click', () => {
-      const next = shiftDate(state.period, state.date, 1);
-      state.date = next > today ? today : next; show();
+    // Panel kalendar
+    const dlg = $('repDlg');
+    $('repPick').addEventListener('click', () => {
+      view.querySelectorAll('[data-preset]').forEach(b => {
+        const on = isPreset(PRESETS.find(p => p.k === b.dataset.preset));
+        b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      });
+      $('repFrom').value = state.period === 'julat' ? state.from : buildPeriod(state.period, state.date).from;
+      $('repTo').value = state.period === 'julat' ? state.to : clampDay(buildPeriod(state.period, state.date).to);
+      $('repFrom').max = today; $('repTo').max = today;
+      dlg.showModal();
     });
-    $('repDate').addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama: biar lalai */ } });
-    $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value > today ? today : e.target.value < minDate ? minDate : e.target.value; show(); } });
-    const setRange = () => {
+    $('repCancel').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    view.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+      const p = PRESETS.find(x => x.k === b.dataset.preset);
+      if (presetLocked(p)) { dlg.close(); location.hash = '#/pakej'; return; }
+      state.period = p.period; state.date = p.date(today);
+      dlg.close(); show();
+    }));
+    $('repApply').addEventListener('click', () => {
       let f = $('repFrom').value, t = $('repTo').value;
-      if (!f || !t) return;
+      if (!f || !t) { toast('Choose both From and To dates.', 'error'); return; }
       f = clampDay(f); t = clampDay(t);
       if (f > t) [f, t] = [t, f];                    // tersalah susun: tukar sendiri
-      state.from = f; state.to = t; show();
-    };
-    ['repFrom', 'repTo'].forEach(id => {
-      $(id).addEventListener('change', setRange);
-      $(id).addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama */ } });
+      state.period = 'julat'; state.from = f; state.to = t;
+      dlg.close(); show();
+    });
+    ['repFrom', 'repTo'].forEach(id => $(id).addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama */ } }));
+
+    // ‹ › : anjak tempoh. Custom: anjak sebanyak panjang julat.
+    $('repPrev').addEventListener('click', () => {
+      if (state.period === 'julat') {
+        const n = daysBetween(state.from, state.to);
+        state.from = addDays(state.from, -n); state.to = addDays(state.to, -n);
+      } else state.date = shiftDate(state.period, state.date, -1);
+      show();
+    });
+    $('repNext').addEventListener('click', () => {
+      if (state.period === 'julat') {
+        const n = daysBetween(state.from, state.to);
+        state.from = addDays(state.from, n); state.to = clampDay(addDays(state.to, n));
+      } else {
+        const next = shiftDate(state.period, state.date, 1);
+        state.date = next > today ? today : next;
+      }
+      show();
     });
     $('repShare').addEventListener('click', async () => {
       if (!shareText) { toast('Report is still loading.'); return; }
