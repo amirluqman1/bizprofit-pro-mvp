@@ -139,7 +139,7 @@ function attentionHTML(stock, fcAlerts) {
       <div style="min-width:0"><div class="t">Food cost at ${esc(outletName(f.id))}: ${f.pct.toFixed(1)}%</div><div class="m">Above the ${FC_LIMIT}% guide, last 7 days</div></div>
       <a class="pill ${f.pct > 40 ? 'crit' : 'warn'}" href="#/foodcost">Review</a></li>`),
     ...stock.slice(0, STOCK_SHOWN).map(x => `<li><span class="alert-ic ${x.st === 'habis' ? 'crit' : 'warn'}" aria-hidden="true">${icon('box')}</span>
-      <div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="m">${x.st === 'habis' ? 'Out of stock' : `${qty(x.current_qty)} ${esc(x.unit)} left`} · target ${qty(x.target_qty)} ${esc(x.unit)}${session.outletId === ALL_OUTLETS ? ' · ' + esc(outletName(x.outlet_id)) : ''}</div></div>
+      <div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="m">${x.st === 'habis' ? 'Out of stock' : `${qty(x.current_qty)}${x.unit ? ' ' + esc(x.unit) : ''} left`} · target ${qty(x.target_qty)}${x.unit ? ' ' + esc(x.unit) : ''}${session.outletId === ALL_OUTLETS ? ' · ' + esc(outletName(x.outlet_id)) : ''}</div></div>
       <span class="pill ${x.st === 'habis' ? 'crit' : 'warn'}">${x.st === 'habis' ? 'Out' : 'Low'}</span></li>`)
   ];
   if (!items.length) return '<li><span class="empty-row">All good. Nothing needs attention right now.</span></li>';

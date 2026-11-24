@@ -29,7 +29,8 @@ const stockChanged = () => window.dispatchEvent(new Event('bp:stock-changed'));
 const errText = e => (e?.code === '23505' ? 'An item with this name already exists in this outlet.' : e?.message || 'Unknown error.');
 const catOf = x => x.category || OTHER;
 const catOptions = (sel = OTHER) => [...CATEGORIES, OTHER].map(c => `<option ${c === sel ? 'selected' : ''}>${c}</option>`).join('');
-const unitOptions = sel => UNITS.map(u => `<option ${u === sel ? 'selected' : ''}>${u}</option>`).join('');
+const unitOptions = (sel = '') => `<option value="" ${sel ? '' : 'selected'}>(no unit)</option>` + UNITS.map(u => `<option ${u === sel ? 'selected' : ''}>${u}</option>`).join('');
+const withUnit = (n, x) => (x.unit ? `${n} ${x.unit}` : `${n}`);  // "5 kg" atau "5" bila tiada unit
 
 function cardHTML(x) {
   const st = status(x);
@@ -37,7 +38,7 @@ function cardHTML(x) {
     <div class="item-top">
       <button class="item-name" type="button" data-open="${esc(x.id)}">
         <h3>${esc(x.name)}</h3>
-        <span class="sub">${esc(catOf(x))} · Target ${qty(x.target_qty)} ${esc(x.unit)}${prices.has(x.id) ? ' · ' + esc(rm(prices.get(x.id))) + '/' + esc(x.unit) : ''}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
+        <span class="sub">${esc(catOf(x))} · Target ${esc(withUnit(qty(x.target_qty), x))}${prices.has(x.id) ? ' · ' + esc(rm(prices.get(x.id))) + (x.unit ? '/' + esc(x.unit) : ' each') : ''}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
       </button>
       <span class="pill ${st}">${LABEL[st]}</span>
     </div>
@@ -170,7 +171,7 @@ function dialogsHTML() {
     <label class="field">Item name<input id="addName" maxlength="120" placeholder="e.g. Chicken fillet"></label>
     <div class="two">
       <label class="field">Category<select id="addCat">${catOptions()}</select></label>
-      <label class="field">Unit<select id="addUnit">${unitOptions('kg')}</select></label>
+      <label class="field">Unit<select id="addUnit">${unitOptions()}</select></label>
     </div>
     <div class="two">
       <label class="field">In stock<input id="addCurrent" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
@@ -215,13 +216,13 @@ function openEdit(x) {
   if (session.isAdminUp) {
     $('editName').value = x.name;
     $('editCat').value = catOf(x);
-    if (![...$('editUnit').options].some(o => o.value === x.unit)) $('editUnit').add(new Option(x.unit, x.unit));
+    if (x.unit && ![...$('editUnit').options].some(o => o.value === x.unit)) $('editUnit').add(new Option(x.unit, x.unit));
     $('editUnit').value = x.unit;
     $('editTarget').value = x.target_qty;
     $('editPrice').value = prices.has(x.id) ? prices.get(x.id) : '';
   }
   $('editNote').textContent = session.isAdminUp ? 'Every quantity change is recorded in history.'
-    : `Target: ${qty(x.target_qty)} ${x.unit}. Only the owner or an admin can change the name, category, unit or target.`;
+    : `Target: ${withUnit(qty(x.target_qty), x)}. Only the owner or an admin can change the name, category, unit or target.`;
   $('openHistory').hidden = !canSeeLogs();
   $('editDialog').showModal();
 }
@@ -274,7 +275,7 @@ async function copyList() {
   const groupBy = (list, key) => list.reduce((m, x) => m.set(key(x), [...(m.get(key(x)) || []), x]), new Map());
   const order = [...CATEGORIES, OTHER];
   const block = list => [...groupBy(list, catOf)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
-    .map(([cat, xs]) => [cat.toUpperCase(), ...xs.map(x => `• ${x.name} ${qty(kurang(x))} ${x.unit}`)].join('\n')).join('\n\n');
+    .map(([cat, xs]) => [cat.toUpperCase(), ...xs.map(x => `• ${x.name} ${withUnit(qty(kurang(x)), x)}`)].join('\n')).join('\n\n');
   const byOutlet = groupBy(perlu, x => x.outlet_id);
   const text = byOutlet.size > 1 || allMode()
     ? [...byOutlet].map(([oid, list]) => `*${outletName(oid)}*\n\n${block(list)}`).join('\n\n')
