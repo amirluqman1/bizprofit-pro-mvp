@@ -1,13 +1,14 @@
 // Gambar resit pada transaksi (ciri Pro).
-// Gambar dikecilkan dalam phone dahulu (maks 1600px, JPEG) supaya cepat dimuat
-// naik dan storage tak cepat penuh. Disimpan dalam bucket peribadi "receipts":
+// Gambar dikecilkan dalam phone dahulu (sasaran ~60–80KB, maks 100KB) supaya cepat
+// dimuat naik dan kos storage rendah. Tulisan resit masih jelas pada 1200px. Disimpan dalam bucket peribadi "receipts":
 // <business_id>/<outlet_id>/<uuid>.jpg. Akses dikawal oleh database (Fasa 13).
 import { esc, icon, toast } from './ui.js';
 import { sb, session } from './session.js';
 
 const BUCKET = 'receipts';
-const MAX_SIDE = 1600;
-const QUALITY = 0.72;
+// Cuba dari kualiti terbaik; berhenti bila saiz ≤ TARGET. Langkah terakhir diguna walau apa pun.
+const STEPS = [[1200, 0.6], [1200, 0.5], [1000, 0.5], [1000, 0.42], [850, 0.42]];
+const TARGET = 100 * 1024;
 
 // Kecilkan gambar → Blob JPEG.
 export async function compressImage(file) {
@@ -25,14 +26,23 @@ export async function compressImage(file) {
     });
     w = src.naturalWidth; h = src.naturalHeight;
   }
-  const scale = Math.min(1, MAX_SIDE / Math.max(w, h));
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale);
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);   // PNG lutsinar → latar putih
-  ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
-  if (src.close) src.close();
-  const blob = await new Promise(ok => canvas.toBlob(ok, 'image/jpeg', QUALITY));
+  let blob = null, side = 0;
+  try {
+    for (const [maxSide, q] of STEPS) {
+      if (maxSide !== side) {
+        side = maxSide;
+        const scale = Math.min(1, maxSide / Math.max(w, h));
+        canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale);
+        ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);   // PNG lutsinar → latar putih
+        ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+      }
+      blob = await new Promise(ok => canvas.toBlob(ok, 'image/jpeg', q));
+      if (!blob || blob.size <= TARGET) break;
+    }
+  } finally { if (src.close) src.close(); }
   if (!blob) throw new Error('This photo could not be processed. Try another one.');
   return blob;
 }
