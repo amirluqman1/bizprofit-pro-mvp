@@ -484,6 +484,10 @@ a.h-tile:active { transform: scale(.99); }
 .tx-amount { flex: 0 0 auto; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
 .tx-amount.in { color: var(--mint); } .tx-amount.out { color: var(--text); }
 
+/* Key In: butang pilih cepat description (macam autofill Excel) */
+.chips.quick { margin-top: -6px; }
+.chips.quick .chip { font-size: 12.5px; padding: 6px 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips.quick .chip:hover { border-color: rgba(16, 185, 129, .45); color: var(--mint); }
 /* Key In: senarai transaksi ikut tarikh dipilih */
 .day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .day-title { margin: 0; font-size: 15px; font-weight: 600; }
