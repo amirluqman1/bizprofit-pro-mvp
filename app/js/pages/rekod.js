@@ -28,6 +28,26 @@ async function loadLists() {
   return lists;
 }
 
+// Amaun gaya online banking: taip digit sahaja, 2 digit terakhir jadi sen.
+// Contoh: 1 → 0.01, 12 → 0.12, 120 → 1.20, 12000 → 120.00. Padam = buang digit terakhir.
+const MAX_DIGITS = 10;   // sehingga RM 99,999,999.99
+const fmtAmt = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const amountValue = el => Number(el.value.replace(/[^\d.]/g, '')) || 0;
+function setAmount(el, n) {
+  const cents = Math.round(Number(n) * 100);
+  el.value = cents > 0 ? fmtAmt.format(cents / 100) : '';
+}
+function bankAmount(el) {
+  const toEnd = () => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch { /* abaikan */ } };
+  el.addEventListener('input', () => {
+    const digits = el.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, MAX_DIGITS);
+    el.value = digits ? fmtAmt.format(Number(digits) / 100) : '';
+    toEnd();
+  });
+  // Kursor sentiasa di hujung supaya digit baru masuk di belakang macam app bank.
+  ['focus', 'click', 'keyup'].forEach(ev => el.addEventListener(ev, () => requestAnimationFrame(toEnd)));
+}
+
 const tabFromHash = () => (location.hash.includes('t=sejarah') ? 'sejarah'
   : location.hash.includes('t=log') && session.isAdminUp ? 'log' : 'keyin');
 
@@ -50,7 +70,7 @@ function keyInHTML() {
       <label class="seg-opt out"><input type="radio" name="kiType" value="Out">${icon('layers')}Money out</label>
     </div>
     <label class="field">Amount
-      <span class="amount"><span>RM</span><input id="kiAmount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></span></label>
+      <span class="amount"><span>RM</span><input id="kiAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="0.00"></span></label>
     <label class="field">Category<select id="kiCategory"></select></label>
     <fieldset class="field plain"><legend>Payment method</legend><div class="chips" id="kiPay"></div></fieldset>
     <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales" list="kiDescList" autocomplete="off"></label>
@@ -106,6 +126,7 @@ async function renderKeyIn(box) {
   catch (e) { box.innerHTML = `<section class="card"><p class="greet-sub">${esc(e.message)}</p></section>`; return; }
   box.innerHTML = keyInHTML();
   box.classList.add('ki-split');
+  bankAmount($('kiAmount'));
 
   const fillCategories = () => {
     const type = document.querySelector('input[name="kiType"]:checked').value;
@@ -211,7 +232,7 @@ async function renderKeyIn(box) {
 
   $('kiForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const amount = Number($('kiAmount').value);
+    const amount = amountValue($('kiAmount'));
     const desc = $('kiDesc').value.trim();
     if (!(amount > 0)) { toast('Enter an amount above RM 0.', 'error'); $('kiAmount').focus(); return; }
     if (!$('kiCategory').value) { toast('Choose a category.', 'error'); return; }
@@ -342,7 +363,7 @@ function editDialogHTML() {
       <label class="seg-opt out"><input type="radio" name="edType" value="Out">${icon('layers')}Money out</label>
     </div>
     <label class="field">Amount
-      <span class="amount"><span>RM</span><input id="edAmount" type="number" inputmode="decimal" step="0.01" min="0.01"></span></label>
+      <span class="amount"><span>RM</span><input id="edAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="0.00"></span></label>
     <label class="field">Category<select id="edCategory"></select></label>
     <label class="field">Payment method<select id="edPay"></select></label>
     <label class="field">Description<input id="edDesc" maxlength="200"></label>
@@ -376,7 +397,7 @@ async function openEdit(t, done) {
   const pays = l.payments.includes(t.payment_method) || !t.payment_method ? l.payments : [t.payment_method, ...l.payments];
   $('edPay').replaceChildren(...pays.map(p => new Option(p, p)));
   $('edPay').value = t.payment_method || pays[0] || '';
-  $('edAmount').value = Number(t.amount).toFixed(2);
+  setAmount($('edAmount'), t.amount);
   $('edDesc').value = t.description || '';
   $('edDate').value = t.transaction_date;
   $('edRef').value = t.reference_no || '';
@@ -403,6 +424,7 @@ function fillEditCategories(selected) {
 }
 
 function bindEditDialog() {
+  bankAmount($('edAmount'));
   document.querySelectorAll('input[name="edType"]').forEach(r => r.addEventListener('change', () => fillEditCategories(null)));
   $('edCancel').onclick = () => $('edDialog').close();
 
@@ -410,7 +432,7 @@ function bindEditDialog() {
     e.preventDefault();
     if (!editing) return;
     const { t } = editing;
-    const amount = Math.round(Number($('edAmount').value) * 100) / 100;
+    const amount = amountValue($('edAmount'));
     const desc = $('edDesc').value.trim();
     if (!(amount > 0)) { toast('Enter an amount above RM 0.', 'error'); return; }
     if (!desc) { toast('Enter a description.', 'error'); return; }
