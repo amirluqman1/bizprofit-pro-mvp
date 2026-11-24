@@ -84,6 +84,7 @@ export function smartListHTML() {
     <div class="sl-head">
       <h2>List</h2>
       <div class="sl-head-btns">
+        <button class="btn ghost" type="button" id="slClearAll">Delete all</button>
         <button class="btn ghost" type="button" id="slImport">Import from Stock</button>
         <button class="btn ghost" type="button" id="slClose">Close</button>
       </div>
@@ -132,6 +133,14 @@ export function bindSmartList(getStock = () => []) {
   $('slClose').onclick = () => $('slDialog').close();
   $('slCopy').onclick = copyWhatsApp;
   $('slImport').onclick = () => importFromStock(getStock());
+  // Padam semua barang dalam List (contoh: nak import semula dari Stok).
+  $('slClearAll').onclick = () => {
+    if (!list.length) { toast('List is already empty.'); return; }
+    if (!confirm(`Delete all ${list.length} items from the list? This cannot be undone.`)) return;
+    list = [];
+    saveList(); render();
+    toast('All items deleted. Tap Import from Stock to add them again.');
+  };
   $('slAddCancel').onclick = () => $('slAddDialog').close();
   const openForm = x => {
     editId = x ? x.id : null;

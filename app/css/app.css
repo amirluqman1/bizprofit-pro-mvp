@@ -648,7 +648,8 @@ a.h-tile:active { transform: scale(.99); }
 /* Senarai beli ringkas */
 .sl-dialog { width: 100%; max-width: 560px; height: 100%; max-height: 100%; margin: 0 auto; border-radius: 0; padding: 16px 16px 24px; }
 .sl-dialog[open] { display: flex; flex-direction: column; gap: 12px; }
-.sl-head { display: flex; justify-content: space-between; align-items: center; }
+.sl-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.sl-head-btns { flex-wrap: wrap; justify-content: flex-end; }
 .sl-head .btn { border-radius: 10px; padding: 8px 14px; font-size: 13px; }
 .sl-tools { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .sl-tools .btn { border-radius: 10px; padding: 9px 14px; font-size: 13px; }
