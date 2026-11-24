@@ -488,6 +488,25 @@ a.h-tile:active { transform: scale(.99); }
 .chips.quick { margin-top: -6px; }
 .chips.quick .chip { font-size: 12.5px; padding: 6px 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chips.quick .chip:hover { border-color: rgba(16, 185, 129, .45); color: var(--mint); }
+/* Gambar resit */
+.muted-inline { color: var(--muted); font-weight: 400; }
+.rc-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
+.rc-pick svg { width: 18px; height: 18px; }
+.rc-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.rc-pick:has(input:focus-visible) { outline: 2px solid var(--gold); }
+.rc-preview { display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--input); }
+.rc-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; background: var(--raise); }
+.rc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rc-row .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px; }
+.rc-row .btn svg { width: 16px; height: 16px; }
+.rc-remove { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); cursor: pointer; }
+.rc-remove input { width: 16px; height: 16px; accent-color: var(--red); }
+.tx-receipt { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.tx-receipt svg { width: 16px; height: 16px; }
+.tx-receipt:hover, .tx-receipt:focus-visible { color: var(--mint); border-color: rgba(16, 185, 129, .45); outline: none; }
+.rc-dialog { width: min(640px, calc(100% - 16px)); padding: 12px; }
+.rc-body { display: grid; place-items: center; min-height: 160px; }
+.rc-body img { display: block; max-width: 100%; max-height: calc(100dvh - 160px); border-radius: 8px; object-fit: contain; }
 /* Key In: senarai transaksi ikut tarikh dipilih */
 .day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .day-title { margin: 0; font-size: 15px; font-weight: 600; }
