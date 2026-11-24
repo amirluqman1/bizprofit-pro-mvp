@@ -53,7 +53,9 @@ function keyInHTML() {
       <span class="amount"><span>RM</span><input id="kiAmount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00"></span></label>
     <label class="field">Category<select id="kiCategory"></select></label>
     <fieldset class="field plain"><legend>Payment method</legend><div class="chips" id="kiPay"></div></fieldset>
-    <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales"></label>
+    <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales" list="kiDescList" autocomplete="off"></label>
+    <datalist id="kiDescList"></datalist>
+    <div class="chips quick" id="kiQuick" hidden></div>
     <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
     <button class="btn primary block" id="kiSave">Save transaction</button>
   </form>
@@ -156,8 +158,46 @@ async function renderKeyIn(box) {
       <div><span>Money out</span><b>${esc(rm(tout))}</b></div>
       <div><span>Net</span><b class="${tin - tout < 0 ? 'neg' : 'in'}">${esc(rm(tin - tout))}</b></div>`;
   }
+  // Cadangan description macam autofill Excel: ambil description lama ikut jenis & kategori,
+  // susun ikut paling kerap dipakai. Tunjuk sebagai dropdown (datalist) + butang pilih cepat.
+  let descHist = [];   // [{ description, type, category }]
+  async function loadDescHistory() {
+    const { data } = await sb.from('transactions').select('description,type,category')
+      .eq('outlet_id', kiOutletId()).not('description', 'is', null)
+      .order('created_at', { ascending: false }).limit(1000);
+    descHist = data || [];
+    fillDescSuggest();
+  }
+  function fillDescSuggest() {
+    const type = document.querySelector('input[name="kiType"]:checked').value;
+    const cat = $('kiCategory').value;
+    const score = new Map();   // nama (huruf kecil) → { text, n, same }
+    descHist.forEach(t => {
+      const text = (t.description || '').trim();
+      if (!text || t.type !== type) return;
+      const k = text.toLowerCase();
+      const e = score.get(k) || { text, n: 0, same: 0 };
+      e.n++; if (t.category === cat) e.same++;
+      score.set(k, e);
+    });
+    const all = [...score.values()].sort((a, b) => b.same - a.same || b.n - a.n);
+    $('kiDescList').replaceChildren(...all.slice(0, 50).map(e => new Option(e.text)));
+    const quick = all.filter(e => e.same > 0).slice(0, 6);
+    $('kiQuick').hidden = !quick.length;
+    $('kiQuick').innerHTML = quick.map(e => `<button type="button" class="chip" data-desc="${esc(e.text)}">${esc(e.text)}</button>`).join('');
+  }
+  $('kiQuick').addEventListener('click', e => {
+    const b = e.target.closest('[data-desc]');
+    if (!b) return;
+    $('kiDesc').value = b.dataset.desc;
+    $('kiRef').focus();
+  });
+  document.querySelectorAll('input[name="kiType"]').forEach(r => r.addEventListener('change', fillDescSuggest));
+  $('kiCategory').addEventListener('change', fillDescSuggest);
+  loadDescHistory();
+
   $('kiDate').addEventListener('change', loadDay);
-  if ($('kiOutlet')) $('kiOutlet').addEventListener('change', loadDay);
+  if ($('kiOutlet')) $('kiOutlet').addEventListener('change', () => { loadDay(); loadDescHistory(); });
   if (session.isAdminUp) {
     const open = e => {
       const li = e.target.closest('[data-tx]');
@@ -198,6 +238,7 @@ async function renderKeyIn(box) {
     toast('Transaction saved.');
     $('kiAmount').focus();
     loadDay();
+    loadDescHistory();
   });
 }
 
