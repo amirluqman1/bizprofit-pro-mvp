@@ -585,6 +585,19 @@ a.h-tile:active { transform: scale(.99); }
 .rep-detail .p { color: var(--mint); }
 .rep-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rep-controls .seg { flex: 0 1 380px; }
+/* Report: butang kalendar + panel pilih tempoh */
+.rep-pick { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 auto; min-width: 170px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font-weight: 500; font-size: 13px; cursor: pointer; }
+.rep-pick:hover, .rep-pick:focus-visible { background: var(--raise); outline: none; }
+.rep-pick svg { width: 16px; height: 16px; color: var(--muted); }
+.rep-chev { color: var(--muted); font-size: 11px; }
+.range-dialog { width: min(420px, calc(100% - 24px)); }
+.preset-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.preset { display: flex; align-items: center; justify-content: center; gap: 2px; min-height: 42px; padding: 8px; border: 1px solid var(--line-2); border-radius: 10px; background: transparent; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; }
+.preset:hover { background: var(--raise); }
+.preset.on { background: var(--good-soft); border-color: rgba(16, 185, 129, .45); color: var(--mint); }
+.custom-range { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.custom-lbl { margin: 0; font-size: 13px; font-weight: 600; }
+.custom-range input { color-scheme: dark; }
 .datenav { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 3px; }
 .datenav > button { border: 0; background: transparent; width: 32px; height: 32px; border-radius: 7px; font-size: 18px; color: var(--muted); }
 .datenav > button:hover:not(:disabled) { background: var(--raise); color: var(--text); }
