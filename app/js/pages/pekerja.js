@@ -243,6 +243,31 @@ function slipData(r) {
   };
 }
 
+// Slip GABUNGAN: semua slip seorang pekerja dalam tempoh dipilih jadi satu slip
+// (contoh 6 slip mingguan → 1 slip sebulan). Slip asal tidak berubah.
+function comboData(list) {
+  const r0 = list[0], money = c => rm(fromCents(c));
+  const sum = k => list.reduce((t, r) => t + r[k], 0);
+  const short = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+  const items = list.map(r => [
+    `${dateRange(r.from, r.to)} · ${r.payType === 'bulanan' ? 'salary' : `${r.days} days`}${r.ot ? ` + OT ${r.ot} hrs` : ''}${r.paid ? '' : ' (unpaid)'}`,
+    money(r.base + r.otAmt)]);
+  const allow = sum('allow'), ded = sum('ded'), adv = sum('adv');
+  if (allow) items.push(['Allowance (total)', money(allow)]);
+  if (ded) items.push(['Deduction (total)', '-' + money(ded)]);
+  if (adv) items.push(['Advance deduction (total)', '-' + money(adv)]);
+  const paid = list.filter(r => r.paid);
+  const co = outletCompany(r0.e.outlet_id);
+  return {
+    business: co.name, regNo: co.regNo, compact: items.length > 9,
+    info: [['Name', r0.e.name], ...(r0.e.position ? [['Position', r0.e.position]] : []), ['Outlet', outletName(r0.e.outlet_id)],
+      ['Payments', `${list.length} payslips combined`], ['Period', dateRange(state.from, state.to)]],
+    items, total: money(sum('net')),
+    status: paid.length === list.length
+      ? `Paid in ${paid.length} payment${paid.length === 1 ? '' : 's'} (${paid.map(r => short(new Date(r.slip.paid_at).toLocaleDateString('sv-SE', { timeZone: 'Asia/Kuala_Lumpur' }))).join(', ')})`
+      : `${paid.length} of ${list.length} paid`
+  };
+}
 
 function drawSlip(doc, d) {
   const W = 148, M = 12, R = W - M;
@@ -270,17 +295,18 @@ function drawSlip(doc, d) {
   y += 1; stroke(LINE); doc.setLineWidth(0.3); doc.line(M, y, R, y); y += 7;
 
   // Jadual Perihal / Amaun.
-  const split = R - 42, hH = 8.5, rH = 8.5;
+  const split = R - 42, hH = 8.5, rH = d.compact ? 7 : 8.5;
   fill(GREEN); doc.rect(M, y, R - M, hH, 'F');
   doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
   doc.text('Description', M + 4, y + 5.7); doc.text('Amount (RM)', R - 4, y + 5.7, { align: 'right' });
   stroke([255, 255, 255]); doc.setLineWidth(0.3); doc.line(split, y, split, y + hH);
   y += hH;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); stroke(LINE);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(d.compact ? 8.5 : 9.5); stroke(LINE);
+  const ty = d.compact ? 4.8 : 5.7;
   d.items.forEach(([k, v]) => {
     doc.rect(M, y, R - M, rH); doc.line(split, y, split, y + rH);
-    color(INK); doc.text(pdfText(k), M + 4, y + 5.7, { maxWidth: split - M - 8 });
-    doc.text(pdfText(v), R - 4, y + 5.7, { align: 'right' });
+    color(INK); doc.text(pdfText(k), M + 4, y + ty, { maxWidth: split - M - 8 });
+    doc.text(pdfText(v), R - 4, y + ty, { align: 'right' });
     y += rH;
   });
   const tH = 11;
@@ -293,7 +319,7 @@ function drawSlip(doc, d) {
   // Status.
   color(INK); doc.setFontSize(10); doc.text('Status:', M, y);
   const sw = doc.getTextWidth('Status: ');
-  doc.setFont('helvetica', 'normal'); doc.text(pdfText(d.status), M + sw, y);
+  doc.setFont('helvetica', 'normal'); doc.text(pdfText(d.status), M + sw, y, { maxWidth: R - M - sw });
 
   // Tandatangan dan kaki.
   const sy = 176;
@@ -307,12 +333,12 @@ function drawSlip(doc, d) {
 
 let pdfFile = null;   // fail PDF terakhir, untuk dialog Muat turun / Kongsi
 
-async function makePdf(list, filename, label) {
+async function makePdf(list, filename, label, toData = slipData) {
   let JsPDF;
   try { JsPDF = await loadJsPdf(); }
   catch { toast('Could not create the PDF. Check your internet connection.', 'error'); return; }
   const doc = new JsPDF({ unit: 'mm', format: 'a5' });
-  list.forEach((r, i) => { if (i) doc.addPage(); drawSlip(doc, slipData(r)); });
+  list.forEach((r, i) => { if (i) doc.addPage(); drawSlip(doc, toData(r)); });
   const safe = filename.replace(/[^\w.-]+/g, '_');
   pdfFile = new File([doc.output('blob')], safe, { type: 'application/pdf' });
   $('pdfInfo').textContent = `${label} · ${safe}`;
@@ -353,7 +379,10 @@ async function renderPayroll() {
       </div>
       <div class="kv total" id="pyTotal"></div>
       <p class="greet-sub right" id="pyPaid"></p>
-      <button class="btn ghost block" id="pyPdfAll" type="button" hidden>${icon('download')} PDF all payslips</button>
+      <div class="two" id="pyPdfBtns" hidden>
+        <button class="btn ghost" id="pyPdfAll" type="button">${icon('download')} PDF all payslips</button>
+        <button class="btn ghost" id="pyPdfCombo" type="button">${icon('download')} 1 slip per staff</button>
+      </div>
     </section>
     <details class="card adv-box" id="pyAdvances"></details>
     <button class="btn ghost block" id="pyAdvanceBtn" type="button">+ Give advance (early pay)</button>
@@ -437,8 +466,17 @@ async function renderPayroll() {
   $('pyPaid').textContent = `Paid ${rm(fromCents(paid))} · Unpaid ${rm(fromCents(total - paid))}`
     + (overlap ? ` · includes ${overlap} payslip${overlap === 1 ? '' : 's'} from other pay periods that overlap these dates` : '');
   if (!rows.length) { $('pyList').innerHTML = emptyStaff(); return; }
-  $('pyPdfAll').hidden = false;
+  $('pyPdfBtns').hidden = false;
   $('pyPdfAll').onclick = () => makePdf(rows, `Payslips_All_${state.from}_${state.to}.pdf`, `${rows.length} payslips`);
+  // Kumpulan slip ikut pekerja (baris pekerja sama sentiasa bersebelahan).
+  const groups = [];
+  rows.forEach((r, i) => {
+    const g = groups.at(-1);
+    if (g && g.e.id === r.e.id) g.idx.push(i); else groups.push({ e: r.e, idx: [i] });
+  });
+  const listOf = g => g.idx.map(i => rows[i]);
+  $('pyPdfCombo').onclick = () => makePdf(groups.map(listOf), `Payslips_Combined_${state.from}_${state.to}.pdf`,
+    `${groups.length} combined payslip${groups.length === 1 ? '' : 's'}`, comboData);
 
   $('pyList').innerHTML = rows.map((r, i) => {
     const st = r.paid ? '<span class="pill ok">Paid</span>' : r.slip ? '<span class="pill rendah">Draft</span>' : '<span class="pill">Not saved</span>';
@@ -451,7 +489,12 @@ async function renderPayroll() {
     const advLine = (r.adv || r.bal)
       ? `<div class="kv"><span>Advance deduction${r.paid ? '' : ` (balance ${rm(fromCents(r.bal))})`}</span><b class="neg" data-adv>−${rm(fromCents(r.adv))}</b></div>` : '';
     const own = r.from !== state.from || r.to !== state.to;
-    return `<section class="card slip" data-row="${i}">
+    const g = groups.find(x => x.idx[0] === i && x.idx.length > 1);
+    const combo = g ? `<div class="combo-bar" data-combo="${groups.indexOf(g)}">
+        <div><b>${esc(r.e.name)}</b><span>${g.idx.length} payslips · ${rm(fromCents(listOf(g).reduce((t, x) => t + x.net, 0)))}</span></div>
+        <div class="combo-actions"><button class="btn ghost" type="button" data-combo-pdf>${icon('download')}1 combined slip</button>
+        <button class="btn ghost" type="button" data-combo-copy>Copy</button></div></div>` : '';
+    return `${combo}<section class="card slip" data-row="${i}">
       <div class="emp-head"><div><b>${esc(r.e.name)}</b><span class="sub">${esc(outletName(r.e.outlet_id))}${r.e.is_manager ? ' · Management level' : ''}${own ? ' · ' + esc(dateRange(r.from, r.to)) : ''}</span></div>${st}</div>
       ${r.partial ? `<p class="note-line small">${icon('lock')}Only ${r.partial} day${r.partial === 1 ? '' : 's'} not covered by paid payslips are counted.</p>` : ''}
       <div class="kv-list">
@@ -504,6 +547,20 @@ async function renderPayroll() {
   }
 
   $('pyList').addEventListener('click', async e => {
+    const cb = e.target.closest('[data-combo] button');
+    if (cb) {
+      const list = listOf(groups[Number(cb.closest('[data-combo]').dataset.combo)]);
+      if (cb.matches('[data-combo-pdf]')) {
+        makePdf([list], `Payslip_${list[0].e.name}_${state.from}_${state.to}_combined.pdf`, `Combined payslip ${list[0].e.name}`, comboData);
+        return;
+      }
+      const d = comboData(list);
+      const lines = [`PAYSLIP (COMBINED) — ${d.business}${d.regNo ? ` (${d.regNo})` : ''}`, ...d.info.map(([k, v]) => `${k}: ${v}`),
+        ...d.items.map(([k, v]) => `${k}: ${v}`), `TOTAL: ${d.total}`, `Status: ${d.status}`];
+      try { await navigator.clipboard.writeText(lines.join('\n')); toast('Combined payslip copied. Paste into WhatsApp.'); }
+      catch { toast('Copy failed.', 'error'); }
+      return;
+    }
     const btn = e.target.closest('button');
     if (!btn || !btn.closest('[data-row]')) return;
     const card = btn.closest('[data-row]'), r = rowOf(card);
