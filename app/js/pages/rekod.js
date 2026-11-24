@@ -6,7 +6,7 @@ import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, dateShort, dateLong } from '../format.js';
 import { isPro, proTag } from '../plan.js';
-import { bindPicker, uploadReceipt, discardReceipt, viewReceipt, receiptBtn } from '../receipt.js';
+import { bindPicker, pickerButtons, uploadReceipt, discardReceipt, viewReceipt, receiptBtn } from '../receipt.js';
 
 const PAGE_SIZE = 30;
 const BASE_COLS = 'id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at';
@@ -97,7 +97,7 @@ function keyInHTML() {
     <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
     <div class="field">
       <span>Receipt photo <span class="muted-inline">(optional)</span> ${isPro() ? '' : proTag()}</span>
-      ${isPro() ? `<label class="btn ghost block rc-pick" id="kiRcPick">${icon('camera')}Add receipt photo<input type="file" id="kiRcFile" accept="image/*"></label>
+      ${isPro() ? `${pickerButtons('kiRc', true)}
       <div class="rc-preview" id="kiRcPrev" hidden><img id="kiRcImg" alt="Receipt photo preview"><button type="button" class="btn ghost" id="kiRcDel">Remove</button></div>`
       : `<a class="btn ghost block rc-pick" href="#/pakej">${icon('lock')}Upgrade to Pro to attach receipt photos</a>`}
     </div>
@@ -258,7 +258,7 @@ async function renderKeyIn(box) {
   }
   loadDay();
 
-  const rcPicker = $('kiRcFile') ? bindPicker($('kiRcFile'), $('kiRcPrev'), $('kiRcImg'), $('kiRcDel'), $('kiRcPick')) : null;
+  const rcPicker = $('kiRcCam') ? bindPicker([$('kiRcCam'), $('kiRcGal')], $('kiRcPrev'), $('kiRcImg'), $('kiRcDel'), $('kiRcPick')) : null;
 
   $('kiForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -419,7 +419,7 @@ function editDialogHTML() {
       <span>Receipt photo ${isPro() ? '' : proTag()}</span>
       <div class="rc-row">
         <button type="button" class="btn ghost" id="edRcView" hidden>${icon('camera')}View</button>
-        ${isPro() ? `<label class="btn ghost rc-pick" id="edRcPick">${icon('camera')}<span id="edRcPickTxt">Add photo</span><input type="file" id="edRcFile" accept="image/*"></label>` : ''}
+        ${isPro() ? pickerButtons('edRc') : ''}
         <label class="rc-remove" id="edRcRemoveLbl" hidden><input type="checkbox" id="edRcRemove">Remove photo</label>
       </div>
       <div class="rc-preview" id="edRcPrev" hidden><img id="edRcImg" alt="New receipt photo"><button type="button" class="btn ghost" id="edRcDel">Cancel new photo</button></div>
@@ -459,7 +459,6 @@ async function openEdit(t, done) {
   $('edRcView').hidden = !hasRc;
   $('edRcRemoveLbl').hidden = !hasRc;
   $('edRcRemove').checked = false;
-  if ($('edRcPickTxt')) $('edRcPickTxt').textContent = hasRc ? 'Replace photo' : 'Add photo';
   edPicker?.reset();
 
   const lock = !!linked;
@@ -485,7 +484,7 @@ function fillEditCategories(selected) {
 let edPicker = null;
 function bindEditDialog() {
   bankAmount($('edAmount'));
-  edPicker = $('edRcFile') ? bindPicker($('edRcFile'), $('edRcPrev'), $('edRcImg'), $('edRcDel'), $('edRcPick')) : null;
+  edPicker = $('edRcCam') ? bindPicker([$('edRcCam'), $('edRcGal')], $('edRcPrev'), $('edRcImg'), $('edRcDel'), $('edRcPick')) : null;
   $('edRcView').onclick = () => { if (editing?.t.receipt_path) viewReceipt(editing.t.receipt_path); };
   document.querySelectorAll('input[name="edType"]').forEach(r => r.addEventListener('change', () => fillEditCategories(null)));
   $('edCancel').onclick = () => $('edDialog').close();
