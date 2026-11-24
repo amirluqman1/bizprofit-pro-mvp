@@ -4,7 +4,7 @@
 // direkod dalam log audit oleh database, bukan oleh app.
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
-import { rm, todayKL, dateShort } from '../format.js';
+import { rm, todayKL, dateShort, dateLong } from '../format.js';
 
 const PAGE_SIZE = 30;
 // Pilihan susunan Sejarah: [kolum, menaik?] — kolum seterusnya jadi pemutus seri.
@@ -56,7 +56,17 @@ function keyInHTML() {
     <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales"></label>
     <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
     <button class="btn primary block" id="kiSave">Save transaction</button>
-  </form>`;
+  </form>
+  <section class="card day-card" aria-labelledby="dayTitle">
+    <div class="day-head">
+      <h2 class="day-title" id="dayTitle">Entries for today</h2>
+      <span class="day-count" id="dayCount"></span>
+    </div>
+    <div class="day-sum" id="daySum" hidden></div>
+    <ul class="tx-list" id="dayList"></ul>
+    <p class="greet-sub" id="dayStatus">Loading…</p>
+  </section>
+  ${session.isAdminUp ? editDialogHTML() : ''}`;
 }
 
 function rowHTML(t) {
@@ -93,6 +103,7 @@ async function renderKeyIn(box) {
   try { l = await loadLists(); }
   catch (e) { box.innerHTML = `<section class="card"><p class="greet-sub">${esc(e.message)}</p></section>`; return; }
   box.innerHTML = keyInHTML();
+  box.classList.add('ki-split');
 
   const fillCategories = () => {
     const type = document.querySelector('input[name="kiType"]:checked').value;
@@ -103,6 +114,60 @@ async function renderKeyIn(box) {
   $('kiPay').innerHTML = l.payments.map((p, i) =>
     `<label class="chip"><input type="radio" name="kiPay" value="${esc(p)}" ${i === 0 ? 'checked' : ''}>${esc(p)}</label>`).join('');
   $('kiDate').value = todayKL();
+
+  // Senarai transaksi untuk tarikh & outlet yang dipilih (bawah butang Save / sebelah di landscape).
+  const dayRows = new Map();
+  let dayRun = 0;
+  const kiOutletId = () => ($('kiOutlet') ? $('kiOutlet').value : defaultOutlet());
+  async function loadDay() {
+    const date = $('kiDate').value;
+    const run = ++dayRun;
+    $('dayTitle').textContent = !date ? 'Entries' : date === todayKL() ? 'Entries for today' : 'Entries for ' + dateLong(date);
+    if (!date) {
+      $('dayList').innerHTML = ''; $('daySum').hidden = true; $('dayCount').textContent = '';
+      $('dayStatus').hidden = false; $('dayStatus').textContent = 'Choose a date to see its entries.';
+      return;
+    }
+    $('dayStatus').hidden = false; $('dayStatus').textContent = 'Loading…';
+    const { data, error } = await sb.from('transactions')
+      .select('id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at')
+      .eq('transaction_date', date).eq('outlet_id', kiOutletId())
+      .order('created_at', { ascending: false }).order('id', { ascending: false })
+      .limit(200);
+    if (run !== dayRun) return;   // tarikh/outlet dah bertukar semasa menunggu
+    if (error) { $('dayStatus').textContent = 'Could not load entries for this date. Try again.'; return; }
+    dayRows.clear();
+    data.forEach(t => dayRows.set(String(t.id), t));
+    $('dayList').innerHTML = data.map(rowHTML).join('');
+    $('dayCount').textContent = data.length ? `${data.length} ${data.length === 1 ? 'entry' : 'entries'}` : '';
+    if (!data.length) {
+      $('daySum').hidden = true;
+      $('dayStatus').textContent = session.role === 'staff' && date !== todayKL()
+        ? 'Staff can only see entries keyed in today.'
+        : 'Nothing keyed in for this date yet.';
+      return;
+    }
+    $('dayStatus').hidden = true;
+    const total = type => data.filter(t => t.type === type).reduce((n, t) => n + Math.round(Number(t.amount) * 100), 0) / 100;
+    const tin = total('In'), tout = total('Out');
+    $('daySum').hidden = false;
+    $('daySum').innerHTML = `
+      <div><span>Money in</span><b class="in">${esc(rm(tin))}</b></div>
+      <div><span>Money out</span><b>${esc(rm(tout))}</b></div>
+      <div><span>Net</span><b class="${tin - tout < 0 ? 'neg' : 'in'}">${esc(rm(tin - tout))}</b></div>`;
+  }
+  $('kiDate').addEventListener('change', loadDay);
+  if ($('kiOutlet')) $('kiOutlet').addEventListener('change', loadDay);
+  if (session.isAdminUp) {
+    const open = e => {
+      const li = e.target.closest('[data-tx]');
+      if (li) openEdit(dayRows.get(li.dataset.tx), loadDay);
+    };
+    $('dayList').addEventListener('click', open);
+    $('dayList').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+    bindEditDialog();
+  }
+  loadDay();
 
   $('kiForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -132,6 +197,7 @@ async function renderKeyIn(box) {
     $('kiAmount').value = ''; $('kiDesc').value = ''; $('kiRef').value = '';
     toast('Transaction saved.');
     $('kiAmount').focus();
+    loadDay();
   });
 }
 
