@@ -1,4 +1,4 @@
-// Report ikut tempoh: Harian, Mingguan, Bulanan, Tahunan. Owner, admin & manager sahaja.
+// Report ikut tempoh: Harian, Mingguan, Bulanan, Tahunan, atau Custom (dari tarikh – hingga tarikh). Owner, admin & manager sahaja.
 // Ringkasan profit + perbandingan tempoh sebelum, sorotan, graf masuk/keluar,
 // prestasi outlet, perbelanjaan ikut kategori, jualan ikut kaedah bayaran, kongsi ringkasan.
 import { $, esc, icon, toast } from '../ui.js';
@@ -6,13 +6,13 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
 import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 
-const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly' };
+const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly', julat: 'Custom' };
 const PAGE = 1000;
 const FC_GOOD = 35;
 const COLORS = 6;    // --c1..--c6 dalam CSS
 
 // Kekal semasa tukar halaman/outlet.
-const state = { period: 'harian', date: null };
+const state = { period: 'harian', date: null, from: null, to: null };   // from/to: tempoh Custom
 let version = 0;
 let catInfo = null;  // Map "type|name" -> { counts_in_profit, is_sales }
 
@@ -50,6 +50,35 @@ function buildPeriod(period, date) {
     }
     const start = period === 'harian' ? addDays(date, -6) : from;
     groups = Array.from({ length: 7 }, (_, i) => { const d = addDays(start, i); return { label: d.slice(-2), from: d, to: d }; });
+  }
+  return { from, to, groups };
+}
+
+const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5) + 1;
+
+// Tempoh Custom: graf ikut hari (≤ 31 hari), minggu (≤ 4 bulan), bulan (≤ 3 tahun), atau tahun.
+function buildCustom(from, to) {
+  const n = daysBetween(from, to);
+  const groups = [];
+  if (n <= 31) {
+    for (let d = from; d <= to; d = addDays(d, 1)) groups.push({ label: d.slice(-2), from: d, to: d });
+  } else if (n <= 124) {
+    for (let d = from; d <= to; d = addDays(d, 7)) {
+      const e = addDays(d, 6) < to ? addDays(d, 6) : to;
+      groups.push({ label: dateShort(d).replace(' ', '\u00a0'), from: d, to: e });
+    }
+  } else if (n <= 1096) {
+    for (let d = from; d <= to;) {
+      const e = endOfMonth(d) < to ? endOfMonth(d) : to;
+      groups.push({ label: MONTHS[Number(d.slice(5, 7)) - 1] + (from.slice(0, 4) !== to.slice(0, 4) ? '\u00a0' + d.slice(2, 4) : ''), from: d, to: e });
+      d = addDays(e, 1);
+    }
+  } else {
+    for (let d = from; d <= to;) {
+      const e = d.slice(0, 4) + '-12-31' < to ? d.slice(0, 4) + '-12-31' : to;
+      groups.push({ label: d.slice(0, 4), from: d, to: e });
+      d = addDays(e, 1);
+    }
   }
   return { from, to, groups };
 }
@@ -191,16 +220,26 @@ export default {
     if (locked(state.period)) state.period = 'harian';
     if (!pro && state.date < minDate) state.date = today;
     if (!pro && state.period === 'mingguan') state.date = today;
+    // Custom: lalai awal bulan ini hingga hari ini; Percuma terhad kepada 30 hari terakhir.
+    const clampDay = d => (d > today ? today : d < minDate ? minDate : d);
+    state.to = clampDay(state.to || today);
+    state.from = clampDay(state.from || today.slice(0, 8) + '01');
+    if (state.from > state.to) [state.from, state.to] = [state.to, state.from];
 
     view.innerHTML = `
       <div class="rep-controls">
-        <div class="seg four" role="group" aria-label="Report period">
+        <div class="seg four five" role="group" aria-label="Report period">
           ${Object.entries(PERIODS).map(([k, v]) => `<button class="seg-opt" type="button" data-period="${k}">${locked(k) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${v}${locked(k) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}
         </div>
         <div class="datenav">
           <button type="button" id="repPrev" aria-label="Previous period">‹</button>
           <label id="repPick"><span id="repLabel"></span><input id="repDate" type="date" min="${minDate}" aria-label="Choose date"></label>
           <button type="button" id="repNext" aria-label="Next period">›</button>
+        </div>
+        <div class="range-pick" id="repRange" hidden>
+          <label>From<input id="repFrom" type="date" min="${minDate}"></label>
+          <span aria-hidden="true">–</span>
+          <label>To<input id="repTo" type="date" min="${minDate}"></label>
         </div>
         <button class="share-btn" type="button" id="repShare">${icon('link')}Share summary</button>
         ${session.isAdminUp ? `<a class="share-btn" href="#/pnl">${icon('receipt')}P&amp;L (Form B)</a>` : ''}
@@ -212,6 +251,12 @@ export default {
         b.classList.toggle('on', b.dataset.period === state.period);
         b.setAttribute('aria-pressed', String(b.dataset.period === state.period));
       });
+      const custom = state.period === 'julat';
+      view.querySelector('.datenav').hidden = custom;
+      $('repRange').hidden = !custom;
+      $('repFrom').value = state.from; $('repFrom').max = today;
+      $('repTo').value = state.to; $('repTo').max = today;
+      if (custom) return;
       $('repLabel').textContent = periodLabel(state.period, state.date);
       $('repDate').value = state.date;
       $('repDate').max = today;
@@ -225,10 +270,12 @@ export default {
     async function show() {
       const v = ++version;
       syncControls();
-      const { from, to, groups } = buildPeriod(state.period, state.date);
+      const custom = state.period === 'julat';
+      const { from, to, groups } = custom ? buildCustom(state.from, state.to) : buildPeriod(state.period, state.date);
       const upTo = to < today ? to : today;                 // tempoh berjalan: banding hari yang sama
-      const prevFrom = shiftDate(state.period, from, -1);
-      const prevTo = shiftDate(state.period, upTo, -1);
+      // Custom: banding dengan tempoh sama panjang betul-betul sebelumnya.
+      const prevFrom = custom ? addDays(from, -daysBetween(from, to)) : shiftDate(state.period, from, -1);
+      const prevTo = custom ? addDays(from, -1) : shiftDate(state.period, upTo, -1);
       $('repBody').innerHTML = '<p class="loading-line">Loading…</p>';
       shareText = '';
 
@@ -268,7 +315,8 @@ export default {
       const bestOutlet = best && session.outletId === ALL_OUTLETS && best[1].outlets.size > 1
         ? [...best[1].outlets].sort((a, b) => b[1] - a[1])[0][0] : null;
       const profitChg = pctChange(t.profit, p.profit);
-      const prevName = state.period === 'harian' ? 'previous day' : state.period === 'mingguan' ? 'previous week'
+      const prevName = custom ? `previous ${days} day${days === 1 ? '' : 's'}`
+        : state.period === 'harian' ? 'previous day' : state.period === 'mingguan' ? 'previous week'
         : state.period === 'bulanan' ? 'previous month' : 'previous year';
       const prevSpan = prevFrom === prevTo ? `${dayName(prevFrom)}, ${dateShort(prevFrom)}` : dateRange(prevFrom, prevTo);
       const bestOutletAll = [...perOutletProfit(inRange)].sort((a, b) => b[1] - a[1])[0];
@@ -380,6 +428,8 @@ export default {
         const hasData = g => rows.some(r => r.transaction_date >= g.from && r.transaction_date <= g.to);
         focus = from.slice(0, 4) === today.slice(0, 4) ? Number(today.slice(5, 7)) - 1
           : groups.reduce((last, g, i) => (hasData(g) ? i : last), groups.length - 1);
+      } else if (custom) {
+        focus = groups.length - 1;
       } else {
         focus = groups.findIndex(g => state.date >= g.from && state.date <= g.to);
         if (focus < 0) focus = groups.length - 1;
@@ -398,6 +448,17 @@ export default {
     });
     $('repDate').addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama: biar lalai */ } });
     $('repDate').addEventListener('change', e => { if (e.target.value) { state.date = e.target.value > today ? today : e.target.value < minDate ? minDate : e.target.value; show(); } });
+    const setRange = () => {
+      let f = $('repFrom').value, t = $('repTo').value;
+      if (!f || !t) return;
+      f = clampDay(f); t = clampDay(t);
+      if (f > t) [f, t] = [t, f];                    // tersalah susun: tukar sendiri
+      state.from = f; state.to = t; show();
+    };
+    ['repFrom', 'repTo'].forEach(id => {
+      $(id).addEventListener('change', setRange);
+      $(id).addEventListener('click', e => { try { e.target.showPicker(); } catch { /* pelayar lama */ } });
+    });
     $('repShare').addEventListener('click', async () => {
       if (!shareText) { toast('Report is still loading.'); return; }
       try {
