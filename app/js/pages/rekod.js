@@ -5,8 +5,26 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, dateShort, dateLong } from '../format.js';
+import { isPro, proTag } from '../plan.js';
+import { bindPicker, uploadReceipt, discardReceipt, viewReceipt, receiptBtn } from '../receipt.js';
 
 const PAGE_SIZE = 30;
+const BASE_COLS = 'id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at';
+// receipt_path wujud selepas migration Fasa 13. Kalau belum, teruskan tanpa resit (jangan rosakkan senarai).
+let receiptCol = true;
+const txCols = () => BASE_COLS + (receiptCol ? ',receipt_path' : '');
+const missingReceiptCol = err => {
+  if (!receiptCol || !/receipt_path/.test(err?.message || '')) return false;
+  receiptCol = false; return true;
+};
+// Klik butang 📷 pada baris → lihat resit (untuk semua peranan).
+function bindReceiptClicks(list) {
+  list.addEventListener('click', e => {
+    const b = e.target.closest('[data-receipt]');
+    if (b) { e.preventDefault(); viewReceipt(b.dataset.receipt); }
+  });
+}
+const isRowKey = e => (e.key === 'Enter' || e.key === ' ') && !e.target.closest('[data-receipt]');
 // Pilihan susunan Sejarah: [kolum, menaik?] — kolum seterusnya jadi pemutus seri.
 const SORTS = [
   { label: 'Newest date', order: [['transaction_date', false], ['created_at', false]] },
@@ -77,6 +95,12 @@ function keyInHTML() {
     <datalist id="kiDescList"></datalist>
     <div class="chips quick" id="kiQuick" hidden></div>
     <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
+    <div class="field">
+      <span>Receipt photo <span class="muted-inline">(optional)</span> ${isPro() ? '' : proTag()}</span>
+      ${isPro() ? `<label class="btn ghost block rc-pick" id="kiRcPick">${icon('camera')}Add receipt photo<input type="file" id="kiRcFile" accept="image/*"></label>
+      <div class="rc-preview" id="kiRcPrev" hidden><img id="kiRcImg" alt="Receipt photo preview"><button type="button" class="btn ghost" id="kiRcDel">Remove</button></div>`
+      : `<a class="btn ghost block rc-pick" href="#/pakej">${icon('lock')}Upgrade to Pro to attach receipt photos</a>`}
+    </div>
     <button class="btn primary block" id="kiSave">Save transaction</button>
   </form>
   <section class="card day-card" aria-labelledby="dayTitle">
@@ -99,6 +123,7 @@ function rowHTML(t) {
   return `<li class="tx${session.isAdminUp ? ' editable' : ''}"${edit}>
     <span class="tx-icon ${masuk ? 'in' : 'out'}" aria-hidden="true">${masuk ? '+' : '−'}</span>
     <div class="tx-copy"><p class="tx-title">${esc(t.description || t.category)}</p><p class="tx-detail">${esc(parts.join(' · '))}</p></div>
+    ${receiptBtn(t.receipt_path)}
     <span class="tx-amount ${masuk ? 'in' : 'out'}">${masuk ? '+' : '−'}${esc(rm(t.amount))}</span>
   </li>`;
 }
@@ -153,11 +178,12 @@ async function renderKeyIn(box) {
     }
     $('dayStatus').hidden = false; $('dayStatus').textContent = 'Loading…';
     const { data, error } = await sb.from('transactions')
-      .select('id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at')
+      .select(txCols())
       .eq('transaction_date', date).eq('outlet_id', kiOutletId())
       .order('created_at', { ascending: false }).order('id', { ascending: false })
       .limit(200);
     if (run !== dayRun) return;   // tarikh/outlet dah bertukar semasa menunggu
+    if (error && missingReceiptCol(error)) return loadDay();
     if (error) { $('dayStatus').textContent = 'Could not load entries for this date. Try again.'; return; }
     dayRows.clear();
     data.forEach(t => dayRows.set(String(t.id), t));
@@ -219,16 +245,20 @@ async function renderKeyIn(box) {
 
   $('kiDate').addEventListener('change', loadDay);
   if ($('kiOutlet')) $('kiOutlet').addEventListener('change', () => { loadDay(); loadDescHistory(); });
+  bindReceiptClicks($('dayList'));
   if (session.isAdminUp) {
     const open = e => {
+      if (e.target.closest('[data-receipt]')) return;
       const li = e.target.closest('[data-tx]');
       if (li) openEdit(dayRows.get(li.dataset.tx), loadDay);
     };
     $('dayList').addEventListener('click', open);
-    $('dayList').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+    $('dayList').addEventListener('keydown', e => { if (isRowKey(e)) { e.preventDefault(); open(e); } });
     bindEditDialog();
   }
   loadDay();
+
+  const rcPicker = $('kiRcFile') ? bindPicker($('kiRcFile'), $('kiRcPrev'), $('kiRcImg'), $('kiRcDel'), $('kiRcPick')) : null;
 
   $('kiForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -242,7 +272,16 @@ async function renderKeyIn(box) {
     if (!pay) { toast('Choose a payment method.', 'error'); return; }
 
     const btn = $('kiSave');
-    btn.disabled = true; btn.textContent = 'Saving…';
+    const outletId = $('kiOutlet') ? $('kiOutlet').value : defaultOutlet();
+    const photo = rcPicker?.get();
+    let receiptPath = null;
+    btn.disabled = true;
+    if (photo) {
+      btn.textContent = 'Uploading photo…';
+      try { receiptPath = await uploadReceipt(photo, outletId); }
+      catch (err) { btn.disabled = false; btn.textContent = 'Save transaction'; toast(err.message, 'error'); return; }
+    }
+    btn.textContent = 'Saving…';
     const { error } = await sb.from('transactions').insert({
       transaction_date: $('kiDate').value,
       type: document.querySelector('input[name="kiType"]:checked').value,
@@ -251,11 +290,13 @@ async function renderKeyIn(box) {
       description: desc,
       payment_method: pay.value,
       reference_no: $('kiRef').value.trim() || null,
-      outlet_id: $('kiOutlet') ? $('kiOutlet').value : defaultOutlet()
+      outlet_id: outletId,
+      ...(receiptPath ? { receipt_path: receiptPath } : {})
     });
     btn.disabled = false; btn.textContent = 'Save transaction';
-    if (error) { toast('Transaction not saved: ' + error.message, 'error'); return; }
+    if (error) { discardReceipt(receiptPath); toast('Transaction not saved: ' + error.message, 'error'); return; }
     $('kiAmount').value = ''; $('kiDesc').value = ''; $('kiRef').value = '';
+    rcPicker?.reset();
     toast('Transaction saved.');
     $('kiAmount').focus();
     loadDay();
@@ -295,8 +336,7 @@ async function renderHistory(box) {
     const cat = $('fCat').value;
     const sort = SORTS[Number($('fSort').value)] || SORTS[0];
     let q = sb.from('transactions')
-      .select('id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at',
-        { count: offset ? undefined : 'exact' });
+      .select(txCols(), { count: offset ? undefined : 'exact' });
     sort.order.forEach(([col, asc]) => { q = q.order(col, { ascending: asc }); });
     q = q.order('id', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
@@ -304,6 +344,7 @@ async function renderHistory(box) {
     if (cat) q = q.eq('category', cat);
     const { data, error, count } = await q;
     if (run !== runId) return;   // tapisan dah berubah semasa menunggu
+    if (error && missingReceiptCol(error)) return more();
     if (error) { $('txStatus').textContent = 'Could not load transactions. Try again.'; return; }
     data.forEach(t => rows.set(String(t.id), t));
     $('txList').insertAdjacentHTML('beforeend', data.map(rowHTML).join(''));
@@ -337,13 +378,15 @@ async function renderHistory(box) {
   $('fCat').addEventListener('change', reload);
   $('fSort').addEventListener('change', reload);
 
+  bindReceiptClicks($('txList'));
   if (session.isAdminUp) {
     const open = e => {
+      if (e.target.closest('[data-receipt]')) return;
       const li = e.target.closest('[data-tx]');
       if (li) openEdit(rows.get(li.dataset.tx), reload);
     };
     $('txList').addEventListener('click', open);
-    $('txList').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+    $('txList').addEventListener('keydown', e => { if (isRowKey(e)) { e.preventDefault(); open(e); } });
     bindEditDialog();
   }
   await more();
@@ -372,6 +415,15 @@ function editDialogHTML() {
       <label class="field">Reference no.<input id="edRef" maxlength="50" placeholder="Optional"></label>
     </div>
     ${outletPicker}
+    <div class="field" id="edRcField">
+      <span>Receipt photo ${isPro() ? '' : proTag()}</span>
+      <div class="rc-row">
+        <button type="button" class="btn ghost" id="edRcView" hidden>${icon('camera')}View</button>
+        ${isPro() ? `<label class="btn ghost rc-pick" id="edRcPick">${icon('camera')}<span id="edRcPickTxt">Add photo</span><input type="file" id="edRcFile" accept="image/*"></label>` : ''}
+        <label class="rc-remove" id="edRcRemoveLbl" hidden><input type="checkbox" id="edRcRemove">Remove photo</label>
+      </div>
+      <div class="rc-preview" id="edRcPrev" hidden><img id="edRcImg" alt="New receipt photo"><button type="button" class="btn ghost" id="edRcDel">Cancel new photo</button></div>
+    </div>
     <div class="dialog-actions">
       <button class="btn danger" type="button" id="edDelete">Delete</button>
       <button class="btn ghost" type="button" id="edCancel">Cancel</button>
@@ -402,6 +454,13 @@ async function openEdit(t, done) {
   $('edDate').value = t.transaction_date;
   $('edRef').value = t.reference_no || '';
   if ($('edOutlet')) $('edOutlet').value = t.outlet_id;
+  const hasRc = receiptCol && !!t.receipt_path;
+  $('edRcField').hidden = !receiptCol || (!isPro() && !hasRc);
+  $('edRcView').hidden = !hasRc;
+  $('edRcRemoveLbl').hidden = !hasRc;
+  $('edRcRemove').checked = false;
+  if ($('edRcPickTxt')) $('edRcPickTxt').textContent = hasRc ? 'Replace photo' : 'Add photo';
+  edPicker?.reset();
 
   const lock = !!linked;
   ['edAmount', 'edCategory', 'edOutlet'].forEach(id => { if ($(id)) $(id).disabled = lock; });
@@ -423,8 +482,11 @@ function fillEditCategories(selected) {
   if (selected) $('edCategory').value = selected;
 }
 
+let edPicker = null;
 function bindEditDialog() {
   bankAmount($('edAmount'));
+  edPicker = $('edRcFile') ? bindPicker($('edRcFile'), $('edRcPrev'), $('edRcImg'), $('edRcDel'), $('edRcPick')) : null;
+  $('edRcView').onclick = () => { if (editing?.t.receipt_path) viewReceipt(editing.t.receipt_path); };
   document.querySelectorAll('input[name="edType"]').forEach(r => r.addEventListener('change', () => fillEditCategories(null)));
   $('edCancel').onclick = () => $('edDialog').close();
 
@@ -450,8 +512,18 @@ function bindEditDialog() {
       if ($('edOutlet')) payload.outlet_id = $('edOutlet').value;
     }
     $('edSave').disabled = true;
+    const photo = edPicker?.get();
+    let newPath = null;
+    if (photo) {
+      try { newPath = await uploadReceipt(photo, payload.outlet_id || t.outlet_id); }
+      catch (err) { $('edSave').disabled = false; toast(err.message, 'error'); return; }
+      payload.receipt_path = newPath;
+    } else if ($('edRcRemove').checked) {
+      payload.receipt_path = null;
+    }
     const { data, error } = await sb.from('transactions').update(payload).eq('id', t.id).select('id');
     $('edSave').disabled = false;
+    if (error || !data?.length) discardReceipt(newPath);
     if (error) { toast('Not saved: ' + error.message, 'error'); return; }
     if (!data?.length) { toast('No access to edit this transaction.', 'error'); return; }
     $('edDialog').close();
@@ -479,7 +551,8 @@ function bindEditDialog() {
 // ---------------- Log audit (owner & admin) ----------------
 const FIELD = {
   amount: 'Amount', type: 'Type', category: 'Category', description: 'Description',
-  payment_method: 'Payment method', transaction_date: 'Date', reference_no: 'Reference no.', outlet_id: 'Outlet'
+  payment_method: 'Payment method', transaction_date: 'Date', reference_no: 'Reference no.', outlet_id: 'Outlet',
+  receipt_path: 'Receipt photo'
 };
 function fieldVal(k, v) {
   if (v == null || v === '') return '-';
@@ -487,6 +560,7 @@ function fieldVal(k, v) {
   if (k === 'type') return v === 'In' ? 'Money in' : 'Money out';
   if (k === 'transaction_date') return dateShort(v);
   if (k === 'outlet_id') return outletName(v) || 'Other outlet';
+  if (k === 'receipt_path') return 'Photo …' + String(v).slice(-10, -4);
   return String(v);
 }
 
