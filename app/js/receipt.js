@@ -1,14 +1,15 @@
 // Gambar resit pada transaksi (ciri Pro).
-// Gambar dikecilkan dalam phone dahulu (sasaran ~60–80KB, maks 100KB) supaya cepat
-// dimuat naik dan kos storage rendah. Tulisan resit masih jelas pada 1200px. Disimpan dalam bucket peribadi "receipts":
+// Gambar dikecilkan dalam phone dahulu: hitam putih, 900px (turun ke 800px jika perlu),
+// sasaran ~20–35KB, maks ~40KB. Diuji dengan resit thermal tulisan kecil: masih boleh
+// dibaca pada 800px; 700px dah mula pecah. Disimpan dalam bucket peribadi "receipts":
 // <business_id>/<outlet_id>/<uuid>.jpg. Akses dikawal oleh database (Fasa 13).
 import { esc, icon, toast } from './ui.js';
 import { sb, session } from './session.js';
 
 const BUCKET = 'receipts';
 // Cuba dari kualiti terbaik; berhenti bila saiz ≤ TARGET. Langkah terakhir diguna walau apa pun.
-const STEPS = [[1200, 0.6], [1200, 0.5], [1000, 0.5], [1000, 0.42], [850, 0.42]];
-const TARGET = 100 * 1024;
+const STEPS = [[900, 0.45], [800, 0.45], [800, 0.38]];
+const TARGET = 40 * 1024;
 
 // Kecilkan gambar → Blob JPEG.
 export async function compressImage(file) {
@@ -36,8 +37,12 @@ export async function compressImage(file) {
         const scale = Math.min(1, maxSide / Math.max(w, h));
         canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale);
         ctx.imageSmoothingQuality = 'high';
+        ctx.filter = 'none';
         ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);   // PNG lutsinar → latar putih
+        // Hitam putih + kontras sikit: fail lebih kecil, tulisan resit lebih tajam.
+        ctx.filter = 'grayscale(1) contrast(1.15)';
         ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+        ctx.filter = 'none';
       }
       blob = await new Promise(ok => canvas.toBlob(ok, 'image/jpeg', q));
       if (!blob || blob.size <= TARGET) break;
