@@ -236,7 +236,7 @@ function slipData(r) {
   return {
     business: co.name, regNo: co.regNo,
     info: [['Name', r.e.name], ...(r.e.position ? [['Position', r.e.position]] : []), ['Outlet', outletName(r.e.outlet_id)],
-      ['Period', dateRange(state.from, state.to)]],
+      ['Period', dateRange(r.from, r.to)]],
     items, total: money(r.net),
     status: r.paid ? `Paid ${new Date(r.slip.paid_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : r.slip ? 'Draft (unpaid)' : 'Unpaid'
@@ -374,52 +374,73 @@ async function renderPayroll() {
   const ids = employees.map(e => e.id);
   if (!ids.length) { $('pyList').innerHTML = emptyStaff(); $('pyTotal').innerHTML = ''; return; }
   const [att, pr, adv, paidAdv] = await Promise.all([
-    sb.from('attendance').select('employee_id,status,ot_hours').gte('work_date', state.from).lte('work_date', state.to).in('employee_id', ids),
-    sb.from('payroll').select('*').eq('period_start', state.from).eq('period_end', state.to).in('employee_id', ids),
+    sb.from('attendance').select('employee_id,work_date,status,ot_hours').gte('work_date', state.from).lte('work_date', state.to).in('employee_id', ids),
+    // Semua slip yang BERTINDIH dengan tempoh ini (contoh slip mingguan dalam paparan bulanan).
+    sb.from('payroll').select('*').lte('period_start', state.to).gte('period_end', state.from).in('employee_id', ids).order('period_start'),
     sb.from('salary_advances').select('employee_id,amount,advance_date,note,created_at').in('employee_id', ids).order('created_at', { ascending: false }),
     sb.from('payroll').select('employee_id,advance_deduction').eq('status', 'dibayar').in('employee_id', ids)
   ]);
   if (v !== payrollVersion) return;   // pengguna dah tukar tempoh; abaikan hasil lama
   if (att.error || pr.error || adv.error || paidAdv.error) { $('pyList').innerHTML = '<div class="empty">Could not load payroll data.</div>'; return; }
-  const slips = new Map((pr.data || []).map(p => [p.employee_id, p]));
+  // Slip tempoh ini (sama tepat: draf/dibayar) dan slip DIBAYAR lain yang bertindih.
+  const exactOf = new Map(), paidOther = new Map();
+  (pr.data || []).forEach(p => {
+    if (p.period_start === state.from && p.period_end === state.to) exactOf.set(p.employee_id, p);
+    else if (p.status === 'dibayar') paidOther.set(p.employee_id, [...(paidOther.get(p.employee_id) || []), p]);
+  });
   // Baki advance belum ditolak (sen) = semua advance − yang sudah ditolak dalam gaji dibayar
   const balance = new Map();
   (adv.data || []).forEach(a => balance.set(a.employee_id, (balance.get(a.employee_id) || 0) + cents(a.amount)));
   (paidAdv.data || []).forEach(p => balance.set(p.employee_id, (balance.get(p.employee_id) || 0) - cents(p.advance_deduction)));
 
+  const allDays = [];
+  for (let d = state.from; d <= state.to; d = addDays(d, 1)) allDays.push(d);
+  const paidRow = (e, slip) => ({ e, slip, paid: true, from: slip.period_start, to: slip.period_end,
+    days: Number(slip.days_worked), ot: Number(slip.ot_hours), absent: 0,
+    base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction),
+    adv: cents(slip.advance_deduction), bal: Math.max(0, balance.get(e.id) || 0), net: cents(slip.net_amount),
+    weeks: weeksIn(slip.period_start, slip.period_end), rate: Number(slip.rate), otRate: Number(slip.ot_rate), payType: slip.pay_type });
+
   // Kira dalam sen supaya tiada ralat pecahan.
-  const rows = employees.filter(e => e.active || slips.has(e.id)).map(e => {
-    const mine = (att.data || []).filter(a => a.employee_id === e.id);
+  const rows = [];
+  employees.forEach(e => {
+    const others = paidOther.get(e.id) || [];
+    const exact = exactOf.get(e.id);
+    if (!e.active && !exact && !others.length) return;
+    others.forEach(sl => rows.push(paidRow(e, sl)));
+    if (exact?.status === 'dibayar') { rows.push(paidRow(e, exact)); return; }
+
+    // Hari yang sudah dibayar dalam slip lain tidak dikira lagi (elak bayar dua kali).
+    const covered = new Set(allDays.filter(d => others.some(sl => d >= sl.period_start && d <= sl.period_end)));
+    const openDays = allDays.length - covered.size;
+    if (covered.size && !openDays && !exact) return;          // semua hari dah dibayar
+    const mine = (att.data || []).filter(a => a.employee_id === e.id && !covered.has(a.work_date));
     const days = mine.reduce((t, a) => t + DAY_VALUE[a.status], 0);
     const ot = mine.reduce((t, a) => t + Number(a.ot_hours), 0);
     const absent = mine.filter(a => a.status === 'tidak_hadir').length;
-    const slip = slips.get(e.id);
-    if (slip?.status === 'dibayar') {
-      return { e, slip, paid: true, days: Number(slip.days_worked), ot: Number(slip.ot_hours), absent,
-        base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction),
-        adv: cents(slip.advance_deduction), bal: Math.max(0, balance.get(e.id) || 0), net: cents(slip.net_amount), weeks: weeksIn(slip.period_start, slip.period_end),
-        rate: Number(slip.rate), otRate: Number(slip.ot_rate), payType: slip.pay_type };
-    }
-    const weeks = weeksIn(state.from, state.to);
+    const weeks = covered.size ? Math.round(openDays / 7 * 100) / 100 : weeksIn(state.from, state.to);
     const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate))
-      : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate)) : cents(e.rate);
+      : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate))
+      : Math.round(cents(e.rate) * openDays / allDays.length);
     const otAmt = Math.round(ot * cents(e.ot_rate));
-    const allow = cents(slip?.allowance), ded = cents(slip?.deduction);
+    if (covered.size && !exact && base + otAmt === 0) return;  // baki hari tiada gaji
+    const allow = cents(exact?.allowance), ded = cents(exact?.deduction);
     const bal = Math.max(0, balance.get(e.id) || 0);
-    const r = { e, slip, paid: false, days, ot, absent, weeks, base, otAmt, allow, ded, bal,
-      rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type };
-    return recalc(r);
+    rows.push(recalc({ e, slip: exact, paid: false, from: state.from, to: state.to, partial: covered.size ? openDays : 0,
+      days, ot, absent, weeks, base, otAmt, allow, ded, bal, rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type }));
   });
 
   const total = rows.reduce((t, r) => t + r.net, 0);
   const paid = rows.filter(r => r.paid).reduce((t, r) => t + r.net, 0);
   $('pyTotal').innerHTML = `<span>Total payroll ${esc(dateRange(state.from, state.to))}</span><b>${rm(fromCents(total))}</b>`;
-  $('pyPaid').textContent = `Paid ${rm(fromCents(paid))} · Unpaid ${rm(fromCents(total - paid))}`;
+  const overlap = rows.filter(r => r.from !== state.from || r.to !== state.to).length;
+  $('pyPaid').textContent = `Paid ${rm(fromCents(paid))} · Unpaid ${rm(fromCents(total - paid))}`
+    + (overlap ? ` · includes ${overlap} payslip${overlap === 1 ? '' : 's'} from other pay periods that overlap these dates` : '');
   if (!rows.length) { $('pyList').innerHTML = emptyStaff(); return; }
   $('pyPdfAll').hidden = false;
   $('pyPdfAll').onclick = () => makePdf(rows, `Payslips_All_${state.from}_${state.to}.pdf`, `${rows.length} payslips`);
 
-  $('pyList').innerHTML = rows.map(r => {
+  $('pyList').innerHTML = rows.map((r, i) => {
     const st = r.paid ? '<span class="pill ok">Paid</span>' : r.slip ? '<span class="pill rendah">Draft</span>' : '<span class="pill">Not saved</span>';
     const absentNote = r.absent ? ` (${r.absent} days absent)` : '';
     const baseLine = r.payType === 'harian'
@@ -429,8 +450,10 @@ async function renderPayroll() {
       : `<div class="kv"><span>Monthly salary${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`;
     const advLine = (r.adv || r.bal)
       ? `<div class="kv"><span>Advance deduction${r.paid ? '' : ` (balance ${rm(fromCents(r.bal))})`}</span><b class="neg" data-adv>−${rm(fromCents(r.adv))}</b></div>` : '';
-    return `<section class="card slip" data-emp="${esc(r.e.id)}">
-      <div class="emp-head"><div><b>${esc(r.e.name)}</b><span class="sub">${esc(outletName(r.e.outlet_id))}${r.e.is_manager ? ' · Management level' : ''}</span></div>${st}</div>
+    const own = r.from !== state.from || r.to !== state.to;
+    return `<section class="card slip" data-row="${i}">
+      <div class="emp-head"><div><b>${esc(r.e.name)}</b><span class="sub">${esc(outletName(r.e.outlet_id))}${r.e.is_manager ? ' · Management level' : ''}${own ? ' · ' + esc(dateRange(r.from, r.to)) : ''}</span></div>${st}</div>
+      ${r.partial ? `<p class="note-line small">${icon('lock')}Only ${r.partial} day${r.partial === 1 ? '' : 's'} not covered by paid payslips are counted.</p>` : ''}
       <div class="kv-list">
         ${baseLine}
         <div class="kv"><span>OT ${r.ot} hrs × ${rm(r.otRate)}</span><b>${rm(fromCents(r.otAmt))}</b></div>
@@ -445,20 +468,20 @@ async function renderPayroll() {
       <div class="dialog-actions">
         <button class="btn ghost" type="button" data-pdf>${icon('download')}PDF</button>
         <button class="btn ghost" type="button" data-copy>Copy payslip</button>
-        ${r.e.active ? '<button class="btn ghost" type="button" data-advance>+ Advance</button>' : ''}
+        ${r.e.active && !r.paid ? '<button class="btn ghost" type="button" data-advance>+ Advance</button>' : ''}
         ${r.paid ? '' : '<button class="btn ghost" type="button" data-draft>Save draft</button><button class="btn primary" type="button" data-pay>Pay</button>'}
       </div>
     </section>`;
   }).join('');
 
-  const rowOf = el => rows.find(r => r.e.id === el.closest('[data-emp]').dataset.emp);
+  const rowOf = el => rows[Number(el.closest('[data-row]').dataset.row)];
   const readExtras = card => {
     const a = Number(card.querySelector('[data-allow]')?.value || 0), d = Number(card.querySelector('[data-ded]')?.value || 0);
     return (a >= 0 && d >= 0) ? { allow: Math.round(a * 100), ded: Math.round(d * 100) } : null;
   };
   $('pyList').addEventListener('input', e => {
     if (!e.target.matches('[data-allow],[data-ded]')) return;
-    const card = e.target.closest('[data-emp]'), r = rowOf(card), x = readExtras(card);
+    const card = e.target.closest('[data-row]'), r = rowOf(card), x = readExtras(card);
     if (!x) return;
     r.allow = x.allow; r.ded = x.ded; recalc(r);
     card.querySelector('[data-net]').textContent = rm(fromCents(r.net));
@@ -482,8 +505,8 @@ async function renderPayroll() {
 
   $('pyList').addEventListener('click', async e => {
     const btn = e.target.closest('button');
-    if (!btn || !btn.closest('[data-emp]')) return;
-    const card = btn.closest('[data-emp]'), r = rowOf(card);
+    if (!btn || !btn.closest('[data-row]')) return;
+    const card = btn.closest('[data-row]'), r = rowOf(card);
     if (btn.matches('[data-copy]')) {
       const d = slipData(r);
       const lines = [`PAYSLIP — ${d.business}${d.regNo ? ` (${d.regNo})` : ''}`, ...d.info.map(([k, v]) => `${k}: ${v}`),
@@ -493,7 +516,7 @@ async function renderPayroll() {
       return;
     }
     if (btn.matches('[data-pdf]')) {
-      makePdf([r], `Payslip_${r.e.name}_${state.from}_${state.to}.pdf`, `Payslip ${r.e.name}`);
+      makePdf([r], `Payslip_${r.e.name}_${r.from}_${r.to}.pdf`, `Payslip ${r.e.name}`);
       return;
     }
     if (btn.matches('[data-advance]')) { openAdvance(r.e.id); return; }
@@ -507,15 +530,15 @@ async function renderPayroll() {
     if (btn.matches('[data-pay]')) {
       if (r.net <= 0 && r.adv <= 0) { toast('Total is RM 0, nothing to pay.', 'error'); return; }
       const methods = await loadPayMethods();
-      $('payInfo').textContent = `${r.e.name} · ${dateRange(state.from, state.to)} · ${rm(fromCents(r.net))}` + (r.adv ? ` (after advance deduction ${rm(fromCents(r.adv))})` : '');
+      $('payInfo').textContent = `${r.e.name} · ${dateRange(r.from, r.to)} · ${rm(fromCents(r.net))}` + (r.adv ? ` (after advance deduction ${rm(fromCents(r.adv))})` : '');
       $('payMethod').replaceChildren(...methods.map(m => new Option(m, m)));
-      $('payDialog').dataset.emp = r.e.id;
+      $('payDialog').dataset.row = rows.indexOf(r);
       $('payDialog').showModal();
     }
   });
 
   $('payConfirm').onclick = async () => {
-    const r = rows.find(x => x.e.id === $('payDialog').dataset.emp);
+    const r = rows[Number($('payDialog').dataset.row)];
     if (!r) return;
     $('payConfirm').disabled = true;
     const id = await saveDraft(r);            // simpan nilai terkini dahulu
