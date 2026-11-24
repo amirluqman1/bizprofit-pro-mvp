@@ -6,7 +6,7 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
 import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 
-const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly', julat: 'Custom' };
+const PERIODS = { julat: 'Custom', harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly' };
 const PAGE = 1000;
 const FC_GOOD = 35;
 const COLORS = 6;    // --c1..--c6 dalam CSS
