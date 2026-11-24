@@ -164,6 +164,17 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .tab[aria-current="page"] { color: var(--text); }
 .tab[aria-current="page"] svg { color: var(--gold); }
 
+/* Phone dalam landscape: skrin rendah, jadi menu bawah & header dikecilkan */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1023px) {
+  :root { --tabbar-h: 46px; }
+  .tabbar { padding-top: 3px; padding-bottom: calc(3px + env(safe-area-inset-bottom)); }
+  .tab { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; font-size: 12px; }
+  .tab svg { width: 18px; height: 18px; }
+  .topbar { padding-top: max(10px, env(safe-area-inset-top)); }
+  .subbar { margin-top: 12px; }
+  .view { margin-top: 12px; }
+}
+
 @media (min-width: 1024px) {
   .app { padding-bottom: 40px; padding-left: var(--side-w); }
   .tabbar {
@@ -472,6 +483,23 @@ a.h-tile:active { transform: scale(.99); }
 .tx-detail { margin-top: 1px; font-size: 12px; color: var(--muted); }
 .tx-amount { flex: 0 0 auto; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
 .tx-amount.in { color: var(--mint); } .tx-amount.out { color: var(--text); }
+
+/* Key In: senarai transaksi ikut tarikh dipilih */
+.day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.day-title { margin: 0; font-size: 15px; font-weight: 600; }
+.day-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.day-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 4px; }
+.day-sum > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--raise); min-width: 0; }
+.day-sum span { font-size: 11px; color: var(--muted); }
+.day-sum b { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: clamp(11.5px, 3.2vw, 13px); font-weight: 500; overflow-wrap: anywhere; }
+@media (max-width: 420px) { .day-sum { gap: 6px; } .day-sum > div { padding: 8px; } }
+.day-sum b.in { color: var(--mint); } .day-sum b.neg { color: var(--red); }
+.day-card .greet-sub { margin-top: 10px; }
+/* Skrin lebar / landscape: borang di kiri, senarai hari di kanan */
+@media (min-width: 760px) {
+  .view[data-page="rekod"] > #rekodBody.ki-split { max-width: 1080px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  #rekodBody.ki-split > .day-card { position: sticky; top: 12px; max-height: calc(100dvh - var(--tabbar-h) - 40px); overflow-y: auto; }
+}
 
 /* Stok */
 .section-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
