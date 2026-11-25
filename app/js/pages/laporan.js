@@ -5,7 +5,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
-import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
+import { isPro, freeHistoryStart } from '../plan.js';
 
 const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly', julat: 'Custom' };
 // Pilihan cepat dalam panel kalendar. pro: perlu pakej Pro.
@@ -225,14 +225,14 @@ export default {
   render(view) {
     const today = todayKL();
     state.date = state.date || today;
-    // Pakej Percuma: harian (30 hari terakhir) dan minggu ini sahaja; bulanan/tahunan perlu Pro.
+    // Pakej Percuma: harian (bulan lepas + bulan ini) dan minggu ini sahaja; bulanan/tahunan perlu Pro.
     const pro = isPro();
-    const minDate = pro ? '2000-01-01' : addDays(today, -(HISTORY_DAYS_FREE - 1));
+    const minDate = pro ? '2000-01-01' : freeHistoryStart();
     const locked = k => !pro && (k === 'bulanan' || k === 'tahunan');
     if (locked(state.period)) state.period = 'harian';
     if (!pro && state.date < minDate) state.date = today;
     if (!pro && state.period === 'mingguan') state.date = today;
-    // Custom: lalai awal bulan ini hingga hari ini; Percuma terhad kepada 30 hari terakhir.
+    // Custom: lalai awal bulan ini hingga hari ini; Percuma terhad dari 1hb bulan lepas.
     const clampDay = d => (d > today ? today : d < minDate ? minDate : d);
     state.to = clampDay(state.to || today);
     state.from = clampDay(state.from || today.slice(0, 8) + '01');
@@ -254,7 +254,7 @@ export default {
         <h2 id="repDlgTitle">Choose period</h2>
         <div class="preset-grid">${PRESETS.map(p => `<button type="button" class="preset" data-preset="${p.k}">${presetLocked(p) ? `<span class="seg-lock" aria-hidden="true">${icon('lock')}</span>` : ''}${p.label}${presetLocked(p) ? '<span class="sr-only"> (Pro)</span>' : ''}</button>`).join('')}</div>
         <div class="custom-range">
-          <p class="custom-lbl">Custom range${pro ? '' : ' <span class="muted-inline">(last 30 days)</span>'}</p>
+          <p class="custom-lbl">Custom range${pro ? '' : ' <span class="muted-inline">(last month &amp; this month)</span>'}</p>
           <div class="two">
             <label class="field">From<input id="repFrom" type="date" min="${minDate}"></label>
             <label class="field">To<input id="repTo" type="date" min="${minDate}"></label>

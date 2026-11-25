@@ -18,8 +18,7 @@ export const FEATURES = [
   ['Daily report', true, true, true],
   ['Weekly report', 'This week', true, true],
   ['Monthly & yearly report', false, true, true],
-  ['Report history', '30 days', 'Unlimited', 'Unlimited'],
-  ['Transaction history', 'Last & this month', 'Unlimited', 'Unlimited'],
+  ['Report, Key In & transaction history', 'Last & this month', 'Unlimited', 'Unlimited'],
   ['Staff attendance', true, true, true],
   ['Audit log (owner & admin)', true, true, true],
   ['Food Cost & menu recipes', false, true, true],
@@ -28,9 +27,7 @@ export const FEATURES = [
   ['Compare outlets', false, false, true]
 ];
 
-export const HISTORY_DAYS_FREE = 30;
-
-// Sejarah transaksi pakej Percuma: bulan lepas + bulan ini (dari 1hb bulan lepas).
+// Had pakej Percuma untuk Laporan, Key In dan Sejarah: bulan lepas + bulan ini (dari 1hb bulan lepas).
 // Hanya paparan; rekod lama tidak dipadam dan kembali bila naik taraf.
 export function freeHistoryStart() {
   const [y, m] = todayKL().split('-').map(Number);

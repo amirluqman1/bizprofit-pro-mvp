@@ -162,6 +162,8 @@ async function renderKeyIn(box) {
   $('kiPay').innerHTML = l.payments.map((p, i) =>
     `<label class="chip"><input type="radio" name="kiPay" value="${esc(p)}" ${i === 0 ? 'checked' : ''}>${esc(p)}</label>`).join('');
   $('kiDate').value = todayKL();
+  // Pakej Percuma: Key In dan senarai harian terhad kepada bulan lepas + bulan ini.
+  if (!isPro()) $('kiDate').min = freeHistoryStart();
 
   // Senarai transaksi untuk tarikh & outlet yang dipilih (bawah butang Save / sebelah di landscape).
   const dayRows = new Map();
@@ -174,6 +176,12 @@ async function renderKeyIn(box) {
     if (!date) {
       $('dayList').innerHTML = ''; $('daySum').hidden = true; $('dayCount').textContent = '';
       $('dayStatus').hidden = false; $('dayStatus').textContent = 'Choose a date to see its entries.';
+      return;
+    }
+    if (!isPro() && date < freeHistoryStart()) {
+      $('dayList').innerHTML = ''; $('daySum').hidden = true; $('dayCount').textContent = '';
+      $('dayStatus').hidden = false;
+      $('dayStatus').textContent = `Free plan covers last month and this month (from ${dateShort(freeHistoryStart())}). Upgrade to see older dates.`;
       return;
     }
     $('dayStatus').hidden = false; $('dayStatus').textContent = 'Loading…';
@@ -268,6 +276,9 @@ async function renderKeyIn(box) {
     if (!$('kiCategory').value) { toast('Choose a category.', 'error'); return; }
     if (!desc) { toast('Add a description so it is easy to check later.', 'error'); $('kiDesc').focus(); return; }
     if (!$('kiDate').value) { toast('Choose the transaction date.', 'error'); return; }
+    if (!isPro() && $('kiDate').value < freeHistoryStart()) {
+      toast(`Free plan can key in from ${dateShort(freeHistoryStart())} only. Upgrade to key in older dates.`, 'error'); return;
+    }
     const pay = document.querySelector('input[name="kiPay"]:checked');
     if (!pay) { toast('Choose a payment method.', 'error'); return; }
 
