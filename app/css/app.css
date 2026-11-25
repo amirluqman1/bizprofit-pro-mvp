@@ -883,3 +883,27 @@ a.h-tile:active { transform: scale(.99); }
 .combo-actions { display: flex; gap: 8px; }
 .combo-actions .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px; }
 .combo-actions .btn svg { width: 16px; height: 16px; }
+
+/* Kehadiran: grid minggu / bulan */
+.at-nav { display: flex; justify-content: space-between; }
+.at-label { font-weight: 600; font-size: 14px; }
+.at-grid-wrap { padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.at-grid { border-collapse: separate; border-spacing: 0; min-width: 100%; font-size: 12px; }
+.at-grid th, .at-grid td { padding: 3px 1px; text-align: center; border-bottom: 1px solid var(--line); }
+.at-grid tbody tr:last-child > * { border-bottom: 0; }
+.at-grid thead th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 500; z-index: 1; }
+.at-grid thead th.today .at-day { color: var(--text); background: var(--raise); }
+.at-grid .at-corner, .at-grid th[scope="row"] { position: sticky; left: 0; z-index: 2; background: var(--panel); text-align: left; padding-left: 8px; }
+.at-day { display: grid; gap: 1px; width: 30px; padding: 3px 0; border: 0; border-radius: 7px; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.at-day span { font-size: 10px; font-weight: 500; opacity: .75; }
+.at-day:disabled { opacity: .35; cursor: default; }
+.at-name { display: block; width: 78px; padding: 6px 4px 6px 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.at-cell { width: 30px; height: 32px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.at-cell:disabled { opacity: .25; cursor: default; }
+.at-cell.s-hadir { background: var(--good-soft); border-color: rgba(16, 185, 129, .45); color: var(--mint); }
+.at-cell.s-separuh { background: var(--amber-bg); border-color: rgba(247, 197, 107, .4); color: var(--amber); }
+.at-cell.s-cuti { background: rgba(122, 180, 230, .12); border-color: rgba(122, 180, 230, .4); color: #9fd4f7; }
+.at-cell.s-tidak_hadir { background: var(--red-bg); border-color: rgba(255, 122, 107, .4); color: var(--red); }
+.at-tot { min-width: 28px; padding-right: 8px !important; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+
+@media (max-width: 380px) { .at-cell, .at-day { width: 27px; } .at-name { width: 70px; } }

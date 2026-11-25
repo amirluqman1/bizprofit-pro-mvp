@@ -68,8 +68,20 @@ export default {
 };
 
 // ================= Kehadiran =================
+// Tiga paparan: Hari (tanda satu tarikh + OT), Minggu dan Bulan (grid pekerja × hari).
+const AT_VIEWS = [['day', 'Day'], ['week', 'Week'], ['month', 'Month']];
 async function renderAttendance() {
   const box = $('pkBody');
+  state.atView = state.atView || 'day';
+  box.innerHTML = `
+    <div class="seg" role="group" aria-label="Attendance view">${AT_VIEWS.map(([k, v]) =>
+      `<button type="button" class="seg-opt ${state.atView === k ? 'on' : ''}" data-atview="${k}" aria-pressed="${state.atView === k}">${v}</button>`).join('')}</div>
+    <div id="atBody" class="stack"></div>`;
+  box.querySelectorAll('[data-atview]').forEach(b => b.addEventListener('click', () => { state.atView = b.dataset.atview; renderAttendance(); }));
+  return state.atView === 'day' ? renderAttendanceDay($('atBody')) : renderAttendanceGrid($('atBody'));
+}
+
+async function renderAttendanceDay(box) {
   const active = employees.filter(e => e.active);
   box.innerHTML = `
     <section class="card stack">
@@ -142,6 +154,122 @@ async function renderAttendance() {
     load();
   };
   await load();
+}
+
+// ---------- Grid minggu / bulan ----------
+const AT_CODE = { hadir: 'P', separuh: '½', cuti: 'L', tidak_hadir: 'A' };
+const AT_CYCLE = [null, 'hadir', 'separuh', 'cuti', 'tidak_hadir'];   // tekan kotak: kosong → P → ½ → L → A → kosong
+const DOW1 = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+function gridRange() {
+  const d = state.date;
+  if (state.atView === 'week') {
+    const s = addDays(d, -((new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7));   // Isnin – Ahad
+    return [s, addDays(s, 6)];
+  }
+  const s = d.slice(0, 8) + '01';
+  return [s, endOfMonth(s)];
+}
+
+async function renderAttendanceGrid(box) {
+  const active = employees.filter(e => e.active);
+  const today = todayKL();
+  const [from, to] = gridRange();
+  const days = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) days.push(d);
+  const label = state.atView === 'week' ? dateRange(from, to)
+    : new Date(from + 'T00:00:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
+  box.innerHTML = `
+    <section class="card stack">
+      <div class="datenav at-nav">
+        <button type="button" id="agPrev" aria-label="Previous">‹</button>
+        <span class="at-label">${esc(label)}</span>
+        <button type="button" id="agNext" aria-label="Next" ${to >= today ? 'disabled' : ''}>›</button>
+      </div>
+      <p class="greet-sub" id="agSum">Loading…</p>
+      <button class="btn ghost block" id="agAll" type="button">Mark all empty days: Present</button>
+    </section>
+    ${active.length ? `<div class="card at-grid-wrap"><table class="at-grid">
+      <thead><tr><th class="at-corner">Staff</th>${days.map(d => `<th class="${d === today ? 'today' : ''}"><button type="button" class="at-day" data-day="${d}" ${d > today ? 'disabled' : ''} aria-label="Edit ${esc(dateLong(d))}"><span>${DOW1[new Date(d + 'T00:00:00Z').getUTCDay()]}</span>${Number(d.slice(-2))}</button></th>`).join('')}<th>Days</th></tr></thead>
+      <tbody>${active.map(e => `<tr>
+        <th scope="row"><button type="button" class="at-name" data-fill="${esc(e.id)}" title="Mark ${esc(e.name)}'s empty days Present">${esc(e.name)}</button></th>
+        ${days.map(d => `<td><button type="button" class="at-cell" data-c="${esc(e.id)}|${d}" ${d > today ? 'disabled' : ''} aria-label="${esc(e.name)} ${esc(d)}"></button></td>`).join('')}
+        <td class="at-tot" data-tot="${esc(e.id)}"></td></tr>`).join('')}</tbody>
+    </table></div>
+    <p class="note-line small">${icon('check')}Tap a box: <b>P</b> Present → <b>½</b> Half day → <b>L</b> Leave → <b>A</b> Absent → empty. Tap a <b>name</b> to mark that person's empty days Present. Tap a <b>date</b> to edit OT for that day.</p>` : emptyStaff()}`;
+
+  $('agPrev').onclick = () => { state.date = state.atView === 'week' ? addDays(from, -7) : addDays(from, -1); renderAttendance(); };
+  $('agNext').onclick = () => {
+    const n = state.atView === 'week' ? addDays(from, 7) : addDays(to, 1);
+    state.date = n > today ? today : n; renderAttendance();
+  };
+  if (!active.length) { $('agAll').hidden = true; $('agSum').textContent = ''; return; }
+
+  const marks = new Map();   // "empId|tarikh" -> { status, ot }
+  const { data, error } = await sb.from('attendance').select('employee_id,work_date,status,ot_hours')
+    .gte('work_date', from).lte('work_date', to).in('employee_id', active.map(e => e.id));
+  if (error) { $('agSum').textContent = 'Could not load attendance. Try again.'; return; }
+  (data || []).forEach(a => marks.set(`${a.employee_id}|${a.work_date}`, { status: a.status, ot: Number(a.ot_hours) }));
+
+  const grid = box.querySelector('.at-grid');
+  const paintCell = key => {
+    const el = grid.querySelector(`[data-c="${key}"]`);
+    const st = marks.get(key)?.status;
+    el.className = 'at-cell' + (st ? ' s-' + st : '');
+    el.textContent = st ? AT_CODE[st] : '';
+    el.title = st ? STATUS[st] + (marks.get(key).ot ? ` · OT ${marks.get(key).ot} hrs` : '') : 'Not marked';
+  };
+  const paintTotals = () => {
+    active.forEach(e => {
+      const v = days.reduce((t, d) => t + (DAY_VALUE[marks.get(`${e.id}|${d}`)?.status] || 0), 0);
+      grid.querySelector(`[data-tot="${e.id}"]`).textContent = v;
+    });
+    const past = days.filter(d => d <= today);
+    const all = active.flatMap(e => past.map(d => marks.get(`${e.id}|${d}`)?.status));
+    const n = k => all.filter(x => x === k).length;
+    $('agSum').textContent = `Present ${n('hadir')} · Half day ${n('separuh')} · Leave ${n('cuti')} · Absent ${n('tidak_hadir')} · Empty ${n(undefined)}`;
+  };
+  marks.forEach((_, k) => { if (grid.querySelector(`[data-c="${k}"]`)) paintCell(k); });
+  paintTotals();
+
+  // Simpan selepas berhenti menekan (boleh tekan berulang kali untuk pilih status).
+  const timers = new Map();
+  const save = async key => {
+    const [id, d] = key.split('|');
+    const m = marks.get(key);
+    const { error: err } = m?.status
+      ? await sb.from('attendance').upsert({ employee_id: id, work_date: d, status: m.status, ot_hours: m.ot || 0 }, { onConflict: 'employee_id,work_date' })
+      : await sb.from('attendance').delete().eq('employee_id', id).eq('work_date', d);
+    if (err) { toast('Save failed: ' + errText(err), 'error'); renderAttendance(); }
+  };
+  const fill = async ids => {
+    const rows = ids.flatMap(id => days.filter(d => d <= today && !marks.get(`${id}|${d}`)?.status)
+      .map(d => ({ employee_id: id, work_date: d, status: 'hadir', ot_hours: 0 })));
+    if (!rows.length) { toast('No empty days to mark.'); return; }
+    const { error: err } = await sb.from('attendance').upsert(rows, { onConflict: 'employee_id,work_date' });
+    if (err) { toast('Could not mark: ' + errText(err), 'error'); return; }
+    rows.forEach(r => { const k = `${r.employee_id}|${r.work_date}`; marks.set(k, { status: 'hadir', ot: 0 }); paintCell(k); });
+    paintTotals();
+    toast(`${rows.length} day${rows.length === 1 ? '' : 's'} marked Present.`);
+  };
+
+  grid.addEventListener('click', e => {
+    const cell = e.target.closest('[data-c]');
+    if (cell) {
+      const key = cell.dataset.c, cur = marks.get(key);
+      const next = AT_CYCLE[(AT_CYCLE.indexOf(cur?.status ?? null) + 1) % AT_CYCLE.length];
+      marks.set(key, { status: next, ot: next ? (cur?.ot || 0) : 0 });
+      paintCell(key); paintTotals();
+      clearTimeout(timers.get(key));
+      timers.set(key, setTimeout(() => { timers.delete(key); save(key); }, 600));
+      return;
+    }
+    const name = e.target.closest('[data-fill]');
+    if (name) { fill([name.dataset.fill]); return; }
+    const day = e.target.closest('[data-day]');
+    if (day) { timers.forEach((t, k) => { clearTimeout(t); save(k); }); state.date = day.dataset.day; state.atView = 'day'; renderAttendance(); }
+  });
+  $('agAll').onclick = () => fill(active.map(e => e.id));
 }
 
 function emptyStaff() {
