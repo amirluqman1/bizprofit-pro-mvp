@@ -15,16 +15,21 @@ begin
     -- Sediakan data (sebagai postgres, tanpa RLS): satu transaksi lama, satu baru,
     -- dan syarikat B dengan transaksi sendiri.
     insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
-    select biz, lama, type, category, 1, 'UJI F16 lama', payment_method, ol, o from public.transactions where business_id = biz limit 1
+    select biz, lama, type, category, 1, 'UJI F16 lama', payment_method, ol, o from public.transactions where business_id = biz order by id limit 1
     returning id into txLama;
     insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
-    select biz, baru, type, category, 1, 'UJI F16 baru', payment_method, ol, o from public.transactions where business_id = biz limit 1
+    select biz, baru, type, category, 1, 'UJI F16 baru', payment_method, ol, o from public.transactions where business_id = biz order by id limit 1
     returning id into txBaru;
     insert into public.businesses (name) values ('Syarikat Ujian F16') returning id into bB;
     update public.businesses set plan = 'business', plan_until = null, trial_ends_at = null where id = bB;
     insert into public.outlets (business_id, name) values (bB, 'Outlet B F16') returning id into outB;
-    insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id)
-    select bB, lama, type, category, 1, 'UJI F16 syarikat B', payment_method, outB from public.transactions where business_id = biz limit 1
+    insert into public.categories (business_id, key, name, type, counts_in_profit, is_sales)
+    select bB, c.key, c.name, c.type, c.counts_in_profit, c.is_sales from public.categories c
+     where c.business_id = biz and (c.name, c.type) = (select category, type from public.transactions where business_id = biz order by id limit 1);
+    insert into public.payment_methods (business_id, name)
+    select bB, payment_method from public.transactions where business_id = biz order by id limit 1;
+    insert into public.transactions (business_id, transaction_date, type, category, amount, description, payment_method, outlet_id, created_by)
+    select bB, lama, type, category, 1, 'UJI F16 syarikat B', payment_method, outB, o from public.transactions where business_id = biz order by id limit 1
     returning id into txB;
 
     -- ===== Owner, pakej Percuma =====
