@@ -66,6 +66,12 @@ Setiap kali ubah fail dalam `app/`:
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
   tunggu bahagian app siap dulu.
 
+## Skills (`.claude/skills/`)
+- 3 skill dari obra/superpowers (MIT): `systematic-debugging`, `verification-before-completion`,
+  `receiving-code-review`. Butiran & perubahan dalam `.claude/skills/README.md`.
+- **Kalau skill bercanggah dengan CLAUDE.md, ikut CLAUDE.md.**
+- Jangan tambah skill/plugin pihak ketiga tanpa semak isinya dan tanya pengguna.
+
 ## Git
 - Kerja di branch kerja (bukan terus ke `main`); `main` = production (GitHub Pages).
 - Commit message dalam English, ringkas, mula dengan kawasan: `Payroll: ...`, `Report: ...`, `Key In: ...`, `Stock: ...`.
