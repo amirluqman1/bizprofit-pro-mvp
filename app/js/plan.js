@@ -2,6 +2,7 @@
 // dan policy RLS, Fasa 12); fail ini hanya untuk paparan: kunci 🔒 dan butang naik taraf.
 import { icon, esc } from './ui.js';
 import { session } from './session.js';
+import { todayKL } from './format.js';
 
 export const PLANS = {
   free:     { name: 'Free',     price: 0,  outlets: 1,  staff: 2 },
@@ -18,6 +19,7 @@ export const FEATURES = [
   ['Weekly report', 'This week', true, true],
   ['Monthly & yearly report', false, true, true],
   ['Report history', '30 days', 'Unlimited', 'Unlimited'],
+  ['Transaction history', 'Last & this month', 'Unlimited', 'Unlimited'],
   ['Staff attendance', true, true, true],
   ['Audit log (owner & admin)', true, true, true],
   ['Food Cost & menu recipes', false, true, true],
@@ -27,6 +29,13 @@ export const FEATURES = [
 ];
 
 export const HISTORY_DAYS_FREE = 30;
+
+// Sejarah transaksi pakej Percuma: bulan lepas + bulan ini (dari 1hb bulan lepas).
+// Hanya paparan; rekod lama tidak dipadam dan kembali bila naik taraf.
+export function freeHistoryStart() {
+  const [y, m] = todayKL().split('-').map(Number);
+  return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);   // Jan → 1 Dis tahun lepas
+}
 
 export const planKey = () => session.plan || 'business';
 export const isPro = () => planKey() !== 'free';

@@ -27,7 +27,9 @@ Jadual penuh dalam `README.md`. Pastikan README dikemas kini bila peranan beruba
 ## Pakej langganan (Fasa 12)
 `free` / `pro` (RM15) / `business` (RM80, ≤10 outlet). Sumber sebenar: fungsi `current_plan()`
 + RLS. `app/js/plan.js` (`PLANS`, `FEATURES`) hanya paparan dan mesti selari dengan database.
-Prinsip: bila turun ke Free, data lama TIDAK dipadam dan masih boleh dilihat; cuma tak boleh tambah/ubah.
+Prinsip: bila turun ke Free, data lama TIDAK dipadam; cuma tak boleh tambah/ubah. Rekod gaji, menu dan
+harga lama masih boleh dibaca. Pengecualian (had paparan sahaja, data kekal dan kembali bila naik taraf):
+laporan Free 30 hari terakhir; Records → History Free bulan lepas + bulan ini (`freeHistoryStart()`).
 
 ## Struktur
 - `app/index.html`: rangka; muat `../config.js`, supabase-js dari CDN (versi tetap), kemudian `js/main.js` (ES module).

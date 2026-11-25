@@ -5,7 +5,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, dateShort, dateLong } from '../format.js';
-import { isPro, proTag } from '../plan.js';
+import { isPro, proTag, freeHistoryStart } from '../plan.js';
 import { bindPicker, pickerButtons, uploadReceipt, discardReceipt, viewReceipt, receiptBtn } from '../receipt.js';
 
 const PAGE_SIZE = 30;
@@ -309,7 +309,8 @@ async function renderHistory(box) {
   let offset = 0, runId = 0;
   const rows = new Map();
   box.innerHTML = `
-    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'You only see transactions you entered today.</p>' : ''}
+    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'You only see transactions you entered today.</p>'
+      : isPro() ? '' : `<p class="note-line">${icon('lock')}<span>Free plan shows last month and this month (from ${esc(dateShort(freeHistoryStart()))}). Older records are kept. <a href="#/pakej">Upgrade to see all</a></span></p>`}
     <section class="card stack filter-bar" aria-label="Sort and filter transactions">
       <div class="seg" role="radiogroup" aria-label="Transaction type">
         <label class="seg-opt"><input type="radio" name="fType" value="" checked>All</label>
@@ -340,6 +341,7 @@ async function renderHistory(box) {
     sort.order.forEach(([col, asc]) => { q = q.order(col, { ascending: asc }); });
     q = q.order('id', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
+    if (!isPro()) q = q.gte('transaction_date', freeHistoryStart());   // Percuma: bulan lepas + bulan ini
     if (type) q = q.eq('type', type);
     if (cat) q = q.eq('category', cat);
     const { data, error, count } = await q;
