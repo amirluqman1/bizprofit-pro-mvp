@@ -6,7 +6,6 @@ import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, addDays, endOfMonth, MONTHS, dateRange, dateShort, dayName } from '../format.js';
 import { isPro, freeHistoryStart } from '../plan.js';
-import { isPro, HISTORY_DAYS_FREE } from '../plan.js';
 import { t, locale } from '../i18n.js';
 
 const PERIODS = { harian: 'Daily', mingguan: 'Weekly', bulanan: 'Monthly', tahunan: 'Yearly', julat: 'Custom' };

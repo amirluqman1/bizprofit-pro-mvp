@@ -512,8 +512,8 @@ async function renderPayroll() {
       <div class="kv total" id="pyTotal"></div>
       <p class="greet-sub right" id="pyPaid"></p>
       <div class="two" id="pyPdfBtns" hidden>
-        <button class="btn ghost" id="pyPdfAll" type="button">${icon('download')} PDF all payslips</button>
-        <button class="btn ghost" id="pyPdfCombo" type="button">${icon('download')} 1 slip per staff</button>
+        <button class="btn ghost" id="pyPdfAll" type="button">${icon('download')} ${t('PDF all payslips')}</button>
+        <button class="btn ghost" id="pyPdfCombo" type="button">${icon('download')} ${t('1 slip per staff')}</button>
       </div>
     </section>
     <details class="card adv-box" id="pyAdvances"></details>

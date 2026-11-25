@@ -786,4 +786,6 @@ export const MS = {
   'Custom': 'Pilihan',
   'Report, Key In & transaction history': 'Sejarah laporan, Key In & transaksi',
   'Last & this month': 'Bulan lepas & bulan ini',
+  'PDF all payslips': 'PDF semua slip gaji',
+  '1 slip per staff': '1 slip setiap staf',
 };
