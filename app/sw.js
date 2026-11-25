@@ -7,7 +7,7 @@ const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/pwa.js', './js/ui.js', './js/session.js', './js/router.js', './js/format.js', './js/receipt.js',
   './js/pages/utama.js', './js/pages/rekod.js', './js/pages/stok.js', './js/pages/smartlist.js',
-  './js/pages/pekerja.js', './js/pages/laporan.js', './js/pages/menu.js', './js/pages/foodcost.js', './js/pages/pnl.js', './js/pages/pakej.js', './js/plan.js',
+  './js/pages/pekerja.js', './js/pages/laporan.js', './js/pages/menu.js', './js/pages/foodcost.js', './js/pages/pnl.js', './js/pages/pakej.js', './js/plan.js', './js/i18n.js', './js/i18n-ms.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   '../config.js'
 ];

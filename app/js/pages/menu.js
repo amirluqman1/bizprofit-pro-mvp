@@ -3,6 +3,7 @@ import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ROLE_NAME } from '../session.js';
 import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
 import { planName, trialDaysLeft, isPro, proTag, PLANS, planKey } from '../plan.js';
+import { t, getLang, setLang } from '../i18n.js';
 
 export default {
   render(view) {
@@ -10,74 +11,76 @@ export default {
     view.innerHTML = `
       <section class="card">
         <dl class="info-grid">
-          <dt>Email</dt><dd>${esc(session.user.email)}</dd>
-          <dt>Role</dt><dd>${esc(ROLE_NAME[session.role] || session.role)}</dd>
-          <dt>Outlet</dt><dd>${esc(session.isOwner ? 'All outlets' : ownOutlet)}</dd>
-          <dt>Company</dt><dd>${esc(session.business?.name || '-')}</dd>
+          <dt>${t('Email')}</dt><dd>${esc(session.user.email)}</dd>
+          <dt>${t('Role')}</dt><dd>${esc(t(ROLE_NAME[session.role] || session.role))}</dd>
+          <dt>${t('Outlet')}</dt><dd>${esc(session.isOwner ? t('All outlets') : ownOutlet)}</dd>
+          <dt>${t('Company')}</dt><dd>${esc(session.business?.name || '-')}</dd>
         </dl>
       </section>
 
       ${session.isAdminUp ? `
       <div class="list" id="coList">
-        ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : 'Not set')}</small></span>${icon('chev-right')}</button>`).join('')}
-        ${session.isOwner ? `<button class="row-btn" type="button" id="olAdd">${icon('plus-box')}<span>+ Add outlet<small>${session.outlets.length} of ${PLANS[planKey()].outlets} outlets on the ${esc(planName())} plan</small></span></button>` : ''}
+        ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : t('Not set'))}</small></span>${icon('chev-right')}</button>`).join('')}
+        ${session.isOwner ? `<button class="row-btn" type="button" id="olAdd">${icon('plus-box')}<span>${t('+ Add outlet')}<small>${t('{n} of {max} outlets on the {plan} plan', { n: session.outlets.length, max: PLANS[planKey()].outlets, plan: esc(planName()) })}</small></span></button>` : ''}
       </div>` : ''}
 
-      <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>Plan: ${esc(planName())}<small>${trialDaysLeft() ? `Pro trial · ${trialDaysLeft()} days left` : 'Compare plans and upgrade'}</small></span>${icon('chev-right')}</a></div>
+      <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>${t('Plan')}: ${esc(planName())}<small>${trialDaysLeft() ? t('Pro trial · {n} days left', { n: trialDaysLeft() }) : t('Compare plans and upgrade')}</small></span>${icon('chev-right')}</a></div>
 
-      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>Profit &amp; Loss statement ${isPro() ? '' : proTag()}<small>Yearly statement per business, laid out like LHDN Form B</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>Food Cost ${isPro() ? '' : proTag()}<small>Cost per plate, menu margins and food cost %</small></span>${icon('chev-right')}</a></div>` : ''}
+      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>${t('Profit &amp; Loss statement')} ${isPro() ? '' : proTag()}<small>${t('Yearly statement per business, laid out like LHDN Form B')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>${t('Food Cost')} ${isPro() ? '' : proTag()}<small>${t('Cost per plate, menu margins and food cost %')}</small></span>${icon('chev-right')}</a></div>` : ''}
 
       <div class="list">
-        ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>Install app<small>Add BizProfit Pro to your phone home screen</small></span></button>`}
-        <button class="row-btn" type="button" id="pwBtn">${icon('lock')}<span>Change password</span></button>
+        ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>${t('Install app')}<small>${t('Add BizProfit Pro to your phone home screen')}</small></span></button>`}
+        <div class="row-btn lang-row">${icon('link')}<span>${t('Language')}<small>${t('Bahasa Melayu or English')}</small></span>
+          <div class="seg lang-seg" role="group" aria-label="${t('Language')}"><button type="button" class="seg-opt ${getLang() === 'en' ? 'on' : ''}" data-lang="en" aria-pressed="${getLang() === 'en'}">EN</button><button type="button" class="seg-opt ${getLang() === 'ms' ? 'on' : ''}" data-lang="ms" aria-pressed="${getLang() === 'ms'}">BM</button></div></div>
+        <button class="row-btn" type="button" id="pwBtn">${icon('lock')}<span>${t('Change password')}</span></button>
       </div>
 
       <div class="list">
-        <button class="row-btn danger" type="button" id="logoutBtn">${icon('logout')}<span>Log out</span></button>
+        <button class="row-btn danger" type="button" id="logoutBtn">${icon('logout')}<span>${t('Log out')}</span></button>
       </div>
 
       <dialog id="installDialog">
         <div class="stack">
-          <h2>Install app</h2>
+          <h2>${t('Install app')}</h2>
           <p class="note" id="installSteps"></p>
-          <div class="dialog-actions"><button class="btn primary" type="button" id="installClose">Got it</button></div>
+          <div class="dialog-actions"><button class="btn primary" type="button" id="installClose">${t('Got it')}</button></div>
         </div>
       </dialog>
 
       <dialog id="olDialog">
         <form id="olForm" class="stack" novalidate>
-          <h2>Add outlet</h2>
-          <label class="field">Outlet name<input id="olName" maxlength="80" autocomplete="off" placeholder="e.g. Outlet Bangi"></label>
-          <label class="field">Company name <small>optional</small><input id="olCo" maxlength="120"></label>
-          <label class="field">Registration no. (SSM) <small>optional</small><input id="olReg" maxlength="60"></label>
+          <h2>${t('Add outlet')}</h2>
+          <label class="field">${t('Outlet name')}<input id="olName" maxlength="80" autocomplete="off" placeholder="${t('e.g. Outlet Bangi')}"></label>
+          <label class="field">${t('Company name')} <small>${t('optional')}</small><input id="olCo" maxlength="120"></label>
+          <label class="field">${t('Registration no. (SSM)')} <small>${t('optional')}</small><input id="olReg" maxlength="60"></label>
           <div class="dialog-actions">
-            <button class="btn ghost" type="button" id="olCancel">Cancel</button>
-            <button class="btn primary" id="olSave">Save</button>
+            <button class="btn ghost" type="button" id="olCancel">${t('Cancel')}</button>
+            <button class="btn primary" id="olSave">${t('Save')}</button>
           </div>
         </form>
       </dialog>
 
       <dialog id="coDialog">
         <form id="coForm" class="stack" novalidate>
-          <h2>Outlet company</h2>
+          <h2>${t('Outlet company')}</h2>
           <p class="note" id="coOutlet"></p>
-          <label class="field">Company name<input id="coName" maxlength="120" placeholder="e.g. Lubok Sarapan Enterprise"></label>
-          <label class="field">Registration no. (SSM) <small>optional</small><input id="coReg" maxlength="60" placeholder="e.g. 202301012345 (1234567-X)"></label>
+          <label class="field">${t('Company name')}<input id="coName" maxlength="120" placeholder="${t('e.g. Lubok Sarapan Enterprise')}"></label>
+          <label class="field">${t('Registration no. (SSM)')} <small>${t('optional')}</small><input id="coReg" maxlength="60" placeholder="${t('e.g. 202301012345 (1234567-X)')}"></label>
           <div class="dialog-actions">
-            <button class="btn ghost" type="button" id="coCancel">Cancel</button>
-            <button class="btn primary" id="coSave">Save</button>
+            <button class="btn ghost" type="button" id="coCancel">${t('Cancel')}</button>
+            <button class="btn primary" id="coSave">${t('Save')}</button>
           </div>
         </form>
       </dialog>
 
       <dialog id="pwDialog">
         <form id="pwForm" class="stack" novalidate>
-          <h2>Change password</h2>
-          <label class="field">New password<input id="pwNew" type="password" autocomplete="new-password" placeholder="At least 10 characters"></label>
-          <label class="field">Confirm password<input id="pwConfirm" type="password" autocomplete="new-password"></label>
+          <h2>${t('Change password')}</h2>
+          <label class="field">${t('New password')}<input id="pwNew" type="password" autocomplete="new-password" placeholder="${t('At least 10 characters')}"></label>
+          <label class="field">${t('Confirm password')}<input id="pwConfirm" type="password" autocomplete="new-password"></label>
           <div class="dialog-actions">
-            <button class="btn ghost" type="button" id="pwCancel">Cancel</button>
-            <button class="btn primary" id="pwSave">Save</button>
+            <button class="btn ghost" type="button" id="pwCancel">${t('Cancel')}</button>
+            <button class="btn primary" id="pwSave">${t('Save')}</button>
           </div>
         </form>
       </dialog>`;
@@ -85,12 +88,12 @@ export default {
     if ($('installBtn')) $('installBtn').onclick = async () => {
       if (canPromptInstall()) {
         const r = await promptInstall();
-        if (r === 'accepted') toast('BizProfit Pro is being installed on your home screen.');
+        if (r === 'accepted') toast(t('BizProfit Pro is being installed on your home screen.'));
         return;
       }
       $('installSteps').innerHTML = isIOS()
-        ? 'On iPhone (Safari): tap the <b>Share</b> button (square with an up arrow), then <b>Add to Home Screen</b>.'
-        : 'In Chrome: tap <b>⋮</b> at the top right, then <b>Install app</b> or <b>Add to Home screen</b>.';
+        ? t('On iPhone (Safari): tap the <b>Share</b> button (square with an up arrow), then <b>Add to Home Screen</b>.')
+        : t('In Chrome: tap <b>⋮</b> at the top right, then <b>Install app</b> or <b>Add to Home screen</b>.');
       $('installDialog').showModal();
     };
     $('installClose').onclick = () => $('installDialog').close();
@@ -99,25 +102,25 @@ export default {
     $('pwForm').addEventListener('submit', async e => {
       e.preventDefault();
       const pw = $('pwNew').value;
-      if (pw.length < 10) { toast('New password must be at least 10 characters.', 'error'); return; }
-      if (pw !== $('pwConfirm').value) { toast('The two passwords do not match.', 'error'); return; }
+      if (pw.length < 10) { toast(t('New password must be at least 10 characters.'), 'error'); return; }
+      if (pw !== $('pwConfirm').value) { toast(t('The two passwords do not match.'), 'error'); return; }
       $('pwSave').disabled = true;
       const { error } = await sb.auth.updateUser({ password: pw });
       $('pwSave').disabled = false;
       if (error) {
-        toast(error.code === 'same_password' ? 'New password must be different from the old one.'
-          : error.code === 'weak_password' ? 'Password too weak. Mix uppercase, lowercase and numbers.'
-          : 'Password not changed: ' + error.message, 'error');
+        toast(error.code === 'same_password' ? t('New password must be different from the old one.')
+          : error.code === 'weak_password' ? t('Password too weak. Mix uppercase, lowercase and numbers.')
+          : t('Password not changed: ') + error.message, 'error');
         return;
       }
       $('pwDialog').close();
-      toast('Password changed.');
+      toast(t('Password changed.'));
     });
 
     // Owner tambah outlet. Database kunci: owner sahaja, syarikat sendiri, had outlet ikut pakej (trigger Fasa 12).
     if ($('olAdd')) {
       const maxOutlets = () => PLANS[planKey()].outlets;
-      const limitMsg = () => `Your ${planName()} plan allows ${maxOutlets()} outlet${maxOutlets() > 1 ? 's' : ''}. Upgrade to add more.`;
+      const limitMsg = () => t('Your {plan} plan allows {max} outlet(s). Upgrade to add more.', { plan: planName(), max: maxOutlets() });
       $('olAdd').onclick = () => {
         if (session.outlets.length >= maxOutlets()) { toast(limitMsg(), 'error'); location.hash = '#/pakej'; return; }
         $('olForm').reset(); $('olDialog').showModal(); $('olName').focus();
@@ -126,23 +129,23 @@ export default {
       $('olForm').addEventListener('submit', async e => {
         e.preventDefault();
         const name = $('olName').value.trim();
-        if (!name) { toast('Enter the outlet name.', 'error'); return; }
+        if (!name) { toast(t('Enter the outlet name.'), 'error'); return; }
         $('olSave').disabled = true;
         const { data, error } = await sb.from('outlets')
           .insert({ name, company_name: $('olCo').value.trim() || null, company_reg_no: $('olReg').value.trim() || null })
           .select('id,name,company_name,company_reg_no').single();
         $('olSave').disabled = false;
         if (error) {
-          toast(error.code === '23505' ? 'An outlet with this name already exists.'
+          toast(error.code === '23505' ? t('An outlet with this name already exists.')
             : /Had outlet/.test(error.message) ? limitMsg()
-            : 'Outlet not added: ' + error.message, 'error');
+            : t('Outlet not added: ') + error.message, 'error');
           return;
         }
         session.outlets.push(data);
-        session.outlets.sort((a, b) => a.name.localeCompare(b.name));
+        session.outlets.sort((a, b) => a.name.localeCompare(b.name, 'ms-MY'));
         $('olDialog').close();
         window.dispatchEvent(new Event('bp:outlets-changed'));
-        toast(`Outlet "${data.name}" added.`);
+        toast(t('Outlet "{x}" added.', { x: data.name }));
         this.render(view);
       });
     }
@@ -153,7 +156,7 @@ export default {
         const b = e.target.closest('[data-outlet]');
         if (!b) return;
         editing = session.outlets.find(o => o.id === b.dataset.outlet);
-        $('coOutlet').textContent = 'Outlet: ' + editing.name;
+        $('coOutlet').textContent = t('Outlet') + ': ' + editing.name;
         $('coName').value = editing.company_name || '';
         $('coReg').value = editing.company_reg_no || '';
         $('coDialog').showModal();
@@ -165,14 +168,15 @@ export default {
         $('coSave').disabled = true;
         const { data, error } = await sb.from('outlets').update(payload).eq('id', editing.id).select('id');
         $('coSave').disabled = false;
-        if (error || !data?.length) { toast('Save failed: ' + (error?.message || 'no access.'), 'error'); return; }
+        if (error || !data?.length) { toast(t('Save failed: ') + (error?.message || t('no access.')), 'error'); return; }
         Object.assign(editing, payload);
         $('coDialog').close();
-        toast('Outlet company updated.');
+        toast(t('Outlet company updated.'));
         this.render(view);
       });
     }
 
+    view.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== getLang()) setLang(b.dataset.lang); }; });
     $('logoutBtn').onclick = () => window.dispatchEvent(new Event('bp:logout'));
   }
 };

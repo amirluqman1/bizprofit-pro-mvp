@@ -2,6 +2,7 @@
 import { $, icon, animateIn } from './ui.js';
 import { session } from './session.js';
 import { todayKL } from './format.js';
+import { t, locale } from './i18n.js';
 import utama from './pages/utama.js';
 import rekod from './pages/rekod.js';
 import stok from './pages/stok.js';
@@ -34,7 +35,7 @@ let current = null;   // { path, cleanup }
 
 export function buildTabbar() {
   $('tabbar').innerHTML = allowed().filter(p => p.tab !== false).map(p =>
-    `<a class="tab" href="#/${p.path}" data-path="${p.path}">${icon(p.icon)}<span>${p.label}</span></a>`
+    `<a class="tab" href="#/${p.path}" data-path="${p.path}">${icon(p.icon)}<span>${t(p.label)}</span></a>`
   ).join('');
 }
 
@@ -50,8 +51,8 @@ export async function render() {
   const view = $('view');
   view.innerHTML = '';
   view.dataset.page = entry.path;
-  $('greet').textContent = entry.label;
-  $('greetSub').textContent = new Date(todayKL() + 'T00:00:00').toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  $('greet').textContent = t(entry.label);
+  $('greetSub').textContent = new Date(todayKL() + 'T00:00:00').toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   // Sembunyi halaman sampai data siap, kemudian muncul SEKALI dengan animasi.
   // Jika lambat (> 0.4 s), tunjuk skeleton dahulu dan langkau animasi
   // supaya kandungan tak berkelip (muncul → hilang → muncul).
@@ -65,6 +66,9 @@ export async function render() {
   if (!slow) animateIn(view);
   window.scrollTo(0, 0);
 }
+
+// Selepas tukar bahasa: bina semula menu dan lukis semula halaman.
+export function rebuildNav() { buildTabbar(); return render(); }
 
 export function startRouter() {
   window.removeEventListener('hashchange', render);

@@ -5,6 +5,7 @@ import { $, esc, icon, countUp } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, qty, todayKL, addDays, dayName } from '../format.js';
 import { isPro, PLANS } from '../plan.js';
+import { t } from '../i18n.js';
 
 const FC_LIMIT = 35;   // sama dengan Food Cost: hijau ≤ 35%
 
@@ -15,7 +16,7 @@ const forOutlet = q => (session.outletId !== ALL_OUTLETS ? q.eq('outlet_id', ses
 // % perubahan berbanding semalam. null jika semalam 0.
 const change = (now, before) => (before ? (now - before) / Math.abs(before) * 100 : null);
 function badge(pct, higherIsGood = true, suffix = '') {
-  if (pct === null || !Number.isFinite(pct)) return '<span class="chg flat">no data yesterday</span>';
+  if (pct === null || !Number.isFinite(pct)) return `<span class="chg flat">${t('no data yesterday')}</span>`;
   const up = pct >= 0;
   return `<span class="chg ${up === higherIsGood ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}%${suffix}</span>`;
 }
@@ -40,9 +41,9 @@ function chartHTML(week) {
   const zero = hasLoss ? `<line class="zero" x1="0" x2="${CW}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" vector-effect="non-scaling-stroke"/>` : '';
   const grid = [0, .5, 1].map(f => { const yy = (CTOP + f * (CH - CTOP - CBOT)).toFixed(1); return `<line class="grid" x1="0" x2="${CW}" y1="${yy}" y2="${yy}" vector-effect="non-scaling-stroke"/>`; }).join('');
   const dots = pts.map((p, i) => `<circle class="pt" style="--k:${i}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" vector-effect="non-scaling-stroke"/>`).join('');
-  const hits = pts.map((p, i) => `<rect class="hit" data-i="${i}" x="${(p[0] - CW / 14).toFixed(1)}" y="0" width="${(CW / 7).toFixed(1)}" height="${CH}" tabindex="0" role="img" aria-label="${dayName(week[i].date)}${i === last ? ' (today)' : ''}: ${rm(vals[i])}"/>`).join('');
-  const days = week.map((w, i) => `<span style="left:${(x(i) / CW * 100).toFixed(2)}%">${i === last ? 'Today' : dayName(w.date)}</span>`).join('');
-  return `<svg class="h-svg" viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" role="group" aria-label="Net profit, last 7 days">
+  const hits = pts.map((p, i) => `<rect class="hit" data-i="${i}" x="${(p[0] - CW / 14).toFixed(1)}" y="0" width="${(CW / 7).toFixed(1)}" height="${CH}" tabindex="0" role="img" aria-label="${dayName(week[i].date)}${i === last ? ' (' + t('today') + ')' : ''}: ${rm(vals[i])}"/>`).join('');
+  const days = week.map((w, i) => `<span style="left:${(x(i) / CW * 100).toFixed(2)}%">${i === last ? t('Today') : dayName(w.date)}</span>`).join('');
+  return `<svg class="h-svg" viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" role="group" aria-label="${t('Net profit, last 7 days')}">
       <defs><linearGradient id="hArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10B981" stop-opacity=".28"/><stop offset="1" stop-color="#10B981" stop-opacity="0"/></linearGradient></defs>
       ${grid}${zero}
       <path class="area" fill="url(#hArea)" d="${d} L${x(last).toFixed(1)} ${CH - CBOT} L${x(0).toFixed(1)} ${CH - CBOT} Z"/>
@@ -62,14 +63,14 @@ function wireChart(view, week) {
   const svg = view.querySelector('.h-svg'); if (!svg) return;
   const dots = [...svg.querySelectorAll('.pt')], guide = svg.querySelector('.guide');
   const roDay = view.querySelector('#hRoDay'), roVal = view.querySelector('#hRoVal');
-  const total = week.reduce((t, w) => t + w.profit, 0);
-  const off = () => { dots.forEach(o => o.classList.remove('on')); guide.classList.remove('on'); roDay.textContent = 'Last 7 days'; roVal.textContent = `${rm(total)} total`; };
+  const total = week.reduce((s, w) => s + w.profit, 0);
+  const off = () => { dots.forEach(o => o.classList.remove('on')); guide.classList.remove('on'); roDay.textContent = t('Last 7 days'); roVal.textContent = t('{amt} total', { amt: rm(total) }); };
   svg.querySelectorAll('.hit').forEach(h => {
     const i = Number(h.dataset.i);
     const on = () => {
       dots.forEach(o => o.classList.remove('on')); dots[i].classList.add('on');
       const cx = dots[i].getAttribute('cx'); guide.setAttribute('x1', cx); guide.setAttribute('x2', cx); guide.classList.add('on');
-      roDay.textContent = i === week.length - 1 ? `${dayName(week[i].date)} · today` : dayName(week[i].date);
+      roDay.textContent = i === week.length - 1 ? t('{day} · today', { day: dayName(week[i].date) }) : dayName(week[i].date);
       roVal.textContent = rm(week[i].profit);
     };
     h.addEventListener('pointerenter', on); h.addEventListener('focus', on);
@@ -132,23 +133,23 @@ async function load() {
 }
 
 function attentionHTML(stock, fcAlerts) {
-  if (stock === null) return '<li><span class="empty-row">Could not load stock.</span></li>';
+  if (stock === null) return `<li><span class="empty-row">${t('Could not load stock.')}</span></li>`;
   const STOCK_SHOWN = 5;
   const items = [
     ...fcAlerts.map(f => `<li><span class="alert-ic ${f.pct > 40 ? 'crit' : 'warn'}" aria-hidden="true">${icon('chart')}</span>
-      <div style="min-width:0"><div class="t">Food cost at ${esc(outletName(f.id))}: ${f.pct.toFixed(1)}%</div><div class="m">Above the ${FC_LIMIT}% guide, last 7 days</div></div>
-      <a class="pill ${f.pct > 40 ? 'crit' : 'warn'}" href="#/foodcost">Review</a></li>`),
+      <div style="min-width:0"><div class="t">${t('Food cost at {outlet}: {pct}%', { outlet: esc(outletName(f.id)), pct: f.pct.toFixed(1) })}</div><div class="m">${t('Above the {n}% guide, last 7 days', { n: FC_LIMIT })}</div></div>
+      <a class="pill ${f.pct > 40 ? 'crit' : 'warn'}" href="#/foodcost">${t('Review')}</a></li>`),
     ...stock.slice(0, STOCK_SHOWN).map(x => `<li><span class="alert-ic ${x.st === 'habis' ? 'crit' : 'warn'}" aria-hidden="true">${icon('box')}</span>
-      <div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="m">${x.st === 'habis' ? 'Out of stock' : `${qty(x.current_qty)}${x.unit ? ' ' + esc(x.unit) : ''} left`} · target ${qty(x.target_qty)}${x.unit ? ' ' + esc(x.unit) : ''}${session.outletId === ALL_OUTLETS ? ' · ' + esc(outletName(x.outlet_id)) : ''}</div></div>
-      <span class="pill ${x.st === 'habis' ? 'crit' : 'warn'}">${x.st === 'habis' ? 'Out' : 'Low'}</span></li>`)
+      <div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="m">${x.st === 'habis' ? t('Out of stock') : `${qty(x.current_qty)}${x.unit ? ' ' + esc(x.unit) : ''} ${t('left')}`} · ${t('target')} ${qty(x.target_qty)}${x.unit ? ' ' + esc(x.unit) : ''}${session.outletId === ALL_OUTLETS ? ' · ' + esc(outletName(x.outlet_id)) : ''}</div></div>
+      <span class="pill ${x.st === 'habis' ? 'crit' : 'warn'}">${x.st === 'habis' ? t('Out') : t('Low')}</span></li>`)
   ];
-  if (!items.length) return '<li><span class="empty-row">All good. Nothing needs attention right now.</span></li>';
+  if (!items.length) return `<li><span class="empty-row">${t('All good. Nothing needs attention right now.')}</span></li>`;
   return items.join('');
 }
 
 function txHTML(tx) {
-  if (tx === null) return '<li><span class="empty-row">Could not load transactions.</span></li>';
-  if (!tx.length) return '<li><span class="empty-row">No transactions yet today.</span></li>';
+  if (tx === null) return `<li><span class="empty-row">${t('Could not load transactions.')}</span></li>`;
+  if (!tx.length) return `<li><span class="empty-row">${t('No transactions yet today.')}</span></li>`;
   return tx.map(t => {
     const meta = [session.outletId === ALL_OUTLETS ? outletName(t.outlet_id) : '', timeOf(t.created_at), t.description ? t.category : ''].filter(Boolean).join(' · ');
     const inn = t.type === 'In';
@@ -160,23 +161,23 @@ function txHTML(tx) {
 function outletHTML(outlets) {
   const max = Math.max(...outlets.map(o => Math.abs(o.p)), 1);
   return `<section class="panel">
-    <div class="ph"><h2>Profit by outlet</h2><span class="sub">Today</span></div>
+    <div class="ph"><h2>${t('Profit by outlet')}</h2><span class="sub">${t('Today')}</span></div>
     <div class="h-outlets">${outlets.map((o, i) => `<div>
       <div class="h-o-top"><b>${esc(outletName(o.id))}</b><span class="${o.p < 0 ? 'neg' : ''}">${esc(rm(o.p))}</span></div>
       <div class="h-bar ${o.p < 0 ? 'neg' : i === outlets.length - 1 ? 'low' : ''}" role="img" aria-label="${esc(outletName(o.id))}: ${esc(rm(o.p))}"><i style="--w:${(Math.abs(o.p) / max * 100).toFixed(1)}%"></i></div>
     </div>`).join('')}</div>
-    <div class="panel-foot"><span></span><a href="#/laporan">Full report →</a></div>
+    <div class="panel-foot"><span></span><a href="#/laporan">${t('Full report →')}</a></div>
   </section>`;
 }
 
 export default {
   async render(view) {
-    view.innerHTML = '<div class="skel-home" aria-busy="true" aria-label="Loading"><div class="skel hero-skel"></div><div class="skel"></div></div>';
+    view.innerHTML = `<div class="skel-home" aria-busy="true" aria-label="${t('Loading')}"><div class="skel hero-skel"></div><div class="skel"></div></div>`;
     let d;
     try { d = await load(); }
     catch {
-      view.innerHTML = `<section class="card placeholder">${icon('chart')}<h2>Could not load summary</h2>
-        <p>Check your internet connection and try again.</p><button class="btn primary" id="retry" type="button">Try again</button></section>`;
+      view.innerHTML = `<section class="card placeholder">${icon('chart')}<h2>${t('Could not load summary')}</h2>
+        <p>${t('Check your internet connection and try again.')}</p><button class="btn primary" id="retry" type="button">${t('Try again')}</button></section>`;
       $('retry').onclick = () => this.render(view);
       return;
     }
@@ -190,84 +191,84 @@ export default {
     const fcPct = fcAll?.pct;
 
     view.innerHTML = `
-      <div class="h-actions"><a class="btn primary" href="#/rekod">${icon('plus-box')}Key in transaction</a></div>
+      <div class="h-actions"><a class="btn primary" href="#/rekod">${icon('plus-box')}${t('Key in transaction')}</a></div>
 
-      <section class="h-bento${showFc ? '' : ' no-fc'}" aria-label="Today at a glance">
+      <section class="h-bento${showFc ? '' : ' no-fc'}" aria-label="${t('Today at a glance')}">
         <div class="h-tile h-hero">
           <div class="h-top">
             <div>
-              <p class="h-lbl">${icon('chart')}Net profit today <span class="info" title="Sales + other income − operating expenses. Owner money, loans, tax and asset purchases are not included.">i</span></p>
+              <p class="h-lbl">${icon('chart')}${t('Net profit today')} <span class="info" title="${t('Sales + other income − operating expenses. Owner money, loans, tax and asset purchases are not included.')}">i</span></p>
               <p class="h-big ${today.profit < 0 ? 'neg' : ''}">${money(today.profit)}</p>
-              <div class="h-meta">${badge(change(today.profit, yesterday.profit))}${yesterday.profit ? `<span>vs yesterday (${esc(rm(yesterday.profit))})</span>` : ''}</div>
+              <div class="h-meta">${badge(change(today.profit, yesterday.profit))}${yesterday.profit ? `<span>${t('vs yesterday ({amt})', { amt: esc(rm(yesterday.profit)) })}</span>` : ''}</div>
             </div>
             <div class="h-goal">
-              <div class="h-goal-row"><span>Profit margin</span><b>${margin === null ? '–' : margin.toFixed(1) + '%'}</b></div>
-              <div class="h-bar ${margin !== null && margin < 0 ? 'neg' : margin !== null && margin < 15 ? 'low' : ''}" role="img" aria-label="${margin === null ? 'No sales yet today' : `Profit margin ${margin.toFixed(1)}% of sales`}"><i style="--w:${margin === null ? 0 : Math.min(100, Math.abs(margin)).toFixed(1)}%"></i></div>
-              <div class="h-goal-row"><span>${margin === null ? 'No sales yet today' : 'of every RM 1 sold'}</span><span class="num">${margin === null ? '' : 'RM ' + (Math.max(margin, 0) / 100).toFixed(2)}</span></div>
+              <div class="h-goal-row"><span>${t('Profit margin')}</span><b>${margin === null ? '–' : margin.toFixed(1) + '%'}</b></div>
+              <div class="h-bar ${margin !== null && margin < 0 ? 'neg' : margin !== null && margin < 15 ? 'low' : ''}" role="img" aria-label="${margin === null ? t('No sales yet today') : t('Profit margin {pct}% of sales', { pct: margin.toFixed(1) })}"><i style="--w:${margin === null ? 0 : Math.min(100, Math.abs(margin)).toFixed(1)}%"></i></div>
+              <div class="h-goal-row"><span>${margin === null ? t('No sales yet today') : t('of every RM 1 sold')}</span><span class="num">${margin === null ? '' : 'RM ' + (Math.max(margin, 0) / 100).toFixed(2)}</span></div>
             </div>
           </div>
           <div class="h-chart">
-            <div class="h-readout" aria-live="polite"><span id="hRoDay">Last 7 days</span><b id="hRoVal">${esc(rm(week.reduce((t, w) => t + w.profit, 0)))} total</b></div>
+            <div class="h-readout" aria-live="polite"><span id="hRoDay">${t('Last 7 days')}</span><b id="hRoVal">${esc(t('{amt} total', { amt: rm(week.reduce((s, w) => s + w.profit, 0)) }))}</b></div>
             ${chartHTML(week)}
           </div>
         </div>
 
         <a class="h-tile h-sales" href="#/laporan">
-          <p class="h-lbl">${icon('download')}Sales</p>
+          <p class="h-lbl">${icon('download')}${t('Sales')}</p>
           <p class="h-val">${money(today.sales)}</p>
           <div class="h-foot">${badge(change(today.sales, yesterday.sales))}${mini(week.map(w => w.sales))}</div>
         </a>
         <a class="h-tile h-exp" href="#/laporan">
-          <p class="h-lbl">${icon('receipt')}Expenses</p>
+          <p class="h-lbl">${icon('receipt')}${t('Expenses')}</p>
           <p class="h-val">${money(today.out)}</p>
           <div class="h-foot">${badge(change(today.out, yesterday.out), false)}${mini(week.map(w => w.out), true)}</div>
         </a>
         <a class="h-tile h-tx" href="#/rekod?t=sejarah">
-          <p class="h-lbl">${icon('history')}Transactions</p>
+          <p class="h-lbl">${icon('history')}${t('Transactions')}</p>
           <p class="h-val"><span data-count="${today.count}" data-fmt="int">${today.count}</span></p>
-          <div class="h-foot"><span class="chg flat">${today.count - yesterday.count >= 0 ? '+' : '−'}${Math.abs(today.count - yesterday.count)} vs yesterday</span>${mini(week.map(w => w.count))}</div>
-          <p class="h-note">Average bill <b>${avgBill === null ? '–' : esc(rm(avgBill))}</b></p>
+          <div class="h-foot"><span class="chg flat">${today.count - yesterday.count >= 0 ? '+' : '−'}${Math.abs(today.count - yesterday.count)} ${t('vs yesterday')}</span>${mini(week.map(w => w.count))}</div>
+          <p class="h-note">${t('Average bill')} <b>${avgBill === null ? '–' : esc(rm(avgBill))}</b></p>
         </a>
         ${fcLocked ? `<a class="h-tile h-fc h-locked" href="#/pakej">
-          <p class="h-lbl">${icon('cart')}Food cost · 7 days</p>
-          <p class="h-note">See your food cost % and which menu makes money.</p>
-          <span class="chg flat" style="align-self:flex-start">${icon('lock')} Pro · RM ${PLANS.pro.price}/month</span>
+          <p class="h-lbl">${icon('cart')}${t('Food cost · 7 days')}</p>
+          <p class="h-note">${t('See your food cost % and which menu makes money.')}</p>
+          <span class="chg flat" style="align-self:flex-start">${icon('lock')} ${t('Pro · RM {n}/month', { n: PLANS.pro.price })}</span>
         </a>` : showFc ? `<a class="h-tile h-fc" href="#/foodcost">
-          <p class="h-lbl">${icon('cart')}Food cost · 7 days</p>
+          <p class="h-lbl">${icon('cart')}${t('Food cost · 7 days')}</p>
           <div class="h-ring-row">
             <svg class="h-ring${fcPct > FC_LIMIT ? ' over' : ''}" viewBox="0 0 70 70" aria-hidden="true">
               <circle class="track" cx="35" cy="35" r="28"/>
               <circle class="prog" cx="35" cy="35" r="28" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-to="${fcPct == null ? C.toFixed(1) : (C * (1 - Math.min(fcPct, 100) / 100)).toFixed(1)}"/>
               <circle class="limit" cx="35" cy="35" r="28" stroke-dasharray="1.4 ${(C - 1.4).toFixed(1)}" stroke-dashoffset="${(-C * FC_LIMIT / 100).toFixed(1)}"/>
             </svg>
-            <div class="h-ring-txt"><b class="num">${fcPct == null ? '–' : fcPct.toFixed(1) + '%'}</b><span>Guide ${FC_LIMIT}%</span>
-              ${fcPct == null ? '<span class="chg flat">No data</span>' : fcPct > FC_LIMIT ? '<span class="chg bad">Above guide</span>' : '<span class="chg good">On track</span>'}</div>
+            <div class="h-ring-txt"><b class="num">${fcPct == null ? '–' : fcPct.toFixed(1) + '%'}</b><span>${t('Guide {n}%', { n: FC_LIMIT })}</span>
+              ${fcPct == null ? `<span class="chg flat">${t('No data')}</span>` : fcPct > FC_LIMIT ? `<span class="chg bad">${t('Above guide')}</span>` : `<span class="chg good">${t('On track')}</span>`}</div>
           </div>
-          ${fcAll.worst ? `<p class="h-note">Highest: <b>${esc(outletName(fcAll.worst.id))} ${fcAll.worst.pct.toFixed(1)}%</b></p>` : ''}
+          ${fcAll.worst ? `<p class="h-note">${t('Highest:')} <b>${esc(outletName(fcAll.worst.id))} ${fcAll.worst.pct.toFixed(1)}%</b></p>` : ''}
         </a>` : ''}
       </section>
 
       <div class="home-grid">
         <div class="h-col">
         <section class="panel">
-          <div class="ph"><h2>Needs attention</h2><span class="sub">${attnCount ? `${attnCount} item${attnCount > 1 ? 's' : ''}` : ''}</span></div>
+          <div class="ph"><h2>${t('Needs attention')}</h2><span class="sub">${attnCount ? t('{n} items', { n: attnCount }) : ''}</span></div>
           <ul class="rows alerts">${attentionHTML(stock, fcAlerts)}</ul>
-          ${stock && stock.length ? `<div class="panel-foot"><span>${stock.length} stock item${stock.length > 1 ? 's' : ''} to restock</span><a href="#/stok">Open Stock →</a></div>` : ''}
+          ${stock && stock.length ? `<div class="panel-foot"><span>${t('{n} stock items to restock', { n: stock.length })}</span><a href="#/stok">${t('Open Stock →')}</a></div>` : ''}
         </section>
         ${session.outletId === ALL_OUTLETS && outlets.length > 1 ? outletHTML(outlets) : ''}
         </div>
 
         <section class="panel">
-          <div class="ph"><h2>Recent transactions</h2><span class="sub">Today</span></div>
+          <div class="ph"><h2>${t('Recent transactions')}</h2><span class="sub">${t('Today')}</span></div>
           <ul class="rows">${txHTML(tx)}</ul>
-          <div class="panel-foot"><span>${tx && tx.length ? `${tx.length} of ${today.count} today` : ''}</span><a href="#/rekod?t=sejarah">View all →</a></div>
+          <div class="panel-foot"><span>${tx && tx.length ? t('{a} of {b} today', { a: tx.length, b: today.count }) : ''}</span><a href="#/rekod?t=sejarah">${t('View all →')}</a></div>
         </section>
       </div>
 
-      <nav class="quick" aria-label="Shortcuts">
-        <a href="#/laporan">${icon('chart')}Full report</a>
-        ${session.isAdminUp ? `<a href="#/pnl">${icon('receipt')}Profit &amp; Loss (Form B)</a><a href="#/foodcost">${icon('cart')}Food Cost</a>` : ''}
-        <a href="#/rekod?t=sejarah">${icon('history')}Transaction history</a>
+      <nav class="quick" aria-label="${t('Shortcuts')}">
+        <a href="#/laporan">${icon('chart')}${t('Full report')}</a>
+        ${session.isAdminUp ? `<a href="#/pnl">${icon('receipt')}${t('Profit &amp; Loss (Form B)')}</a><a href="#/foodcost">${icon('cart')}${t('Food Cost')}</a>` : ''}
+        <a href="#/rekod?t=sejarah">${icon('history')}${t('Transaction history')}</a>
       </nav>`;
 
     countUp(view);

@@ -907,3 +907,9 @@ a.h-tile:active { transform: scale(.99); }
 .at-tot { min-width: 28px; padding-right: 8px !important; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
 
 @media (max-width: 380px) { .at-cell, .at-day { width: 27px; } .at-name { width: 70px; } }
+/* Suis bahasa (Menu) */
+.lang-row { cursor: default; }
+.lang-seg { flex: 0 0 auto; }
+.lang-seg .seg-opt { min-width: 48px; min-height: 36px; }
+/* Label graf 7 hari: "Hari ini" lebih panjang dari "Today"; sorok label sebelah di skrin kecil supaya tak bertindih */
+@media (max-width: 480px) { .h-days span:nth-last-child(2) { display: none; } }
