@@ -4,6 +4,7 @@ import { sb, session, ROLE_NAME } from '../session.js';
 import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
 import { planName, trialDaysLeft, isPro, proTag, PLANS, planKey } from '../plan.js';
 import { t, getLang, setLang } from '../i18n.js';
+import { membersHTML, bindMembers } from '../members.js';
 
 export default {
   render(view) {
@@ -23,6 +24,8 @@ export default {
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : t('Not set'))}</small></span>${icon('chev-right')}</button>`).join('')}
         ${session.isOwner ? `<button class="row-btn" type="button" id="olAdd">${icon('plus-box')}<span>${t('+ Add outlet')}<small>${t('{n} of {max} outlets on the {plan} plan', { n: session.outlets.length, max: PLANS[planKey()].outlets, plan: esc(planName()) })}</small></span></button>` : ''}
       </div>` : ''}
+
+      ${membersHTML()}
 
       <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>${t('Plan')}: ${esc(planName())}<small>${trialDaysLeft() ? t('Pro trial · {n} days left', { n: trialDaysLeft() }) : t('Compare plans and upgrade')}</small></span>${icon('chev-right')}</a></div>
 
@@ -177,6 +180,7 @@ export default {
     }
 
     view.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== getLang()) setLang(b.dataset.lang); }; });
+    bindMembers(view);
     $('logoutBtn').onclick = () => window.dispatchEvent(new Event('bp:logout'));
   }
 };

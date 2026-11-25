@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -30,7 +30,9 @@
     // Jika app gagal bermula (fail tak dimuat, ralat, sambungan lambat), tunjuk punca, jangan diam.
     (function () {
       var errs = [];
-      window.BP_MS = (function () { try { return localStorage.getItem('bp.lang') !== 'en'; } catch (e) { return true; } })();
+      // Pautan set semula kata laluan dari e-mel (#...type=recovery): tunjuk borang kata laluan baru.
+      window.BP_RECOVERY = /type=recovery/.test(location.hash);
+      window.BP_MS = (function () { try { return localStorage.getItem('bp.lang') === 'ms'; } catch (e) { return false; } })();
       function show(msg) {
         var boot = document.getElementById('boot');
         if (!boot || boot.hidden) return;
@@ -61,13 +63,8 @@
         <div class="logo-mark big" aria-hidden="true"></div>
         <div><p class="brand-name">BizProfit <span>Pro</span></p><p class="brand-sub" data-i18n="F&B Management System">F&amp;B Management System</p></div>
       </div>
-      <form id="loginForm" class="card stack" novalidate>
-        <h1 data-i18n="Log in">Log in</h1>
-        <label class="field"><span data-i18n="Email">Email</span><input id="loginEmail" type="email" autocomplete="username" required></label>
-        <label class="field"><span data-i18n="Password">Password</span><input id="loginPassword" type="password" autocomplete="current-password" required></label>
-        <button class="btn primary block" id="loginBtn" data-i18n="Log in">Log in</button>
-        <p class="hint" data-i18n="Forgot password? Ask the owner to reset it.">Forgot password? Ask the owner to reset it.</p>
-      </form>
+      <!-- Log masuk / daftar / lupa kata laluan / jemputan: dilukis oleh js/auth.js -->
+      <div id="authBox"></div>
     </div>
   </main>
 
