@@ -28,8 +28,9 @@ Jadual penuh dalam `README.md`. Pastikan README dikemas kini bila peranan beruba
 `free` / `pro` (RM15) / `business` (RM80, ≤10 outlet). Sumber sebenar: fungsi `current_plan()`
 + RLS. `app/js/plan.js` (`PLANS`, `FEATURES`) hanya paparan dan mesti selari dengan database.
 Prinsip: bila turun ke Free, data lama TIDAK dipadam; cuma tak boleh tambah/ubah. Rekod gaji, menu dan
-harga lama masih boleh dibaca. Pengecualian (had paparan sahaja, data kekal dan kembali bila naik taraf):
-Laporan, Key In dan Records → History untuk Free terhad kepada bulan lepas + bulan ini (`freeHistoryStart()`).
+harga lama masih boleh dibaca. Pengecualian: transaksi untuk Free terhad kepada bulan lepas + bulan ini
+(baca/tambah/ubah/padam), dikunci di database (Fasa 16, `history_floor()`) dan dipapar di app
+(`freeHistoryStart()`, mesti sama). Data lama tidak dipadam dan kembali bila naik taraf.
 
 ## Struktur
 - `app/index.html`: rangka; muat `../config.js`, supabase-js dari CDN (versi tetap), kemudian `js/main.js` (ES module).
@@ -43,7 +44,10 @@ Laporan, Key In dan Records → History untuk Free terhad kepada bulan lepas + b
 
 ## Konvensyen kod
 - **Tiada build step, tiada npm.** JS biasa dengan `import`/`export`. Jangan tambah framework/bundler tanpa tanya.
-- **Teks UI dalam English** (Home, Records, Stock, Save). **Komen kod dalam Bahasa Melayu.**
+- **Teks UI dalam English** (Home, Records, Stock, Save), dibungkus `t('...')` dari `i18n.js`.
+  English ialah bahasa asal; BM pilihan di Menu. Setiap teks baru: tambah terjemahan dalam
+  `app/js/i18n-ms.js` (kalau tiada, teks dipapar dalam English). Jangan namakan pembolehubah `t`
+  (ia fungsi terjemahan). **Komen kod dalam Bahasa Melayu.**
 - Sentiasa `esc()` data pengguna sebelum masuk `innerHTML`.
 - Masa ikut Malaysia: guna `todayKL()`, jangan `new Date().toISOString().slice(0,10)` (UTC, salah tarikh selepas 8 pagi).
 - Wang: papar dengan `rm()` dari `format.js`. Untuk jumlahkan, kira dalam **sen (integer)** guna `sen()`, jangan tambah float terus (elak ralat 0.1 + 0.2).
@@ -66,7 +70,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu.
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 18 (12b, 15, 16, 17 sudah digunakan).
 
 ## Skills (`.claude/skills/`)
 - 3 skill dari obra/superpowers (MIT): `systematic-debugging`, `verification-before-completion`,

@@ -12,6 +12,9 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 - **Report** — harian, mingguan, bulanan, tahunan; banding tempoh sebelum, purata & hari terbaik, prestasi outlet, perbelanjaan ikut kategori, jualan ikut kaedah bayaran, kongsi ringkasan ke WhatsApp
 - **Pekerja** — kehadiran harian, gaji harian/mingguan/bulanan, OT, elaun, potongan, advance, slip gaji
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
+- **Akaun** — daftar sendiri (syarikat + outlet pertama, trial Pro 30 hari), lupa kata laluan, jemput staf melalui pautan WhatsApp (sekali guna, 7 hari), owner tambah outlet
+- **Bahasa** — English (asal) atau Bahasa Melayu; tukar di Menu, disimpan dalam peranti
+- **Pakej** — Free / Pro / Business. Free: laporan, Key In dan sejarah transaksi terhad kepada bulan lepas + bulan ini (dikunci di database; data lama tidak dipadam dan kembali bila naik taraf)
 
 ## Peranan
 | | Owner | Admin | Manager | Staff |
@@ -23,6 +26,8 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 | Log audit | ✓ | Outlet sendiri | ✗ | ✗ |
 | Stok | ✓ | Penuh (outlet sendiri) | Tambah & ubah kuantiti | Tambah & ubah kuantiti |
 | Pekerja & gaji | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| Akaun pengguna & jemputan | Semua outlet; jemput admin/manager/staff | Outlet sendiri; jemput manager/staff | ✗ | ✗ |
+| Tambah outlet | ✓ (ikut had pakej) | ✗ | ✗ | ✗ |
 
 Padam rekod gaji di Rekod akan membuka semula slip gaji (draf). Setiap ubah/padam transaksi direkod dalam log audit yang tidak boleh diubah.
 
