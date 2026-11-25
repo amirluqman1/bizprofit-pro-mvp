@@ -36,5 +36,5 @@ Semua sekatan dikuatkuasa di database (Row Level Security), bukan sekadar di UI.
 - `design/` — konsep reka bentuk (`concept-2-emerald.html`) dan salinan design lama (`legacy-v1/`)
 
 ## Aliran kerja
-Kerja dibuat di branch `development`, diuji, kemudian digabung ke `main` (yang disiarkan oleh GitHub Pages).
+Setiap perubahan dibuat di branch kerja sendiri, diuji, kemudian digabung ke `main` melalui pull request (`main` disiarkan oleh GitHub Pages). Jangan push terus ke `main`.
 Jangan sekali-kali letak `service_role` key atau kata laluan dalam repo ini — repo ini awam.
