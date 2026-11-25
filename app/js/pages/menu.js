@@ -2,7 +2,7 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ROLE_NAME } from '../session.js';
 import { isInstalled, canPromptInstall, promptInstall, isIOS } from '../pwa.js';
-import { planName, trialDaysLeft, isPro, proTag } from '../plan.js';
+import { planName, trialDaysLeft, isPro, proTag, PLANS, planKey } from '../plan.js';
 
 export default {
   render(view) {
@@ -20,6 +20,7 @@ export default {
       ${session.isAdminUp ? `
       <div class="list" id="coList">
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : 'Not set')}</small></span>${icon('chev-right')}</button>`).join('')}
+        ${session.isOwner ? `<button class="row-btn" type="button" id="olAdd">${icon('plus-box')}<span>+ Add outlet<small>${session.outlets.length} of ${PLANS[planKey()].outlets} outlets on the ${esc(planName())} plan</small></span></button>` : ''}
       </div>` : ''}
 
       <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>Plan: ${esc(planName())}<small>${trialDaysLeft() ? `Pro trial · ${trialDaysLeft()} days left` : 'Compare plans and upgrade'}</small></span>${icon('chev-right')}</a></div>
@@ -41,6 +42,19 @@ export default {
           <p class="note" id="installSteps"></p>
           <div class="dialog-actions"><button class="btn primary" type="button" id="installClose">Got it</button></div>
         </div>
+      </dialog>
+
+      <dialog id="olDialog">
+        <form id="olForm" class="stack" novalidate>
+          <h2>Add outlet</h2>
+          <label class="field">Outlet name<input id="olName" maxlength="80" autocomplete="off" placeholder="e.g. Outlet Bangi"></label>
+          <label class="field">Company name <small>optional</small><input id="olCo" maxlength="120"></label>
+          <label class="field">Registration no. (SSM) <small>optional</small><input id="olReg" maxlength="60"></label>
+          <div class="dialog-actions">
+            <button class="btn ghost" type="button" id="olCancel">Cancel</button>
+            <button class="btn primary" id="olSave">Save</button>
+          </div>
+        </form>
       </dialog>
 
       <dialog id="coDialog">
@@ -99,6 +113,39 @@ export default {
       $('pwDialog').close();
       toast('Password changed.');
     });
+
+    // Owner tambah outlet. Database kunci: owner sahaja, syarikat sendiri, had outlet ikut pakej (trigger Fasa 12).
+    if ($('olAdd')) {
+      const maxOutlets = () => PLANS[planKey()].outlets;
+      const limitMsg = () => `Your ${planName()} plan allows ${maxOutlets()} outlet${maxOutlets() > 1 ? 's' : ''}. Upgrade to add more.`;
+      $('olAdd').onclick = () => {
+        if (session.outlets.length >= maxOutlets()) { toast(limitMsg(), 'error'); location.hash = '#/pakej'; return; }
+        $('olForm').reset(); $('olDialog').showModal(); $('olName').focus();
+      };
+      $('olCancel').onclick = () => $('olDialog').close();
+      $('olForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = $('olName').value.trim();
+        if (!name) { toast('Enter the outlet name.', 'error'); return; }
+        $('olSave').disabled = true;
+        const { data, error } = await sb.from('outlets')
+          .insert({ name, company_name: $('olCo').value.trim() || null, company_reg_no: $('olReg').value.trim() || null })
+          .select('id,name,company_name,company_reg_no').single();
+        $('olSave').disabled = false;
+        if (error) {
+          toast(error.code === '23505' ? 'An outlet with this name already exists.'
+            : /Had outlet/.test(error.message) ? limitMsg()
+            : 'Outlet not added: ' + error.message, 'error');
+          return;
+        }
+        session.outlets.push(data);
+        session.outlets.sort((a, b) => a.name.localeCompare(b.name));
+        $('olDialog').close();
+        window.dispatchEvent(new Event('bp:outlets-changed'));
+        toast(`Outlet "${data.name}" added.`);
+        this.render(view);
+      });
+    }
 
     if ($('coList')) {
       let editing = null;

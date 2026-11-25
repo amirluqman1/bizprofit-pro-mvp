@@ -90,6 +90,8 @@ window.addEventListener('bp:logout', async () => {
 $('outletSelect').addEventListener('change', e => setOutlet(e.target.value));
 onOutletChange(() => { rerender(); refreshBell(); });
 window.addEventListener('bp:stock-changed', refreshBell);
+// Owner tambah outlet: kemas kini pemilih outlet (pilihan "All outlets" muncul bila lebih dari 1).
+window.addEventListener('bp:outlets-changed', fillOutletPicker);
 
 $('bellBtn').addEventListener('click', () => {
   if (!lowStock) { toast('No notifications. All stock is sufficient.'); return; }
