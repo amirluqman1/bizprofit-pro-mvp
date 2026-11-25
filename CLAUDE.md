@@ -63,6 +63,10 @@ Setiap kali ubah fail dalam `app/`:
   dibenarkan DAN yang disekat (termasuk syarikat lain), kumpul hasil `(jangka OK/GAGAL)`, dan
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
+- `supabase/snapshot/production_schema.sql` = struktur sebenar production (lebih tepat dari
+  `migrations/`, yang tak lengkap). Bina staging dari situ + `staging_seed.sql`; lihat README dalam folder itu.
+  Kemas kini snapshot bila ada migration baru di production.
+- Uji migration di **staging dulu**, bukan production. Akaun ujian: `*.demo@example.com` (kata laluan dalam secret, bukan repo).
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
   tunggu bahagian app siap dulu.
 
