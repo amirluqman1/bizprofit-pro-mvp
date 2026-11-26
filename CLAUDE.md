@@ -115,8 +115,14 @@ Dikemas kini 26 Nov 2026.
   daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan.
 - Database production aktif: Fasa 12b, 15, 16 (13/13 ujian lulus), 17 (29/29 lulus). Satu-satunya
   syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
-- Perlu tindakan pengguna: Supabase → Authentication: benarkan sign-up, dan tambah
-  `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
+- Supabase → Authentication: sign-up dibenarkan & Redirect URLs ditetapkan oleh pengguna (26 Nov).
+- **E-mel Auth: WAJIB custom SMTP.** E-mel terbina Supabase hanya 2/jam dan hanya hantar ke ahli pasukan
+  projek, jadi tanpa SMTP orang awam tak boleh daftar (Confirm email hidup) atau reset kata laluan.
+  Pelan: Brevo (percuma 300/hari, `smtp-relay.brevo.com:587`) dengan Gmail baru sebagai penghantar,
+  kemudian tukar ke domain sendiri (dirancang `.my`) dengan SPF/DKIM/DMARC. Tukar domain = tukar Sender
+  email di Supabase sahaja; kod app tak berubah. Jemputan staf guna pautan WhatsApp, bukan e-mel.
+- Domain untuk alamat app (`app.<domain>` di GitHub Pages) belum diputuskan: kesannya pengguna perlu log
+  masuk semula, pasang semula PWA, pilihan bahasa hilang, dan Redirect URLs Supabase perlu ditukar.
 - Belum diuji dengan login sebenar (hanya Supabase palsu + skrin log masuk live). Uji: Home, Rekod, Gaji,
   Menu (jemput staf), dan tukar EN ↔ BM.
 - Belum dibuat: ujian `supabase/tests/20261123_fasa15_ujian.sql` (tambah outlet) belum dijalankan;
