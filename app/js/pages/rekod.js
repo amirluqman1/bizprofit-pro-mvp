@@ -5,8 +5,9 @@
 import { $, esc, icon, toast } from '../ui.js';
 import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { rm, todayKL, dateShort, dateLong } from '../format.js';
-import { isPro, proTag } from '../plan.js';
+import { isPro, proTag, freeHistoryStart } from '../plan.js';
 import { bindPicker, pickerButtons, uploadReceipt, discardReceipt, viewReceipt, receiptBtn } from '../receipt.js';
+import { t, locale } from '../i18n.js';
 
 const PAGE_SIZE = 30;
 const BASE_COLS = 'id,transaction_date,type,category,amount,description,payment_method,reference_no,outlet_id,created_at';
@@ -41,7 +42,7 @@ async function loadLists() {
     sb.from('categories').select('key,name,type').order('key'),
     sb.from('payment_methods').select('name').order('name')
   ]);
-  if (e1 || e2) throw new Error('Could not load the category list.');
+  if (e1 || e2) throw new Error(t('Could not load the category list.'));
   lists = { categories: cats || [], payments: (pays || []).map(p => p.name) };
   return lists;
 }
@@ -76,55 +77,55 @@ function defaultOutlet() {
 
 function keyInHTML() {
   // Tarikh & outlet dahulu: kebanyakan orang set "bila & di mana" sebelum isi amaun.
-  const date = '<label class="field">Date<input id="kiDate" type="date"></label>';
+  const date = `<label class="field">${t('Date')}<input id="kiDate" type="date"></label>`;
   const top = session.isOwner && session.outlets.length > 1
-    ? `<div class="two ki-top">${date}<label class="field">Outlet<select id="kiOutlet">${session.outlets.map(o =>
+    ? `<div class="two ki-top">${date}<label class="field">${t('Outlet')}<select id="kiOutlet">${session.outlets.map(o =>
         `<option value="${esc(o.id)}" ${o.id === defaultOutlet() ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label></div>`
-    : `${date}<p class="note-line">${icon('store')}For <b>${esc(outletName(defaultOutlet()))}</b></p>`;
+    : `${date}<p class="note-line">${icon('store')}${t('For <b>{o}</b>', { o: esc(outletName(defaultOutlet())) })}</p>`;
   return `<form id="kiForm" class="card stack" novalidate>
     ${top}
-    <div class="seg" role="radiogroup" aria-label="Transaction type">
-      <label class="seg-opt in"><input type="radio" name="kiType" value="In" checked>${icon('plus-box')}Money in</label>
-      <label class="seg-opt out"><input type="radio" name="kiType" value="Out">${icon('layers')}Money out</label>
+    <div class="seg" role="radiogroup" aria-label="${t('Transaction type')}">
+      <label class="seg-opt in"><input type="radio" name="kiType" value="In" checked>${icon('plus-box')}${t('Money in')}</label>
+      <label class="seg-opt out"><input type="radio" name="kiType" value="Out">${icon('layers')}${t('Money out')}</label>
     </div>
-    <label class="field">Amount
+    <label class="field">${t('Amount')}
       <span class="amount"><span>RM</span><input id="kiAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="0.00"></span></label>
-    <label class="field">Category<select id="kiCategory"></select></label>
-    <fieldset class="field plain"><legend>Payment method</legend><div class="chips" id="kiPay"></div></fieldset>
-    <label class="field">Description<input id="kiDesc" maxlength="200" placeholder="e.g. Breakfast sales" list="kiDescList" autocomplete="off"></label>
+    <label class="field">${t('Category')}<select id="kiCategory"></select></label>
+    <fieldset class="field plain"><legend>${t('Payment method')}</legend><div class="chips" id="kiPay"></div></fieldset>
+    <label class="field">${t('Description')}<input id="kiDesc" maxlength="200" placeholder="${t('e.g. Breakfast sales')}" list="kiDescList" autocomplete="off"></label>
     <datalist id="kiDescList"></datalist>
     <div class="chips quick" id="kiQuick" hidden></div>
-    <label class="field">Reference no.<input id="kiRef" maxlength="50" placeholder="Optional"></label>
+    <label class="field">${t('Reference no.')}<input id="kiRef" maxlength="50" placeholder="${t('Optional')}"></label>
     <div class="field">
-      <span>Receipt photo <span class="muted-inline">(optional)</span> ${isPro() ? '' : proTag()}</span>
+      <span>${t('Receipt photo')} <span class="muted-inline">(${t('optional')})</span> ${isPro() ? '' : proTag()}</span>
       ${isPro() ? `${pickerButtons('kiRc', true)}
-      <div class="rc-preview" id="kiRcPrev" hidden><img id="kiRcImg" alt="Receipt photo preview"><button type="button" class="btn ghost" id="kiRcDel">Remove</button></div>`
-      : `<a class="btn ghost block rc-pick" href="#/pakej">${icon('lock')}Upgrade to Pro to attach receipt photos</a>`}
+      <div class="rc-preview" id="kiRcPrev" hidden><img id="kiRcImg" alt="${t('Receipt photo preview')}"><button type="button" class="btn ghost" id="kiRcDel">${t('Remove')}</button></div>`
+      : `<a class="btn ghost block rc-pick" href="#/pakej">${icon('lock')}${t('Upgrade to Pro to attach receipt photos')}</a>`}
     </div>
-    <button class="btn primary block" id="kiSave">Save transaction</button>
+    <button class="btn primary block" id="kiSave">${t('Save transaction')}</button>
   </form>
   <section class="card day-card" aria-labelledby="dayTitle">
     <div class="day-head">
-      <h2 class="day-title" id="dayTitle">Entries for today</h2>
+      <h2 class="day-title" id="dayTitle">${t('Entries for today')}</h2>
       <span class="day-count" id="dayCount"></span>
     </div>
     <div class="day-sum" id="daySum" hidden></div>
     <ul class="tx-list" id="dayList"></ul>
-    <p class="greet-sub" id="dayStatus">Loading…</p>
+    <p class="greet-sub" id="dayStatus">${t('Loading…')}</p>
   </section>
   ${session.isAdminUp ? editDialogHTML() : ''}`;
 }
 
-function rowHTML(t) {
-  const masuk = t.type === 'In';
-  const parts = [dateShort(t.transaction_date), t.category];
-  if (session.outlets.length > 1) parts.push(outletName(t.outlet_id));
-  const edit = session.isAdminUp ? ` tabindex="0" role="button" data-tx="${esc(t.id)}" aria-label="Edit or delete transaction"` : '';
+function rowHTML(tr) {
+  const masuk = tr.type === 'In';
+  const parts = [dateShort(tr.transaction_date), tr.category];
+  if (session.outlets.length > 1) parts.push(outletName(tr.outlet_id));
+  const edit = session.isAdminUp ? ` tabindex="0" role="button" data-tx="${esc(tr.id)}" aria-label="${t('Edit or delete transaction')}"` : '';
   return `<li class="tx${session.isAdminUp ? ' editable' : ''}"${edit}>
     <span class="tx-icon ${masuk ? 'in' : 'out'}" aria-hidden="true">${masuk ? '+' : '−'}</span>
-    <div class="tx-copy"><p class="tx-title">${esc(t.description || t.category)}</p><p class="tx-detail">${esc(parts.join(' · '))}</p></div>
-    ${receiptBtn(t.receipt_path)}
-    <span class="tx-amount ${masuk ? 'in' : 'out'}">${masuk ? '+' : '−'}${esc(rm(t.amount))}</span>
+    <div class="tx-copy"><p class="tx-title">${esc(tr.description || tr.category)}</p><p class="tx-detail">${esc(parts.join(' · '))}</p></div>
+    ${receiptBtn(tr.receipt_path)}
+    <span class="tx-amount ${masuk ? 'in' : 'out'}">${masuk ? '+' : '−'}${esc(rm(tr.amount))}</span>
   </li>`;
 }
 
@@ -133,9 +134,9 @@ export default {
     const tab = tabFromHash();
     view.innerHTML = `
       <div class="seg tabs" role="tablist">
-        <a class="seg-opt ${tab === 'keyin' ? 'on' : ''}" href="#/rekod" role="tab" aria-selected="${tab === 'keyin'}">Key In</a>
-        <a class="seg-opt ${tab === 'sejarah' ? 'on' : ''}" href="#/rekod?t=sejarah" role="tab" aria-selected="${tab === 'sejarah'}">History</a>
-        ${session.isAdminUp ? `<a class="seg-opt ${tab === 'log' ? 'on' : ''}" href="#/rekod?t=log" role="tab" aria-selected="${tab === 'log'}">Audit log</a>` : ''}
+        <a class="seg-opt ${tab === 'keyin' ? 'on' : ''}" href="#/rekod" role="tab" aria-selected="${tab === 'keyin'}">${t('Key In')}</a>
+        <a class="seg-opt ${tab === 'sejarah' ? 'on' : ''}" href="#/rekod?t=sejarah" role="tab" aria-selected="${tab === 'sejarah'}">${t('History')}</a>
+        ${session.isAdminUp ? `<a class="seg-opt ${tab === 'log' ? 'on' : ''}" href="#/rekod?t=log" role="tab" aria-selected="${tab === 'log'}">${t('Audit log')}</a>` : ''}
       </div>
       <div id="rekodBody"><div class="skel"></div></div>`;
     if (tab === 'sejarah') return renderHistory($('rekodBody'));
@@ -162,6 +163,8 @@ async function renderKeyIn(box) {
   $('kiPay').innerHTML = l.payments.map((p, i) =>
     `<label class="chip"><input type="radio" name="kiPay" value="${esc(p)}" ${i === 0 ? 'checked' : ''}>${esc(p)}</label>`).join('');
   $('kiDate').value = todayKL();
+  // Pakej Percuma: Key In dan senarai harian terhad kepada bulan lepas + bulan ini.
+  if (!isPro()) $('kiDate').min = freeHistoryStart();
 
   // Senarai transaksi untuk tarikh & outlet yang dipilih (bawah butang Save / sebelah di landscape).
   const dayRows = new Map();
@@ -170,13 +173,19 @@ async function renderKeyIn(box) {
   async function loadDay() {
     const date = $('kiDate').value;
     const run = ++dayRun;
-    $('dayTitle').textContent = !date ? 'Entries' : date === todayKL() ? 'Entries for today' : 'Entries for ' + dateLong(date);
+    $('dayTitle').textContent = !date ? t('Entries') : date === todayKL() ? t('Entries for today') : t('Entries for {d}', { d: dateLong(date) });
     if (!date) {
       $('dayList').innerHTML = ''; $('daySum').hidden = true; $('dayCount').textContent = '';
-      $('dayStatus').hidden = false; $('dayStatus').textContent = 'Choose a date to see its entries.';
+      $('dayStatus').hidden = false; $('dayStatus').textContent = t('Choose a date to see its entries.');
       return;
     }
-    $('dayStatus').hidden = false; $('dayStatus').textContent = 'Loading…';
+    if (!isPro() && date < freeHistoryStart()) {
+      $('dayList').innerHTML = ''; $('daySum').hidden = true; $('dayCount').textContent = '';
+      $('dayStatus').hidden = false;
+      $('dayStatus').textContent = t('Free plan covers last month and this month (from {d}). Upgrade to see older dates.', { d: dateShort(freeHistoryStart()) });
+      return;
+    }
+    $('dayStatus').hidden = false; $('dayStatus').textContent = t('Loading…');
     const { data, error } = await sb.from('transactions')
       .select(txCols())
       .eq('transaction_date', date).eq('outlet_id', kiOutletId())
@@ -184,26 +193,26 @@ async function renderKeyIn(box) {
       .limit(200);
     if (run !== dayRun) return;   // tarikh/outlet dah bertukar semasa menunggu
     if (error && missingReceiptCol(error)) return loadDay();
-    if (error) { $('dayStatus').textContent = 'Could not load entries for this date. Try again.'; return; }
+    if (error) { $('dayStatus').textContent = t('Could not load entries for this date. Try again.'); return; }
     dayRows.clear();
-    data.forEach(t => dayRows.set(String(t.id), t));
+    data.forEach(tr => dayRows.set(String(tr.id), tr));
     $('dayList').innerHTML = data.map(rowHTML).join('');
     $('dayCount').textContent = data.length ? `${data.length} ${data.length === 1 ? 'entry' : 'entries'}` : '';
     if (!data.length) {
       $('daySum').hidden = true;
       $('dayStatus').textContent = session.role === 'staff' && date !== todayKL()
-        ? 'Staff can only see entries keyed in today.'
-        : 'Nothing keyed in for this date yet.';
+        ? t('Staff can only see entries keyed in today.')
+        : t('Nothing keyed in for this date yet.');
       return;
     }
     $('dayStatus').hidden = true;
-    const total = type => data.filter(t => t.type === type).reduce((n, t) => n + Math.round(Number(t.amount) * 100), 0) / 100;
+    const total = type => data.filter(tr => tr.type === type).reduce((n, tr) => n + Math.round(Number(tr.amount) * 100), 0) / 100;
     const tin = total('In'), tout = total('Out');
     $('daySum').hidden = false;
     $('daySum').innerHTML = `
-      <div><span>Money in</span><b class="in">${esc(rm(tin))}</b></div>
-      <div><span>Money out</span><b>${esc(rm(tout))}</b></div>
-      <div><span>Net</span><b class="${tin - tout < 0 ? 'neg' : 'in'}">${esc(rm(tin - tout))}</b></div>`;
+      <div><span>${t('Money in')}</span><b class="in">${esc(rm(tin))}</b></div>
+      <div><span>${t('Money out')}</span><b>${esc(rm(tout))}</b></div>
+      <div><span>${t('Net')}</span><b class="${tin - tout < 0 ? 'neg' : 'in'}">${esc(rm(tin - tout))}</b></div>`;
   }
   // Cadangan description macam autofill Excel: ambil description lama ikut jenis & kategori,
   // susun ikut paling kerap dipakai. Tunjuk sebagai dropdown (datalist) + butang pilih cepat.
@@ -219,12 +228,12 @@ async function renderKeyIn(box) {
     const type = document.querySelector('input[name="kiType"]:checked').value;
     const cat = $('kiCategory').value;
     const score = new Map();   // nama (huruf kecil) → { text, n, same }
-    descHist.forEach(t => {
-      const text = (t.description || '').trim();
-      if (!text || t.type !== type) return;
+    descHist.forEach(tr => {
+      const text = (tr.description || '').trim();
+      if (!text || tr.type !== type) return;
       const k = text.toLowerCase();
       const e = score.get(k) || { text, n: 0, same: 0 };
-      e.n++; if (t.category === cat) e.same++;
+      e.n++; if (tr.category === cat) e.same++;
       score.set(k, e);
     });
     const all = [...score.values()].sort((a, b) => b.same - a.same || b.n - a.n);
@@ -264,12 +273,15 @@ async function renderKeyIn(box) {
     e.preventDefault();
     const amount = amountValue($('kiAmount'));
     const desc = $('kiDesc').value.trim();
-    if (!(amount > 0)) { toast('Enter an amount above RM 0.', 'error'); $('kiAmount').focus(); return; }
-    if (!$('kiCategory').value) { toast('Choose a category.', 'error'); return; }
-    if (!desc) { toast('Add a description so it is easy to check later.', 'error'); $('kiDesc').focus(); return; }
-    if (!$('kiDate').value) { toast('Choose the transaction date.', 'error'); return; }
+    if (!(amount > 0)) { toast(t('Enter an amount above RM 0.'), 'error'); $('kiAmount').focus(); return; }
+    if (!$('kiCategory').value) { toast(t('Choose a category.'), 'error'); return; }
+    if (!desc) { toast(t('Add a description so it is easy to check later.'), 'error'); $('kiDesc').focus(); return; }
+    if (!$('kiDate').value) { toast(t('Choose the transaction date.'), 'error'); return; }
+    if (!isPro() && $('kiDate').value < freeHistoryStart()) {
+      toast(t('Free plan can key in from {d} only. Upgrade to key in older dates.', { d: dateShort(freeHistoryStart()) }), 'error'); return;
+    }
     const pay = document.querySelector('input[name="kiPay"]:checked');
-    if (!pay) { toast('Choose a payment method.', 'error'); return; }
+    if (!pay) { toast(t('Choose a payment method.'), 'error'); return; }
 
     const btn = $('kiSave');
     const outletId = $('kiOutlet') ? $('kiOutlet').value : defaultOutlet();
@@ -277,11 +289,11 @@ async function renderKeyIn(box) {
     let receiptPath = null;
     btn.disabled = true;
     if (photo) {
-      btn.textContent = 'Uploading photo…';
+      btn.textContent = t('Uploading photo…');
       try { receiptPath = await uploadReceipt(photo, outletId); }
-      catch (err) { btn.disabled = false; btn.textContent = 'Save transaction'; toast(err.message, 'error'); return; }
+      catch (err) { btn.disabled = false; btn.textContent = t('Save transaction'); toast(err.message, 'error'); return; }
     }
-    btn.textContent = 'Saving…';
+    btn.textContent = t('Saving…');
     const { error } = await sb.from('transactions').insert({
       transaction_date: $('kiDate').value,
       type: document.querySelector('input[name="kiType"]:checked').value,
@@ -293,11 +305,11 @@ async function renderKeyIn(box) {
       outlet_id: outletId,
       ...(receiptPath ? { receipt_path: receiptPath } : {})
     });
-    btn.disabled = false; btn.textContent = 'Save transaction';
-    if (error) { discardReceipt(receiptPath); toast('Transaction not saved: ' + error.message, 'error'); return; }
+    btn.disabled = false; btn.textContent = t('Save transaction');
+    if (error) { discardReceipt(receiptPath); toast(t('Transaction not saved: ') + error.message, 'error'); return; }
     $('kiAmount').value = ''; $('kiDesc').value = ''; $('kiRef').value = '';
     rcPicker?.reset();
-    toast('Transaction saved.');
+    toast(t('Transaction saved.'));
     $('kiAmount').focus();
     loadDay();
     loadDescHistory();
@@ -309,28 +321,29 @@ async function renderHistory(box) {
   let offset = 0, runId = 0;
   const rows = new Map();
   box.innerHTML = `
-    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + 'You only see transactions you entered today.</p>' : ''}
-    <section class="card stack filter-bar" aria-label="Sort and filter transactions">
-      <div class="seg" role="radiogroup" aria-label="Transaction type">
-        <label class="seg-opt"><input type="radio" name="fType" value="" checked>All</label>
-        <label class="seg-opt in"><input type="radio" name="fType" value="In">${icon('plus-box')}In</label>
-        <label class="seg-opt out"><input type="radio" name="fType" value="Out">${icon('layers')}Out</label>
+    ${session.role === 'staff' ? '<p class="note-line">' + icon('lock') + t('You only see transactions you entered today.') + '</p>'
+      : isPro() ? '' : `<p class="note-line">${icon('lock')}<span>${t('Free plan shows last month and this month (from {d}). Older records are kept.', { d: esc(dateShort(freeHistoryStart())) })} <a href="#/pakej">${t('Upgrade to see all')}</a></span></p>`}
+    <section class="card stack filter-bar" aria-label="${t('Sort and filter transactions')}">
+      <div class="seg" role="radiogroup" aria-label="${t('Transaction type')}">
+        <label class="seg-opt"><input type="radio" name="fType" value="" checked>${t('All')}</label>
+        <label class="seg-opt in"><input type="radio" name="fType" value="In">${icon('plus-box')}${t('In')}</label>
+        <label class="seg-opt out"><input type="radio" name="fType" value="Out">${icon('layers')}${t('Out')}</label>
       </div>
       <div class="two">
-        <label class="field">Category<select id="fCat"><option value="">All categories</option></select></label>
-        <label class="field">Sort by<select id="fSort">${SORTS.map((o, i) =>
-          `<option value="${i}">${esc(o.label)}</option>`).join('')}</select></label>
+        <label class="field">${t('Category')}<select id="fCat"><option value="">${t('All categories')}</option></select></label>
+        <label class="field">${t('Sort by')}<select id="fSort">${SORTS.map((o, i) =>
+          `<option value="${i}">${esc(t(o.label))}</option>`).join('')}</select></label>
       </div>
       <p class="note-line small" id="fCount" hidden></p>
     </section>
     <section class="card"><ul class="tx-list" id="txList"></ul>
-      <p class="greet-sub" id="txStatus">Loading…</p>
-      <button class="btn ghost block" id="txMore" type="button" hidden>Load more</button></section>
+      <p class="greet-sub" id="txStatus">${t('Loading…')}</p>
+      <button class="btn ghost block" id="txMore" type="button" hidden>${t('Load more')}</button></section>
     ${session.isAdminUp ? editDialogHTML() : ''}`;
 
   async function more() {
     $('txMore').hidden = true;
-    $('txStatus').hidden = false; $('txStatus').textContent = 'Loading…';
+    $('txStatus').hidden = false; $('txStatus').textContent = t('Loading…');
     const run = ++runId;
     const type = document.querySelector('input[name="fType"]:checked').value;
     const cat = $('fCat').value;
@@ -340,22 +353,23 @@ async function renderHistory(box) {
     sort.order.forEach(([col, asc]) => { q = q.order(col, { ascending: asc }); });
     q = q.order('id', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
+    if (!isPro()) q = q.gte('transaction_date', freeHistoryStart());   // Percuma: bulan lepas + bulan ini
     if (type) q = q.eq('type', type);
     if (cat) q = q.eq('category', cat);
     const { data, error, count } = await q;
     if (run !== runId) return;   // tapisan dah berubah semasa menunggu
     if (error && missingReceiptCol(error)) return more();
-    if (error) { $('txStatus').textContent = 'Could not load transactions. Try again.'; return; }
-    data.forEach(t => rows.set(String(t.id), t));
+    if (error) { $('txStatus').textContent = t('Could not load transactions. Try again.'); return; }
+    data.forEach(tr => rows.set(String(tr.id), tr));
     $('txList').insertAdjacentHTML('beforeend', data.map(rowHTML).join(''));
     offset += data.length;
     if (count != null) {
       const filtered = type || cat;
       $('fCount').hidden = !filtered;
-      $('fCount').textContent = `${count} transactions found`;
+      $('fCount').textContent = t('{n} transactions found', { n: count });
     }
     if (!offset) {
-      $('txStatus').textContent = type || cat ? 'No transactions match this filter.' : 'No transactions yet.';
+      $('txStatus').textContent = type || cat ? t('No transactions match this filter.') : t('No transactions yet.');
       return;
     }
     $('txStatus').hidden = true;
@@ -370,7 +384,7 @@ async function renderHistory(box) {
     const type = document.querySelector('input[name="fType"]:checked').value;
     const keep = $('fCat').value;
     const names = [...new Set(cats.filter(c => !type || c.type === type).map(c => c.name))];
-    $('fCat').replaceChildren(new Option('All categories', ''), ...names.map(n => new Option(n, n)));
+    $('fCat').replaceChildren(new Option(t('All categories'), ''), ...names.map(n => new Option(n, n)));
     $('fCat').value = names.includes(keep) ? keep : '';
   };
   loadLists().then(l => { cats = l.categories; fillCats(); }).catch(() => {});
@@ -393,68 +407,68 @@ async function renderHistory(box) {
 }
 
 // ---------------- Ubah / padam (owner & admin) ----------------
-let editing = null;   // { t, linked, done }
+let editing = null;   // { tr, linked, done }
 
 function editDialogHTML() {
   const outletPicker = session.isOwner && session.outlets.length > 1
-    ? `<label class="field">Outlet<select id="edOutlet">${session.outlets.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label>` : '';
+    ? `<label class="field">${t('Outlet')}<select id="edOutlet">${session.outlets.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label>` : '';
   return `<dialog id="edDialog"><form id="edForm" class="stack" novalidate>
-    <h2>Edit transaction</h2>
+    <h2>${t('Edit transaction')}</h2>
     <p class="alert" id="edLinked" hidden></p>
-    <div class="seg" role="radiogroup" aria-label="Transaction type">
-      <label class="seg-opt in"><input type="radio" name="edType" value="In">${icon('plus-box')}Money in</label>
-      <label class="seg-opt out"><input type="radio" name="edType" value="Out">${icon('layers')}Money out</label>
+    <div class="seg" role="radiogroup" aria-label="${t('Transaction type')}">
+      <label class="seg-opt in"><input type="radio" name="edType" value="In">${icon('plus-box')}${t('Money in')}</label>
+      <label class="seg-opt out"><input type="radio" name="edType" value="Out">${icon('layers')}${t('Money out')}</label>
     </div>
-    <label class="field">Amount
+    <label class="field">${t('Amount')}
       <span class="amount"><span>RM</span><input id="edAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="0.00"></span></label>
-    <label class="field">Category<select id="edCategory"></select></label>
-    <label class="field">Payment method<select id="edPay"></select></label>
-    <label class="field">Description<input id="edDesc" maxlength="200"></label>
+    <label class="field">${t('Category')}<select id="edCategory"></select></label>
+    <label class="field">${t('Payment method')}<select id="edPay"></select></label>
+    <label class="field">${t('Description')}<input id="edDesc" maxlength="200"></label>
     <div class="two">
-      <label class="field">Date<input id="edDate" type="date"></label>
-      <label class="field">Reference no.<input id="edRef" maxlength="50" placeholder="Optional"></label>
+      <label class="field">${t('Date')}<input id="edDate" type="date"></label>
+      <label class="field">${t('Reference no.')}<input id="edRef" maxlength="50" placeholder="${t('Optional')}"></label>
     </div>
     ${outletPicker}
     <div class="field" id="edRcField">
-      <span>Receipt photo ${isPro() ? '' : proTag()}</span>
+      <span>${t('Receipt photo')} ${isPro() ? '' : proTag()}</span>
       <div class="rc-row">
-        <button type="button" class="btn ghost" id="edRcView" hidden>${icon('camera')}View</button>
+        <button type="button" class="btn ghost" id="edRcView" hidden>${icon('camera')}${t('View')}</button>
         ${isPro() ? pickerButtons('edRc') : ''}
-        <label class="rc-remove" id="edRcRemoveLbl" hidden><input type="checkbox" id="edRcRemove">Remove photo</label>
+        <label class="rc-remove" id="edRcRemoveLbl" hidden><input type="checkbox" id="edRcRemove">${t('Remove photo')}</label>
       </div>
-      <div class="rc-preview" id="edRcPrev" hidden><img id="edRcImg" alt="New receipt photo"><button type="button" class="btn ghost" id="edRcDel">Cancel new photo</button></div>
+      <div class="rc-preview" id="edRcPrev" hidden><img id="edRcImg" alt="${t('New receipt photo')}"><button type="button" class="btn ghost" id="edRcDel">${t('Cancel new photo')}</button></div>
     </div>
     <div class="dialog-actions">
-      <button class="btn danger" type="button" id="edDelete">Delete</button>
-      <button class="btn ghost" type="button" id="edCancel">Cancel</button>
-      <button class="btn primary" id="edSave">Save</button>
+      <button class="btn danger" type="button" id="edDelete">${t('Delete')}</button>
+      <button class="btn ghost" type="button" id="edCancel">${t('Cancel')}</button>
+      <button class="btn primary" id="edSave">${t('Save')}</button>
     </div>
   </form></dialog>`;
 }
 
-async function openEdit(t, done) {
-  if (!t) return;
+async function openEdit(tr, done) {
+  if (!tr) return;
   let l;
   try { l = await loadLists(); } catch (e) { toast(e.message, 'error'); return; }
   // Rekod gaji/advance: jumlah, jenis, kategori & outlet dikunci (database juga menyekat).
   const [{ data: pay }, { data: adv }] = await Promise.all([
-    sb.from('payroll').select('id').eq('transaction_id', t.id).limit(1),
-    sb.from('salary_advances').select('id').eq('transaction_id', t.id).limit(1)
+    sb.from('payroll').select('id').eq('transaction_id', tr.id).limit(1),
+    sb.from('salary_advances').select('id').eq('transaction_id', tr.id).limit(1)
   ]);
   const linked = pay?.length ? 'gaji' : adv?.length ? 'advance' : null;
-  editing = { t, linked, done, lists: l };
+  editing = { tr, linked, done, lists: l };
 
-  document.querySelectorAll('input[name="edType"]').forEach(r => { r.checked = r.value === t.type; });
-  fillEditCategories(t.category);
-  const pays = l.payments.includes(t.payment_method) || !t.payment_method ? l.payments : [t.payment_method, ...l.payments];
+  document.querySelectorAll('input[name="edType"]').forEach(r => { r.checked = r.value === tr.type; });
+  fillEditCategories(tr.category);
+  const pays = l.payments.includes(tr.payment_method) || !tr.payment_method ? l.payments : [tr.payment_method, ...l.payments];
   $('edPay').replaceChildren(...pays.map(p => new Option(p, p)));
-  $('edPay').value = t.payment_method || pays[0] || '';
-  setAmount($('edAmount'), t.amount);
-  $('edDesc').value = t.description || '';
-  $('edDate').value = t.transaction_date;
-  $('edRef').value = t.reference_no || '';
-  if ($('edOutlet')) $('edOutlet').value = t.outlet_id;
-  const hasRc = receiptCol && !!t.receipt_path;
+  $('edPay').value = tr.payment_method || pays[0] || '';
+  setAmount($('edAmount'), tr.amount);
+  $('edDesc').value = tr.description || '';
+  $('edDate').value = tr.transaction_date;
+  $('edRef').value = tr.reference_no || '';
+  if ($('edOutlet')) $('edOutlet').value = tr.outlet_id;
+  const hasRc = receiptCol && !!tr.receipt_path;
   $('edRcField').hidden = !receiptCol || (!isPro() && !hasRc);
   $('edRcView').hidden = !hasRc;
   $('edRcRemoveLbl').hidden = !hasRc;
@@ -466,9 +480,9 @@ async function openEdit(t, done) {
   document.querySelectorAll('input[name="edType"]').forEach(r => { r.disabled = lock; });
   $('edLinked').hidden = !lock;
   $('edLinked').textContent = linked === 'gaji'
-    ? 'This is a salary payment record. The amount cannot be changed here. If it is wrong, delete this record: the payslip reopens as a draft so it can be paid again in Staff.'
+    ? t('This is a salary payment record. The amount cannot be changed here. If it is wrong, delete this record: the payslip reopens as a draft so it can be paid again in Staff.')
     : linked === 'advance'
-      ? 'This is an advance record. The amount cannot be changed here. If it is wrong, delete this record (the advance is cancelled) and give it again in Staff.'
+      ? t('This is an advance record. The amount cannot be changed here. If it is wrong, delete this record (the advance is cancelled) and give it again in Staff.')
       : '';
   $('edDialog').showModal();
 }
@@ -485,17 +499,17 @@ let edPicker = null;
 function bindEditDialog() {
   bankAmount($('edAmount'));
   edPicker = $('edRcCam') ? bindPicker([$('edRcCam'), $('edRcGal')], $('edRcPrev'), $('edRcImg'), $('edRcDel'), $('edRcPick')) : null;
-  $('edRcView').onclick = () => { if (editing?.t.receipt_path) viewReceipt(editing.t.receipt_path); };
+  $('edRcView').onclick = () => { if (editing?.tr.receipt_path) viewReceipt(editing.tr.receipt_path); };
   document.querySelectorAll('input[name="edType"]').forEach(r => r.addEventListener('change', () => fillEditCategories(null)));
   $('edCancel').onclick = () => $('edDialog').close();
 
   $('edForm').addEventListener('submit', async e => {
     e.preventDefault();
     if (!editing) return;
-    const { t } = editing;
+    const { tr } = editing;
     const amount = amountValue($('edAmount'));
     const desc = $('edDesc').value.trim();
-    if (!(amount > 0)) { toast('Enter an amount above RM 0.', 'error'); return; }
+    if (!(amount > 0)) { toast(t('Enter an amount above RM 0.'), 'error'); return; }
     if (!desc) { toast('Enter a description.', 'error'); return; }
     if (!$('edDate').value) { toast('Choose a date.', 'error'); return; }
     const payload = {
@@ -514,35 +528,35 @@ function bindEditDialog() {
     const photo = edPicker?.get();
     let newPath = null;
     if (photo) {
-      try { newPath = await uploadReceipt(photo, payload.outlet_id || t.outlet_id); }
+      try { newPath = await uploadReceipt(photo, payload.outlet_id || tr.outlet_id); }
       catch (err) { $('edSave').disabled = false; toast(err.message, 'error'); return; }
       payload.receipt_path = newPath;
     } else if ($('edRcRemove').checked) {
       payload.receipt_path = null;
     }
-    const { data, error } = await sb.from('transactions').update(payload).eq('id', t.id).select('id');
+    const { data, error } = await sb.from('transactions').update(payload).eq('id', tr.id).select('id');
     $('edSave').disabled = false;
     if (error || !data?.length) discardReceipt(newPath);
-    if (error) { toast('Not saved: ' + error.message, 'error'); return; }
-    if (!data?.length) { toast('No access to edit this transaction.', 'error'); return; }
+    if (error) { toast(t('Not saved: ') + error.message, 'error'); return; }
+    if (!data?.length) { toast(t('No access to edit this transaction.'), 'error'); return; }
     $('edDialog').close();
-    toast('Transaction updated. The change is recorded in the Audit log.');
+    toast(t('Transaction updated. The change is recorded in the Audit log.'));
     editing.done();
   });
 
   $('edDelete').onclick = async () => {
     if (!editing) return;
-    const { t, linked } = editing;
-    const extra = linked === 'gaji' ? '\n\nThe payslip will reopen as a draft.'
-      : linked === 'advance' ? '\n\nThis advance will be cancelled.' : '';
-    if (!confirm(`Delete this transaction?\n\n${t.description || t.category} · ${rm(t.amount)}${extra}\n\nThe original record is kept in the Audit log.`)) return;
+    const { tr, linked } = editing;
+    const extra = linked === 'gaji' ? '\n\n' + t('The payslip will reopen as a draft.')
+      : linked === 'advance' ? '\n\n' + t('This advance will be cancelled.') : '';
+    if (!confirm(`${t('Delete this transaction?')}\n\n${tr.description || tr.category} · ${rm(tr.amount)}${extra}\n\n${t('The original record is kept in the Audit log.')}`)) return;
     $('edDelete').disabled = true;
-    const { data, error } = await sb.from('transactions').delete().eq('id', t.id).select('id');
+    const { data, error } = await sb.from('transactions').delete().eq('id', tr.id).select('id');
     $('edDelete').disabled = false;
-    if (error) { toast('Not deleted: ' + error.message, 'error'); return; }
-    if (!data?.length) { toast('No access to delete this transaction.', 'error'); return; }
+    if (error) { toast(t('Not deleted: ') + error.message, 'error'); return; }
+    if (!data?.length) { toast(t('No access to delete this transaction.'), 'error'); return; }
     $('edDialog').close();
-    toast(linked === 'gaji' ? 'Deleted. The payslip is a draft again in Staff.' : 'Transaction deleted.');
+    toast(linked === 'gaji' ? t('Deleted. The payslip is a draft again in Staff.') : t('Transaction deleted.'));
     editing.done();
   };
 }
@@ -556,31 +570,31 @@ const FIELD = {
 function fieldVal(k, v) {
   if (v == null || v === '') return '-';
   if (k === 'amount') return rm(v);
-  if (k === 'type') return v === 'In' ? 'Money in' : 'Money out';
+  if (k === 'type') return v === 'In' ? t('Money in') : t('Money out');
   if (k === 'transaction_date') return dateShort(v);
-  if (k === 'outlet_id') return outletName(v) || 'Other outlet';
-  if (k === 'receipt_path') return 'Photo …' + String(v).slice(-10, -4);
+  if (k === 'outlet_id') return outletName(v) || t('Other outlet');
+  if (k === 'receipt_path') return t('Photo') + ' …' + String(v).slice(-10, -4);
   return String(v);
 }
 
 function auditHTML(a) {
   const o = a.old_data || {};
-  const when = new Date(a.changed_at).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' });
-  const who = a.changed_by === session.user.id ? 'You'
-    : a.changed_by ? [ROLE_LABEL[a.changed_by_role] || 'User', a.changed_by_email].filter(Boolean).join(' · ')
-    : 'System (cleanup by owner)';
+  const when = new Date(a.changed_at).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' });
+  const who = a.changed_by === session.user.id ? t('You')
+    : a.changed_by ? [t(ROLE_LABEL[a.changed_by_role] || 'User'), a.changed_by_email].filter(Boolean).join(' · ')
+    : t('System (cleanup by owner)');
   let body;
   if (a.action === 'ubah') {
     const n = a.new_data || {};
     const diffs = Object.keys(FIELD).filter(k => String(o[k] ?? '') !== String(n[k] ?? ''));
     body = diffs.length
-      ? diffs.map(k => `<div class="kv"><span>${FIELD[k]}</span><b>${esc(fieldVal(k, o[k]))} → ${esc(fieldVal(k, n[k]))}</b></div>`).join('')
-      : '<p class="note">No changes to the main details.</p>';
+      ? diffs.map(k => `<div class="kv"><span>${t(FIELD[k])}</span><b>${esc(fieldVal(k, o[k]))} → ${esc(fieldVal(k, n[k]))}</b></div>`).join('')
+      : `<p class="note">${t('No changes to the main details.')}</p>`;
   } else {
     body = `<div class="kv"><span>${esc(fieldVal('transaction_date', o.transaction_date))} · ${esc(o.category || '')}</span><b>${esc(fieldVal('amount', o.amount))}</b></div>`;
   }
   return `<div class="log">
-    <b><i class="tag ${a.action === 'padam' ? 'off' : ''}">${a.action === 'padam' ? 'Deleted' : 'Edited'}</i> ${esc(o.description || o.category || 'Transaction')}</b>
+    <b><i class="tag ${a.action === 'padam' ? 'off' : ''}">${a.action === 'padam' ? t('Deleted') : t('Edited')}</i> ${esc(o.description || o.category || t('Transaction'))}</b>
     ${body}
     ${a.note ? `<p class="note small">${esc(a.note)}</p>` : ''}
     <span>${esc(when)} · ${esc(who)}${session.outlets.length > 1 ? ' · ' + esc(outletName(a.outlet_id)) : ''}</span>
@@ -591,10 +605,10 @@ const ROLE_LABEL = { owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 
 async function renderAudit(box) {
   let offset = 0;
   box.innerHTML = `
-    <p class="note-line small">${icon('lock')}Only the owner and admins can see this log. It cannot be edited or deleted.</p>
+    <p class="note-line small">${icon('lock')}${t('Only the owner and admins can see this log. It cannot be edited or deleted.')}</p>
     <section class="card"><div id="auList"></div>
-      <p class="greet-sub" id="auStatus">Loading…</p>
-      <button class="btn ghost block" id="auMore" type="button" hidden>Load more</button></section>`;
+      <p class="greet-sub" id="auStatus">${t('Loading…')}</p>
+      <button class="btn ghost block" id="auMore" type="button" hidden>${t('Load more')}</button></section>`;
   async function more() {
     $('auMore').hidden = true;
     let q = sb.from('transaction_audit')
@@ -603,10 +617,10 @@ async function renderAudit(box) {
       .range(offset, offset + PAGE_SIZE - 1);
     if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
     const { data, error } = await q;
-    if (error) { $('auStatus').textContent = 'Could not load the audit log. Try again.'; return; }
+    if (error) { $('auStatus').textContent = t('Could not load the audit log. Try again.'); return; }
     $('auList').insertAdjacentHTML('beforeend', data.map(auditHTML).join(''));
     offset += data.length;
-    if (!offset) { $('auStatus').textContent = 'No transactions have been edited or deleted yet.'; return; }
+    if (!offset) { $('auStatus').textContent = t('No transactions have been edited or deleted yet.'); return; }
     $('auStatus').hidden = true;
     $('auMore').hidden = data.length < PAGE_SIZE;
   }

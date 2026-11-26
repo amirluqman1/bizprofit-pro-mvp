@@ -5,6 +5,7 @@
 // <business_id>/<outlet_id>/<uuid>.jpg. Akses dikawal oleh database (Fasa 13).
 import { esc, icon, toast } from './ui.js';
 import { sb, session } from './session.js';
+import { t } from './i18n.js';
 
 const BUCKET = 'receipts';
 // Cuba dari kualiti terbaik; berhenti bila saiz ≤ TARGET. Langkah terakhir diguna walau apa pun.
@@ -13,7 +14,7 @@ const TARGET = 40 * 1024;
 
 // Kecilkan gambar → Blob JPEG.
 export async function compressImage(file) {
-  if (!file || !file.type.startsWith('image/')) throw new Error('Choose a photo (JPG or PNG).');
+  if (!file || !file.type.startsWith('image/')) throw new Error(t('Choose a photo (JPG or PNG).'));
   let src, w, h;
   try {
     src = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -48,7 +49,7 @@ export async function compressImage(file) {
       if (!blob || blob.size <= TARGET) break;
     }
   } finally { if (src.close) src.close(); }
-  if (!blob) throw new Error('This photo could not be processed. Try another one.');
+  if (!blob) throw new Error(t('This photo could not be processed. Try another one.'));
   return blob;
 }
 
@@ -57,7 +58,7 @@ export async function uploadReceipt(blob, outletId) {
   const id = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
   const path = `${session.business.id}/${outletId}/${id}.jpg`;
   const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-  if (error) throw new Error('Receipt photo not uploaded: ' + error.message);
+  if (error) throw new Error(t('Receipt photo not uploaded: ') + error.message);
   return path;
 }
 
@@ -92,8 +93,8 @@ export function bindPicker(inputs, preview, img, removeBtn, hideEl) {
 // Dua butang: kamera terus (capture) dan galeri/fail. Android 14+ tak tunjuk
 // pilihan kamera jika hanya satu input tanpa capture, jadi kena asingkan.
 export const pickerButtons = (prefix, block = false) => `<div class="rc-pickers${block ? ' block' : ''}" id="${prefix}Pick">
-  <label class="btn ghost rc-pick">${icon('camera')}Take photo<input type="file" id="${prefix}Cam" accept="image/*" capture="environment"></label>
-  <label class="btn ghost rc-pick">${icon('image')}Gallery<input type="file" id="${prefix}Gal" accept="image/*"></label>
+  <label class="btn ghost rc-pick">${icon('camera')}${t('Take photo')}<input type="file" id="${prefix}Cam" accept="image/*" capture="environment"></label>
+  <label class="btn ghost rc-pick">${icon('image')}${t('Gallery')}<input type="file" id="${prefix}Gal" accept="image/*"></label>
 </div>`;
 
 // Lihat resit dalam dialog (pautan sementara 10 minit).
@@ -101,27 +102,27 @@ export async function viewReceipt(path) {
   let dlg = document.getElementById('rcDialog');
   if (!dlg) {
     document.body.insertAdjacentHTML('beforeend', `<dialog id="rcDialog" class="rc-dialog">
-      <div class="rc-body"><p class="greet-sub" id="rcStatus">Loading…</p><img id="rcImg" alt="Receipt photo" hidden></div>
+      <div class="rc-body"><p class="greet-sub" id="rcStatus">${t('Loading…')}</p><img id="rcImg" alt="${t('Receipt photo')}" hidden></div>
       <div class="dialog-actions">
-        <a class="btn ghost" id="rcOpen" target="_blank" rel="noopener" hidden>Open full size</a>
-        <button class="btn primary" type="button" id="rcClose">Close</button>
+        <a class="btn ghost" id="rcOpen" target="_blank" rel="noopener" hidden>${t('Open full size')}</a>
+        <button class="btn primary" type="button" id="rcClose">${t('Close')}</button>
       </div></dialog>`);
     dlg = document.getElementById('rcDialog');
     document.getElementById('rcClose').onclick = () => dlg.close();
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
   }
   const img = document.getElementById('rcImg'), st = document.getElementById('rcStatus'), open = document.getElementById('rcOpen');
-  img.hidden = true; open.hidden = true; st.hidden = false; st.textContent = 'Loading…';
+  img.hidden = true; open.hidden = true; st.hidden = false; st.textContent = t('Loading…');
   dlg.showModal();
   const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, 600);
-  if (error || !data?.signedUrl) { st.textContent = 'Could not load the receipt photo. You may not have access to it.'; return; }
+  if (error || !data?.signedUrl) { st.textContent = t('Could not load the receipt photo. You may not have access to it.'); return; }
   img.onload = () => { st.hidden = true; img.hidden = false; };
-  img.onerror = () => { st.textContent = 'Could not load the receipt photo.'; };
+  img.onerror = () => { st.textContent = t('Could not load the receipt photo.'); };
   img.src = data.signedUrl;
   open.href = data.signedUrl; open.hidden = false;
 }
 
 // Butang kecil 📷 pada baris transaksi.
 export const receiptBtn = path => path
-  ? `<button type="button" class="tx-receipt" data-receipt="${esc(path)}" aria-label="View receipt photo" title="View receipt photo">${icon('camera')}</button>`
+  ? `<button type="button" class="tx-receipt" data-receipt="${esc(path)}" aria-label="${t('View receipt photo')}" title="${t('View receipt photo')}">${icon('camera')}</button>`
   : '';

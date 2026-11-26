@@ -2,6 +2,8 @@
 // dan policy RLS, Fasa 12); fail ini hanya untuk paparan: kunci 🔒 dan butang naik taraf.
 import { icon, esc } from './ui.js';
 import { session } from './session.js';
+import { todayKL } from './format.js';
+import { t } from './i18n.js';
 
 export const PLANS = {
   free:     { name: 'Free',     price: 0,  outlets: 1,  staff: 2 },
@@ -17,7 +19,7 @@ export const FEATURES = [
   ['Daily report', true, true, true],
   ['Weekly report', 'This week', true, true],
   ['Monthly & yearly report', false, true, true],
-  ['Report history', '30 days', 'Unlimited', 'Unlimited'],
+  ['Report, Key In & transaction history', 'Last & this month', 'Unlimited', 'Unlimited'],
   ['Staff attendance', true, true, true],
   ['Audit log (owner & admin)', true, true, true],
   ['Food Cost & menu recipes', false, true, true],
@@ -26,11 +28,16 @@ export const FEATURES = [
   ['Compare outlets', false, false, true]
 ];
 
-export const HISTORY_DAYS_FREE = 30;
+// Had pakej Percuma untuk Laporan, Key In dan Sejarah: bulan lepas + bulan ini (dari 1hb bulan lepas).
+// Hanya paparan; rekod lama tidak dipadam dan kembali bila naik taraf.
+export function freeHistoryStart() {
+  const [y, m] = todayKL().split('-').map(Number);
+  return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);   // Jan → 1 Dis tahun lepas
+}
 
 export const planKey = () => session.plan || 'business';
 export const isPro = () => planKey() !== 'free';
-export const planName = () => PLANS[planKey()]?.name || 'Free';
+export const planName = () => t(PLANS[planKey()]?.name || 'Free');
 
 // Hari trial yang tinggal (null jika tiada trial aktif atau sudah berbayar).
 export function trialDaysLeft() {
@@ -46,11 +53,11 @@ export function trialDaysLeft() {
 export function lockCard(title, text) {
   return `<section class="card placeholder lock-card">
     <span class="lock-ic" aria-hidden="true">${icon('lock')}</span>
-    <h2>${esc(title)} is a Pro feature</h2>
-    <p>${esc(text)} Nothing is deleted: your existing records are kept and come back when you upgrade.</p>
-    <a class="btn primary" href="#/pakej">See Pro plan · RM ${PLANS.pro.price}/month</a>
+    <h2>${esc(t('{f} is a Pro feature', { f: t(title) }))}</h2>
+    <p>${esc(t(text))} ${esc(t('Nothing is deleted: your existing records are kept and come back when you upgrade.'))}</p>
+    <a class="btn primary" href="#/pakej">${esc(t('See Pro plan · RM {n}/month', { n: PLANS.pro.price }))}</a>
   </section>`;
 }
 
 // Lencana kecil 🔒 PRO di sebelah label.
-export const proTag = () => `<span class="pro-tag" aria-label="Pro feature">${icon('lock')}PRO</span>`;
+export const proTag = () => `<span class="pro-tag" aria-label="${t('Pro feature')}">${icon('lock')}PRO</span>`;

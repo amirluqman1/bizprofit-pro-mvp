@@ -6,6 +6,7 @@ import { sb, session, ALL_OUTLETS, outletName } from '../session.js';
 import { qty, rm } from '../format.js';
 import { smartListHTML, bindSmartList, openSmartList } from './smartlist.js';
 import { isPro } from '../plan.js';
+import { t, locale } from '../i18n.js';
 
 const SAVE_DELAY = 3000;           // simpan selepas berhenti tekan − / +
 const UNITS = ['kg', 'pcs', 'biji', 'pack', 'kotak', 'botol', 'ekor', 'papan', 'liter', 'g'];
@@ -26,10 +27,10 @@ const find = id => items.find(x => x.id === id);
 const allMode = () => session.outletId === ALL_OUTLETS;
 const canSeeLogs = () => session.isManagerUp;
 const stockChanged = () => window.dispatchEvent(new Event('bp:stock-changed'));
-const errText = e => (e?.code === '23505' ? 'An item with this name already exists in this outlet.' : e?.message || 'Unknown error.');
+const errText = e => (e?.code === '23505' ? t('An item with this name already exists in this outlet.') : e?.message || t('Unknown error.'));
 const catOf = x => x.category || OTHER;
-const catOptions = (sel = OTHER) => [...CATEGORIES, OTHER].map(c => `<option ${c === sel ? 'selected' : ''}>${c}</option>`).join('');
-const unitOptions = (sel = '') => `<option value="" ${sel ? '' : 'selected'}>(no unit)</option>` + UNITS.map(u => `<option ${u === sel ? 'selected' : ''}>${u}</option>`).join('');
+const catOptions = (sel = OTHER) => [...CATEGORIES, OTHER].map(c => `<option value="${c}" ${c === sel ? 'selected' : ''}>${t(c)}</option>`).join('');
+const unitOptions = (sel = '') => `<option value="" ${sel ? '' : 'selected'}>${t('No unit')}</option>` + UNITS.map(u => `<option ${u === sel ? 'selected' : ''}>${u}</option>`).join('');
 const withUnit = (n, x) => (x.unit ? `${n} ${x.unit}` : `${n}`);  // "5 kg" atau "5" bila tiada unit
 
 function cardHTML(x) {
@@ -38,18 +39,18 @@ function cardHTML(x) {
     <div class="item-top">
       <button class="item-name" type="button" data-open="${esc(x.id)}">
         <h3>${esc(x.name)}</h3>
-        <span class="sub">${esc(catOf(x))} · Target ${esc(withUnit(qty(x.target_qty), x))}${prices.has(x.id) ? ' · ' + esc(rm(prices.get(x.id))) + (x.unit ? '/' + esc(x.unit) : ' each') : ''}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
+        <span class="sub">${esc(t(catOf(x)))} · ${t('Target')} ${esc(withUnit(qty(x.target_qty), x))}${prices.has(x.id) ? ' · ' + esc(rm(prices.get(x.id))) + (x.unit ? '/' + esc(x.unit) : ' ' + t('each')) : ''}${allMode() ? ' · ' + esc(outletName(x.outlet_id)) : ''}</span>
       </button>
-      <span class="pill ${st}">${LABEL[st]}</span>
+      <span class="pill ${st}">${t(LABEL[st])}</span>
     </div>
     <div class="item-bottom">
       <div>
-        <button class="qty" type="button" data-open="${esc(x.id)}" aria-label="Type quantity for ${esc(x.name)}">${qty(x.current_qty)}<small>${esc(x.unit)}</small></button>
+        <button class="qty" type="button" data-open="${esc(x.id)}" aria-label="${t('Type quantity for {x}', { x: esc(x.name) })}">${qty(x.current_qty)}<small>${esc(x.unit)}</small></button>
         <span class="saving" data-saving="${esc(x.id)}"></span>
       </div>
       <div class="steppers">
-        <button class="step minus" type="button" data-step="-1" data-id="${esc(x.id)}" aria-label="One less ${esc(x.name)}" ${Number(x.current_qty) <= 0 ? 'disabled' : ''}>−</button>
-        <button class="step plus" type="button" data-step="1" data-id="${esc(x.id)}" aria-label="One more ${esc(x.name)}">+</button>
+        <button class="step minus" type="button" data-step="-1" data-id="${esc(x.id)}" aria-label="${t('One less {x}', { x: esc(x.name) })}" ${Number(x.current_qty) <= 0 ? 'disabled' : ''}>−</button>
+        <button class="step plus" type="button" data-step="1" data-id="${esc(x.id)}" aria-label="${t('One more {x}', { x: esc(x.name) })}">+</button>
       </div>
     </div>
   </div>`;
@@ -59,8 +60,8 @@ function renderSummary() {
   const habis = items.filter(x => status(x) === 'habis').length;
   const rendah = items.filter(x => status(x) === 'rendah').length;
   const parts = [];
-  if (habis) parts.push(`${habis} out of stock`);
-  if (rendah) parts.push(`${rendah} low stock`);
+  if (habis) parts.push(t('{n} out of stock', { n: habis }));
+  if (rendah) parts.push(t('{n} low stock', { n: rendah }));
   const a = $('stokAlert');
   a.textContent = parts.length ? '⚠ ' + parts.join(', ') + '.' : '';
   a.hidden = !parts.length;
@@ -70,7 +71,7 @@ function renderSummary() {
 function renderAll() {
   renderSummary();
   $('stokItems').innerHTML = items.length ? items.map(cardHTML).join('')
-    : '<div class="empty">No items yet' + (allMode() ? '' : ' in this outlet') + '.<br>Tap <b>+ Add</b> to start.</div>';
+    : `<div class="empty">${t(allMode() ? 'No items yet.' : 'No items yet in this outlet.')}<br>${t('Tap <b>+ Add</b> to start.')}</div>`;
 }
 
 function renderCard(id, savingText) {
@@ -99,8 +100,8 @@ async function load() {
   prices = new Map((pr.data || []).map(p => [p.inventory_item_id, Number(p.unit_price)]));
   // Ikut turutan barang ditambah: barang baru sentiasa di bawah.
   // (Dulu disusun ikut status + abjad, jadi barang baru melompat ke atas/tengah.)
-  const t = x => (x.created_at ? Date.parse(x.created_at) : 0);
-  items = (data || []).sort((a, b) => t(a) - t(b) || a.name.localeCompare(b.name, 'ms-MY'));
+  const ts = x => (x.created_at ? Date.parse(x.created_at) : 0);
+  items = (data || []).sort((a, b) => ts(a) - ts(b) || a.name.localeCompare(b.name, 'ms-MY'));
 }
 
 // ---------- − / + : simpan sekali selepas berhenti menekan ----------
@@ -111,7 +112,7 @@ function bump(id, delta) {
   x.current_qty = Math.max(0, Math.round((Number(x.current_qty) + delta) * 1000) / 1000);
   clearTimeout(pending.get(id));
   pending.set(id, setTimeout(() => save(id), SAVE_DELAY));
-  renderCard(id, 'Not saved yet…');
+  renderCard(id, t('Not saved yet…'));
 }
 
 function save(id) {
@@ -127,17 +128,17 @@ async function doSave(id) {
   const x = find(id);
   if (!x) return;
   if (Number(x.current_qty) === x._saved) { setSaving(id, ''); return; }
-  setSaving(id, 'Saving…');
+  setSaving(id, t('Saving…'));
   const { data, error } = await sb.from('inventory_items').update({ current_qty: x.current_qty })
     .eq('id', id).eq('outlet_id', x.outlet_id).select('id');
   if (error || !data?.length) {
     x.current_qty = x._saved;
     renderCard(id, '');
-    toast(error ? 'Save failed: ' + errText(error) : 'No access to edit this item.', 'error');
+    toast(error ? t('Save failed: ') + errText(error) : t('No access to edit this item.'), 'error');
     return;
   }
   x._saved = Number(x.current_qty);
-  renderCard(id, '✓ Saved');
+  renderCard(id, '✓ ' + t('Saved'));
   setTimeout(() => setSaving(id, ''), 1800);
   stockChanged();
 }
@@ -155,54 +156,54 @@ async function savePrice(id, raw) {
 }
 const priceOk = raw => String(raw ?? '').trim() === '' || (Number.isFinite(Number(raw)) && Number(raw) >= 0);
 const priceField = id => session.isAdminUp && isPro()
-  ? `<label class="field">Price per unit (RM) <small>optional · for food cost · only owner &amp; admin see this</small><input id="${id}" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 9.50"></label>` : '';
+  ? `<label class="field">${t('Price per unit (RM)')} <small>${t('optional · for food cost · only owner &amp; admin see this')}</small><input id="${id}" type="number" inputmode="decimal" min="0" step="any" placeholder="${t('e.g. 9.50')}"></label>` : '';
 
 function flushAll() { return Promise.all([...[...pending.keys()].map(save), ...inflight]); }
 
 // ---------- Dialog ----------
 function dialogsHTML() {
   const outletSel = session.isOwner && session.outlets.length > 1
-    ? `<label class="field">Outlet<select id="addOutlet">${session.outlets.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label>` : '';
+    ? `<label class="field">${t('Outlet')}<select id="addOutlet">${session.outlets.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label>` : '';
   return `
   <dialog id="addDialog"><form id="addForm" class="stack" novalidate>
-    <h2>Add item</h2>
-    <p class="note">After saving, only the owner or an admin can change the name, category, unit or "target".</p>
+    <h2>${t('Add item')}</h2>
+    <p class="note">${t('After saving, only the owner or an admin can change the name, category, unit or "target".')}</p>
     ${outletSel}
-    <label class="field">Item name<input id="addName" maxlength="120" placeholder="e.g. Chicken fillet"></label>
+    <label class="field">${t('Item name')}<input id="addName" maxlength="120" placeholder="${t('e.g. Chicken fillet')}"></label>
     <div class="two">
-      <label class="field">Category<select id="addCat">${catOptions()}</select></label>
-      <label class="field">Unit<select id="addUnit">${unitOptions()}</select></label>
+      <label class="field">${t('Category')}<select id="addCat">${catOptions()}</select></label>
+      <label class="field">${t('Unit')}<select id="addUnit">${unitOptions()}</select></label>
     </div>
     <div class="two">
-      <label class="field">In stock<input id="addCurrent" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
-      <label class="field">Target<input id="addTarget" type="number" inputmode="decimal" min="0" step="any" placeholder="20"></label>
+      <label class="field">${t('In stock')}<input id="addCurrent" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
+      <label class="field">${t('Target')}<input id="addTarget" type="number" inputmode="decimal" min="0" step="any" placeholder="20"></label>
     </div>
     ${priceField('addPrice')}
-    <div class="dialog-actions"><button class="btn ghost" type="button" data-close="addDialog">Cancel</button><button class="btn primary" id="addSave">Save</button></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" data-close="addDialog">${t('Cancel')}</button><button class="btn primary" id="addSave">${t('Save')}</button></div>
   </form></dialog>
 
   <dialog id="editDialog"><form id="editForm" class="stack" novalidate>
     <h2 id="editTitle"></h2>
-    <label class="field">In stock now<input id="editCurrent" type="number" inputmode="decimal" min="0" step="any"></label>
+    <label class="field">${t('In stock now')}<input id="editCurrent" type="number" inputmode="decimal" min="0" step="any"></label>
     <div id="ownerFields" class="stack">
-      <label class="field">Item name<input id="editName" maxlength="120"></label>
-      <label class="field">Category<select id="editCat">${catOptions()}</select></label>
+      <label class="field">${t('Item name')}<input id="editName" maxlength="120"></label>
+      <label class="field">${t('Category')}<select id="editCat">${catOptions()}</select></label>
       <div class="two">
-        <label class="field">Unit<select id="editUnit">${unitOptions()}</select></label>
-        <label class="field">Target<input id="editTarget" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field">${t('Unit')}<select id="editUnit">${unitOptions()}</select></label>
+        <label class="field">${t('Target')}<input id="editTarget" type="number" inputmode="decimal" min="0" step="any"></label>
       </div>
       ${priceField('editPrice')}
     </div>
     <p id="editNote" class="note"></p>
     <div class="dialog-actions">
-      <button class="btn ghost" type="button" id="openHistory">History</button>
-      <button class="btn ghost" type="button" data-close="editDialog">Cancel</button>
-      <button class="btn primary" id="editSave">Save</button>
+      <button class="btn ghost" type="button" id="openHistory">${t('History')}</button>
+      <button class="btn ghost" type="button" data-close="editDialog">${t('Cancel')}</button>
+      <button class="btn primary" id="editSave">${t('Save')}</button>
     </div>
   </form></dialog>
 
   <dialog id="historyDialog">
-    <div class="trend-head"><h2 id="historyTitle"></h2><button class="btn ghost" type="button" data-close="historyDialog">Close</button></div>
+    <div class="trend-head"><h2 id="historyTitle"></h2><button class="btn ghost" type="button" data-close="historyDialog">${t('Close')}</button></div>
     <div id="historyList"></div>
   </dialog>`;
 }
@@ -221,8 +222,8 @@ function openEdit(x) {
     $('editTarget').value = x.target_qty;
     $('editPrice').value = prices.has(x.id) ? prices.get(x.id) : '';
   }
-  $('editNote').textContent = session.isAdminUp ? 'Every quantity change is recorded in history.'
-    : `Target: ${withUnit(qty(x.target_qty), x)}. Only the owner or an admin can change the name, category, unit or target.`;
+  $('editNote').textContent = session.isAdminUp ? t('Every quantity change is recorded in history.')
+    : t('Target: {x}. Only the owner or an admin can change the name, category, unit or target.', { x: withUnit(qty(x.target_qty), x) });
   $('openHistory').hidden = !canSeeLogs();
   $('editDialog').showModal();
 }
@@ -231,21 +232,21 @@ async function openHistory() {
   const x = editing;
   if (!x || !canSeeLogs()) return;
   $('editDialog').close();
-  $('historyTitle').textContent = 'History · ' + x.name;
-  $('historyList').innerHTML = '<p class="note">Loading…</p>';
+  $('historyTitle').textContent = t('History') + ' · ' + x.name;
+  $('historyList').innerHTML = `<p class="note">${t('Loading…')}</p>`;
   $('historyDialog').showModal();
   const [{ data, error }, { data: staff }] = await Promise.all([
     sb.from('inventory_stock_logs').select('previous_qty,new_qty,note,changed_by,created_at')
       .eq('inventory_item_id', x.id).order('created_at', { ascending: false }).limit(30),
     sb.from('staff_profiles').select('user_id,role')
   ]);
-  if (error) { $('historyList').innerHTML = `<p class="note">Could not load history: ${esc(error.message)}</p>`; return; }
-  if (!data.length) { $('historyList').innerHTML = '<p class="note">No history yet.</p>'; return; }
+  if (error) { $('historyList').innerHTML = `<p class="note">${t('Could not load history: ')}${esc(error.message)}</p>`; return; }
+  if (!data.length) { $('historyList').innerHTML = `<p class="note">${t('No history yet.')}</p>`; return; }
   const roles = new Map((staff || []).map(s => [s.user_id, s.role]));
-  const roleName = r => ({ owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 'Staff' }[r] || 'Outlet member');
+  const roleName = r => t({ owner: 'Owner', admin: 'Admin', manager: 'Manager', staff: 'Staff' }[r] || 'Outlet member');
   $('historyList').innerHTML = data.map(l => {
-    const who = l.changed_by === session.user.id ? 'You' : roleName(roles.get(l.changed_by));
-    const when = new Date(l.created_at).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' });
+    const who = l.changed_by === session.user.id ? t('You') : roleName(roles.get(l.changed_by));
+    const when = new Date(l.created_at).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' });
     return `<div class="log"><b>${qty(l.previous_qty)} → ${qty(l.new_qty)} ${esc(x.unit)}</b><br>
       <span>${esc(when)} · ${esc(who)}${l.note ? ' · ' + esc(l.note) : ''}</span></div>`;
   }).join('');
@@ -271,7 +272,7 @@ async function copyText(text) {
 async function copyList() {
   await flushAll();
   const perlu = items.filter(x => kurang(x) > 0);
-  if (!perlu.length) { toast('All stock is sufficient. Nothing to buy.'); return; }
+  if (!perlu.length) { toast(t('All stock is sufficient. Nothing to buy.')); return; }
   const groupBy = (list, key) => list.reduce((m, x) => m.set(key(x), [...(m.get(key(x)) || []), x]), new Map());
   const order = [...CATEGORIES, OTHER];
   const block = list => [...groupBy(list, catOf)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
@@ -280,7 +281,7 @@ async function copyList() {
   const text = byOutlet.size > 1 || allMode()
     ? [...byOutlet].map(([oid, list]) => `*${outletName(oid)}*\n\n${block(list)}`).join('\n\n')
     : block(perlu);
-  toast(await copyText(text) ? `Shopping list copied (${perlu.length} items). Paste into WhatsApp.` : 'Copy failed. Try again.',
+  toast(await copyText(text) ? t('Shopping list copied ({n} items). Paste into WhatsApp.', { n: perlu.length }) : t('Copy failed. Try again.'),
     undefined);
 }
 
@@ -290,21 +291,21 @@ export default {
     view.innerHTML = `
       <div id="stokAlert" class="alert" role="status" hidden></div>
       <div class="section-row">
-        <h2 class="section-title">Raw Material Stock</h2>
-        <button class="btn white" id="openAdd" type="button">+ Add</button>
+        <h2 class="section-title">${t('Raw Material Stock')}</h2>
+        <button class="btn white" id="openAdd" type="button">${t('+ Add')}</button>
       </div>
       <div class="tools">
-        <button class="btn primary" id="copyList" type="button">Copy shopping list</button>
-        <button class="btn ghost" id="openSmartList" type="button">List</button>
-        <button class="btn ghost" id="stokRefresh" type="button" aria-label="Refresh">↻</button>
+        <button class="btn primary" id="copyList" type="button">${t('Copy shopping list')}</button>
+        <button class="btn ghost" id="openSmartList" type="button">${t('List')}</button>
+        <button class="btn ghost" id="stokRefresh" type="button" aria-label="${t('Refresh')}">↻</button>
       </div>
       <div id="stokItems"><div class="skel"></div></div>
-      <p class="greet-sub center">Tap the number to type an exact quantity. Every change is recorded.</p>
+      <p class="greet-sub center">${t('Tap the number to type an exact quantity. Every change is recorded.')}</p>
       ${dialogsHTML()}
       ${smartListHTML()}`;
 
     try { await load(); renderAll(); }
-    catch { $('stokItems').innerHTML = '<div class="empty">Could not load stock. Check your internet and tap ↻.</div>'; }
+    catch { $('stokItems').innerHTML = `<div class="empty">${t('Could not load stock. Check your internet and tap ↻.')}</div>`; }
 
     view.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $(b.dataset.close).close()));
     $('stokItems').addEventListener('click', e => {
@@ -314,7 +315,7 @@ export default {
       if (open) openEdit(find(open.dataset.open));
     });
     $('stokRefresh').onclick = async () => {
-      try { await load(); renderAll(); } catch { toast('Could not load stock.', 'error'); }
+      try { await load(); renderAll(); } catch { toast(t('Could not load stock.'), 'error'); }
     };
     $('copyList').onclick = copyList;
     $('openSmartList').onclick = openSmartList;
@@ -338,18 +339,18 @@ export default {
         target_qty: Number($('addTarget').value)
       };
       const ok = v => Number.isFinite(v) && v >= 0;
-      if (!payload.name) { toast('Enter an item name.', 'error'); return; }
+      if (!payload.name) { toast(t('Enter an item name.'), 'error'); return; }
       if ($('addTarget').value.trim() === '' || !ok(payload.current_qty) || !ok(payload.target_qty)) {
-        toast('Please enter a valid quantity (0 or more).', 'error'); return;
+        toast(t('Please enter a valid quantity (0 or more).'), 'error'); return;
       }
-      if ($('addPrice') && !priceOk($('addPrice').value)) { toast('Invalid price.', 'error'); return; }
+      if ($('addPrice') && !priceOk($('addPrice').value)) { toast(t('Invalid price.'), 'error'); return; }
       $('addSave').disabled = true;
       const { data: added, error } = await sb.from('inventory_items').insert(payload).select('id').single();
-      if (error) { $('addSave').disabled = false; toast('Add failed: ' + errText(error), 'error'); return; }
+      if (error) { $('addSave').disabled = false; toast(t('Add failed: ') + errText(error), 'error'); return; }
       const pErr = $('addPrice') ? await savePrice(added.id, $('addPrice').value) : null;
       $('addSave').disabled = false;
       $('addDialog').close();
-      toast(pErr ? 'Item added, but the price was not saved: ' + errText(pErr) : 'Item added.', pErr ? 'error' : undefined);
+      toast(pErr ? t('Item added, but the price was not saved: ') + errText(pErr) : t('Item added.'), pErr ? 'error' : undefined);
       await load(); renderAll(); stockChanged();
     });
 
@@ -359,24 +360,24 @@ export default {
       await flushAll();
       const payload = { current_qty: Number($('editCurrent').value) };
       const ok = v => Number.isFinite(v) && v >= 0;
-      if ($('editCurrent').value.trim() === '' || !ok(payload.current_qty)) { toast('Invalid quantity.', 'error'); return; }
+      if ($('editCurrent').value.trim() === '' || !ok(payload.current_qty)) { toast(t('Invalid quantity.'), 'error'); return; }
       if (session.isAdminUp) {
         payload.name = $('editName').value.trim();
         payload.unit = $('editUnit').value;
         payload.category = $('editCat').value === OTHER ? null : $('editCat').value;
         payload.target_qty = Number($('editTarget').value);
-        if (!payload.name || !ok(payload.target_qty)) { toast('Invalid name or target.', 'error'); return; }
-        if (!priceOk($('editPrice').value)) { toast('Invalid price.', 'error'); return; }
+        if (!payload.name || !ok(payload.target_qty)) { toast(t('Invalid name or target.'), 'error'); return; }
+        if (!priceOk($('editPrice').value)) { toast(t('Invalid price.'), 'error'); return; }
       }
       $('editSave').disabled = true;
       const { data, error } = await sb.from('inventory_items').update(payload)
         .eq('id', editing.id).eq('outlet_id', editing.outlet_id).select('id');
       $('editSave').disabled = false;
-      if (error) { toast('Save failed: ' + errText(error), 'error'); return; }
-      if (!data?.length) { toast('Nothing was saved. You may not have access.', 'error'); return; }
+      if (error) { toast(t('Save failed: ') + errText(error), 'error'); return; }
+      if (!data?.length) { toast(t('Nothing was saved. You may not have access.'), 'error'); return; }
       const pErr = session.isAdminUp ? await savePrice(editing.id, $('editPrice').value) : null;
       $('editDialog').close();
-      toast(pErr ? 'Stock updated, but the price was not saved: ' + errText(pErr) : 'Stock updated.', pErr ? 'error' : undefined);
+      toast(pErr ? t('Stock updated, but the price was not saved: ') + errText(pErr) : t('Stock updated.'), pErr ? 'error' : undefined);
       await load(); renderAll(); stockChanged();
     });
 
