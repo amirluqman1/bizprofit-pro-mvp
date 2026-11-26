@@ -74,7 +74,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 18 (12b, 15, 16, 17 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 19 (12b, 15, 16, 17, 18 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -110,19 +110,14 @@ Setiap kali ubah fail dalam `app/`:
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
 Dikemas kini 26 Nov 2026.
-- **PR #39** (branch `ccr-fb31f6a2-n9sjsg`) BELUM di-merge. Ia gantikan PR #25:
-  had Percuma bulan lepas + bulan ini (app + DB), owner tambah outlet, log keluar peranti ini sahaja,
-  daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan. `sw.js` CACHE = `v40`.
-- **Database production SUDAH aktif** walaupun app belum di-merge: Fasa 12b, 15, 16 (13/13 ujian lulus),
-  17 (29/29 lulus). Satu-satunya syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
-- Selepas merge #39:
-  1. Tutup PR #25 (semua isinya dah masuk #39).
-  2. Pengguna perlu set Supabase → Authentication: benarkan sign-up, dan tambah
-     `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
-  3. Uji dengan login sebenar: Home, Rekod, Gaji, Menu (jemput staf), dan tukar EN ↔ BM.
-- Belum dibuat: ujian `supabase/tests/20261123_fasa15_ujian.sql` (tambah outlet) belum dijalankan;
-  staging kosong. Dialog gambar resit dicipta sekali, jadi teksnya tak bertukar bahasa sehingga muat semula
-  (kecil). Label P&L (Borang B) sengaja dwibahasa.
+- PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
+  sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
+- **Fasa 18 (potongan tidak hadir)** ada di branch kerja tapi migration BELUM di-apply ke production.
+  App versi ini baca kolum baru `employees.absent_rule/absent_workdays/absent_amount` dan
+  `payroll.absent_days/absent_deduction`: **apply migration DULU sebelum merge**, kalau tak halaman Pekerja rosak.
+- Belum dibuat: had "satu hari tak boleh dibayar dua kali" hanya dikawal di app (`covered` dalam `pekerja.js`);
+  database belum halang slip dibayar yang bertindih. Stok simpan nilai mutlak (dua phone serentak boleh hilang
+  satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
 ## Sebelum kata "siap"
 - Buka app dalam Playwright (Chromium dah ada) pada lebar phone dan semak halaman yang berubah, jika boleh login.

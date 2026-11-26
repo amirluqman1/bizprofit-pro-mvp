@@ -24,6 +24,19 @@ const payLabel = e => `${t(PAY_TYPE[e.pay_type][0])} ${rm(e.rate)}${t(PAY_TYPE[e
 // Bilangan minggu dalam tempoh (contoh 7 hari = 1, 30 hari = 4.29)
 const weeksIn = (from, to) => Math.round(((new Date(to) - new Date(from)) / 86400000 + 1) / 7 * 100) / 100;
 const errText = e => e?.message || t('Unknown error.');
+
+// Peraturan tidak hadir (gaji mingguan/bulanan sahaja; upah harian memang tak dibayar bila tak hadir).
+//   penuh  : bayar penuh, tiada potongan automatik
+//   sehari : potong gaji sehari = gaji ÷ hari bekerja (pemilik tetapkan, cth. 26 sebulan)
+//   tetap  : potong RM tetap setiap hari tidak hadir
+// Separuh hari = separuh potongan. Cuti dan hari tidak ditanda tidak dipotong.
+const ABSENT_RULES = { penuh: 'Pay in full (no deduction)', sehari: "Deduct 1 day's pay", tetap: 'Deduct a fixed amount per day' };
+const ABSENT_VALUE = { tidak_hadir: 1, separuh: 0.5 };
+const DEFAULT_WORKDAYS = { mingguan: 6, bulanan: 26 };
+const absentRuleOf = e => (e.pay_type === 'harian' ? 'penuh' : e.absent_rule || 'penuh');
+// Potongan sehari dalam sen (boleh ada pecahan; dibundarkan selepas darab hari).
+const absentPerDay = e => absentRuleOf(e) === 'sehari' ? cents(e.rate) / Number(e.absent_workdays || DEFAULT_WORKDAYS[e.pay_type])
+  : absentRuleOf(e) === 'tetap' ? cents(e.absent_amount) : 0;
 const daysInMonth = iso => Number(endOfMonth(iso).slice(-2));
 
 // Adakah tempoh ini tepat satu kitaran bulan? (1–30 Nov, atau 15 Nov – 14 Dis)
@@ -47,7 +60,7 @@ function monthlyBase(rateCents, days, from, to) {
 }
 
 async function loadEmployees() {
-  let q = sb.from('employees').select('id,outlet_id,name,position,phone,pay_type,rate,ot_rate,is_manager,active').order('name');
+  let q = sb.from('employees').select('id,outlet_id,name,position,phone,pay_type,rate,ot_rate,is_manager,active,absent_rule,absent_workdays,absent_amount').order('name');
   if (session.outletId !== ALL_OUTLETS) q = q.eq('outlet_id', session.outletId);
   const { data, error } = await q;
   if (error) throw error;
@@ -310,7 +323,7 @@ function renderStaffList() {
     <div class="list" id="empList">${sorted.length ? sorted.map(e => `
       <button type="button" class="row-btn emp-row ${e.active ? '' : 'inactive'}" data-edit="${esc(e.id)}">
         ${icon('user')}<span>${esc(e.name)}${e.is_manager ? ` <i class="tag">${t('Management level')}</i>` : ''}${e.active ? '' : ` <i class="tag off">${t('Inactive')}</i>`}
-        <small>${esc([e.position, outletName(e.outlet_id), payLabel(e)].filter(Boolean).join(' · '))}</small></span>${icon('chev-right')}
+        <small>${esc([e.position, outletName(e.outlet_id), payLabel(e), absentRuleOf(e) === 'penuh' ? '' : t('Absent: {x}', { x: rm(fromCents(absentPerDay(e))) + t('/day') })].filter(Boolean).join(' · '))}</small></span>${icon('chev-right')}
       </button>`).join('') : `<div class="empty">${t('No staff yet.')}<br>${t('Tap <b>+ Add staff</b>.')}</div>`}</div>
     ${session.isAdminUp ? '' : '<p class="note-line small">' + icon('lock') + t('Management-level staff are managed only by the owner or an admin.') + '</p>'}`;
   $('empAdd').onclick = () => openEmployee(null);
@@ -330,6 +343,9 @@ function openEmployee(emp) {
   $('empPayType').value = emp?.pay_type || 'harian';
   $('empRate').value = emp ? emp.rate : '';
   $('empOt').value = emp ? emp.ot_rate : 0;
+  $('empAbsRule').value = emp?.absent_rule || 'penuh';
+  $('empAbsDays').value = emp?.absent_workdays || '';
+  $('empAbsAmt').value = emp?.absent_amount ?? '';
   if ($('empManager')) $('empManager').checked = !!emp?.is_manager;
   $('empActiveWrap').hidden = !emp;
   $('empActive').checked = emp ? emp.active : true;
@@ -337,7 +353,20 @@ function openEmployee(emp) {
   $('empDialog').showModal();
 }
 function syncRateLabel() {
-  $('empRateLabel').firstChild.textContent = t(PAY_TYPE[$('empPayType').value][2]);
+  const type = $('empPayType').value;
+  $('empRateLabel').firstChild.textContent = t(PAY_TYPE[type][2]);
+  // Peraturan tidak hadir hanya untuk gaji mingguan/bulanan.
+  const rule = $('empAbsRule').value;
+  $('empAbsBox').hidden = type === 'harian';
+  $('empAbsDaysWrap').hidden = rule !== 'sehari';
+  $('empAbsAmtWrap').hidden = rule !== 'tetap';
+  $('empAbsDaysWrap').firstChild.textContent = t(type === 'mingguan' ? 'Working days per week' : 'Working days per month');
+  if (!$('empAbsDays').value) $('empAbsDays').placeholder = String(DEFAULT_WORKDAYS[type] || 26);
+  const rate = Number($('empRate').value), days = Number($('empAbsDays').value || DEFAULT_WORKDAYS[type]);
+  const perDay = rule === 'sehari' ? (rate > 0 && days > 0 ? rate / days : 0) : Number($('empAbsAmt').value || 0);
+  $('empAbsHint').textContent = rule === 'penuh'
+    ? t('Absent days are shown on the payslip but not deducted. You can still deduct manually under "Deduction".')
+    : t('1 absent day = −{a}, half day = −{h}. Leave and unmarked days are not deducted.', { a: rm(perDay), h: rm(perDay / 2) });
 }
 
 async function saveEmployee(e) {
@@ -351,11 +380,17 @@ async function saveEmployee(e) {
     pay_type: $('empPayType').value,
     rate: Number($('empRate').value),
     ot_rate: Number($('empOt').value || 0),
-    active: $('empActive').checked
+    active: $('empActive').checked,
+    absent_rule: $('empPayType').value === 'harian' ? 'penuh' : $('empAbsRule').value,
+    absent_workdays: null, absent_amount: null
   };
+  if (payload.absent_rule === 'sehari') payload.absent_workdays = Number($('empAbsDays').value || DEFAULT_WORKDAYS[payload.pay_type]);
+  if (payload.absent_rule === 'tetap') payload.absent_amount = Number($('empAbsAmt').value);
   if ($('empManager')) payload.is_manager = $('empManager').checked;
   if (!payload.name) { toast(t('Enter the staff name.'), 'error'); return; }
   if ($('empRate').value.trim() === '' || !(payload.rate >= 0) || !(payload.ot_rate >= 0)) { toast(t('Enter a valid pay rate.'), 'error'); return; }
+  if (payload.absent_rule === 'sehari' && !(Number.isInteger(payload.absent_workdays) && payload.absent_workdays >= 1 && payload.absent_workdays <= 31)) { toast(t('Working days must be a whole number from 1 to 31.'), 'error'); return; }
+  if (payload.absent_rule === 'tetap' && !($('empAbsAmt').value.trim() !== '' && payload.absent_amount >= 0)) { toast(t('Enter the deduction per absent day.'), 'error'); return; }
   $('empSave').disabled = true;
   const res = id
     ? await sb.from('employees').update(payload).eq('id', id).select('id')
@@ -372,7 +407,9 @@ async function saveEmployee(e) {
 // ================= Gaji =================
 // Advance ditolak automatik (maksimum = gaji kasar); lebihan dibawa ke gaji seterusnya.
 function recalc(r) {
-  const gross = Math.max(0, r.base + r.otAmt + r.allow - r.ded);
+  // Potongan tidak hadir tidak boleh jadikan gaji negatif.
+  if (!r.paid) r.absDed = Math.min(r.absFull || 0, Math.max(0, r.base + r.otAmt + r.allow - r.ded));
+  const gross = Math.max(0, r.base + r.otAmt + r.allow - r.ded - r.absDed);
   r.adv = Math.min(r.bal, gross);
   r.net = gross - r.adv;
   return r;
@@ -384,6 +421,7 @@ function slipData(r) {
     : r.payType === 'mingguan' ? [t('Weekly wage ({n} weeks × {r})', { n: r.weeks, r: rm(r.rate) }), money(r.base)]
     : [r.base === cents(r.rate) ? t('Monthly salary') : t('Monthly salary (pro-rated, {r}/month)', { r: rm(r.rate) }), money(r.base)];
   const items = [baseItem, [t('OT ({n} hrs × {r})', { n: r.ot, r: rm(r.otRate) }), money(r.otAmt)], [t('Allowance'), money(r.allow)], [t('Deduction'), '-' + money(r.ded)]];
+  if (r.absDed) items.push([t('Absent deduction ({n} days)', { n: r.absDays }), '-' + money(r.absDed)]);
   if (r.adv) items.push([t('Advance deduction'), '-' + money(r.adv)]);
   const co = outletCompany(r.e.outlet_id);
   return {
@@ -405,9 +443,10 @@ function comboData(list) {
   const items = list.map(r => [
     `${dateRange(r.from, r.to)} · ${r.payType === 'bulanan' ? t('salary') : t('{n} days', { n: r.days })}${r.ot ? ' + ' + t('OT {n} hrs', { n: r.ot }) : ''}${r.paid ? '' : ` (${t('unpaid')})`}`,
     money(r.base + r.otAmt)]);
-  const allow = sum('allow'), ded = sum('ded'), adv = sum('adv');
+  const allow = sum('allow'), ded = sum('ded'), adv = sum('adv'), absDed = sum('absDed');
   if (allow) items.push([t('Allowance (total)'), money(allow)]);
   if (ded) items.push([t('Deduction (total)'), '-' + money(ded)]);
+  if (absDed) items.push([t('Absent deduction (total {n} days)', { n: sum('absDays') }), '-' + money(absDed)]);
   if (adv) items.push([t('Advance deduction (total)'), '-' + money(adv)]);
   const paid = list.filter(r => r.paid);
   const co = outletCompany(r0.e.outlet_id);
@@ -540,7 +579,7 @@ async function renderPayroll() {
     <details class="card adv-box" id="pyAdvances"></details>
     <button class="btn ghost block" id="pyAdvanceBtn" type="button">${t('+ Give advance (early pay)')}</button>
     <div id="pyList" class="list"><div class="skel"></div></div>
-    <p class="note-line small">${icon('lock')}${t('Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full for a full month; shorter periods are pro-rated by calendar days. Deduct absences manually under "Deduction". Paid payslips are locked.')}</p>`;
+    <p class="note-line small">${icon('lock')}${t('Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full for a full month; shorter periods are pro-rated by calendar days. Weekly and monthly absences follow each staff member\'s setting in the Staff tab. Paid payslips are locked.')}</p>`;
 
   $('pyAdvanceBtn').onclick = () => openAdvance(null);
   box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
@@ -580,6 +619,7 @@ async function renderPayroll() {
   const paidRow = (e, slip) => ({ e, slip, paid: true, from: slip.period_start, to: slip.period_end,
     days: Number(slip.days_worked), ot: Number(slip.ot_hours), absent: 0,
     base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction),
+    absDays: Number(slip.absent_days || 0), absDed: cents(slip.absent_deduction), absFull: cents(slip.absent_deduction),
     adv: cents(slip.advance_deduction), bal: Math.max(0, balance.get(e.id) || 0), net: cents(slip.net_amount),
     weeks: weeksIn(slip.period_start, slip.period_end), rate: Number(slip.rate), otRate: Number(slip.ot_rate), payType: slip.pay_type });
 
@@ -600,6 +640,8 @@ async function renderPayroll() {
     const days = mine.reduce((acc, a) => acc + DAY_VALUE[a.status], 0);
     const ot = mine.reduce((acc, a) => acc + Number(a.ot_hours), 0);
     const absent = mine.filter(a => a.status === 'tidak_hadir').length;
+    const absDays = absentRuleOf(e) === 'penuh' ? 0 : mine.reduce((acc, a) => acc + (ABSENT_VALUE[a.status] || 0), 0);
+    const absFull = Math.round(absDays * absentPerDay(e));
     const weeks = covered.size ? Math.round(openDays / 7 * 100) / 100 : weeksIn(state.from, state.to);
     const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate))
       : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate))
@@ -609,7 +651,7 @@ async function renderPayroll() {
     const allow = cents(exact?.allowance), ded = cents(exact?.deduction);
     const bal = Math.max(0, balance.get(e.id) || 0);
     rows.push(recalc({ e, slip: exact, paid: false, from: state.from, to: state.to, partial: covered.size ? openDays : 0,
-      days, ot, absent, weeks, base, otAmt, allow, ded, bal, rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type }));
+      days, ot, absent, absDays, absFull, absDed: 0, weeks, base, otAmt, allow, ded, bal, rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type }));
   });
 
   const total = rows.reduce((acc, r) => acc + r.net, 0);
@@ -634,7 +676,9 @@ async function renderPayroll() {
 
   $('pyList').innerHTML = rows.map((r, i) => {
     const st = r.paid ? `<span class="pill ok">${t('Paid')}</span>` : r.slip ? `<span class="pill rendah">${t('Draft')}</span>` : `<span class="pill">${t('Not saved')}</span>`;
-    const absentNote = r.absent ? ` (${t('{n} days absent', { n: r.absent })})` : '';
+    const absentNote = r.absent && !r.absFull ? ` (${t('{n} days absent', { n: r.absent })})` : '';
+    const absLine = r.absFull
+      ? `<div class="kv"><span>${t('Absent deduction ({n} days)', { n: r.absDays })}</span><b class="neg" data-absded>−${rm(fromCents(r.absDed))}</b></div>` : '';
     const baseLine = r.payType === 'harian'
       ? `<div class="kv"><span>${t('{n} days × {r}', { n: r.days, r: rm(r.rate) })}</span><b>${rm(fromCents(r.base))}</b></div>`
       : r.payType === 'mingguan'
@@ -658,6 +702,7 @@ async function renderPayroll() {
           ? `<div class="kv"><span>${t('Allowance')}</span><b>${rm(fromCents(r.allow))}</b></div><div class="kv"><span>${t('Deduction')}</span><b class="neg">−${rm(fromCents(r.ded))}</b></div>`
           : `<div class="two"><label class="field">${t('Allowance (RM)')}<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.allow)}" data-allow></label>
               <label class="field">${t('Deduction (RM)')}<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.ded)}" data-ded></label></div>`}
+        ${absLine}
         ${advLine}
       </div>
       <div class="kv total"><span>${t('Total')}</span><b data-net>${rm(fromCents(r.net))}</b></div>
@@ -684,13 +729,16 @@ async function renderPayroll() {
     card.querySelector('[data-net]').textContent = rm(fromCents(r.net));
     const advEl = card.querySelector('[data-adv]');
     if (advEl) advEl.textContent = '−' + rm(fromCents(r.adv));
+    const absEl = card.querySelector('[data-absded]');
+    if (absEl) absEl.textContent = '−' + rm(fromCents(r.absDed));
   });
 
   async function saveDraft(r) {
     const payload = {
       employee_id: r.e.id, period_start: state.from, period_end: state.to, pay_type: r.payType,
       rate: r.rate, days_worked: r.days, ot_hours: r.ot, ot_rate: r.otRate,
-      base_amount: fromCents(r.base), ot_amount: fromCents(r.otAmt), allowance: fromCents(r.allow), deduction: fromCents(r.ded)
+      base_amount: fromCents(r.base), ot_amount: fromCents(r.otAmt), allowance: fromCents(r.allow), deduction: fromCents(r.ded),
+      absent_days: r.absDays || 0, absent_deduction: fromCents(r.absDed || 0)
     };
     const res = r.slip
       ? await sb.from('payroll').update(payload).eq('id', r.slip.id).select('id').maybeSingle()
@@ -788,6 +836,13 @@ function dialogsHTML() {
       <label class="field" id="empRateLabel">${t('Daily wage (RM)')}<input id="empRate" type="number" inputmode="decimal" min="0" step="0.01"></label>
     </div>
     <label class="field">${t('OT rate per hour (RM)')}<input id="empOt" type="number" inputmode="decimal" min="0" step="0.01" value="0"></label>
+    <fieldset class="field plain" id="empAbsBox">
+      <legend>${t('If absent')}</legend>
+      <select id="empAbsRule" aria-label="${t('If absent')}">${Object.entries(ABSENT_RULES).map(([k, v]) => `<option value="${k}">${t(v)}</option>`).join('')}</select>
+      <label class="field" id="empAbsDaysWrap">${t('Working days per month')}<input id="empAbsDays" type="number" inputmode="numeric" min="1" max="31" step="1"></label>
+      <label class="field" id="empAbsAmtWrap">${t('Deduction per absent day (RM)')}<input id="empAbsAmt" type="number" inputmode="decimal" min="0" step="0.01"></label>
+      <p class="note small" id="empAbsHint"></p>
+    </fieldset>
     ${session.isAdminUp ? `<label class="check"><input type="checkbox" id="empManager"> ${t('Management level')} <small>${t('(pay visible to owner &amp; admin only)')}</small></label>` : ''}
     <label class="check" id="empActiveWrap"><input type="checkbox" id="empActive" checked> ${t('Still working (active)')}</label>
     <div class="dialog-actions"><button class="btn ghost" type="button" data-close="empDialog">${t('Cancel')}</button><button class="btn primary" id="empSave">${t('Save')}</button></div>
@@ -859,6 +914,7 @@ function bindDialogs(view) {
   $('pdfShare').onclick = sharePdf;
   $('advForm').addEventListener('submit', saveAdvance);
   view.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $(b.dataset.close).close()));
-  $('empPayType').addEventListener('change', syncRateLabel);
+  ['empPayType', 'empAbsRule'].forEach(id => $(id).addEventListener('change', syncRateLabel));
+  ['empRate', 'empAbsDays', 'empAbsAmt'].forEach(id => $(id).addEventListener('input', syncRateLabel));
   $('empForm').addEventListener('submit', saveEmployee);
 }
