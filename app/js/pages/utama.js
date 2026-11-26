@@ -141,7 +141,7 @@ function attentionHTML(stock, fcAlerts) {
       <a class="pill ${f.pct > 40 ? 'crit' : 'warn'}" href="#/foodcost">${t('Review')}</a></li>`),
     ...stock.slice(0, STOCK_SHOWN).map(x => `<li><span class="alert-ic ${x.st === 'habis' ? 'crit' : 'warn'}" aria-hidden="true">${icon('box')}</span>
       <div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="m">${x.st === 'habis' ? t('Out of stock') : `${qty(x.current_qty)}${x.unit ? ' ' + esc(x.unit) : ''} ${t('left')}`} · ${t('target')} ${qty(x.target_qty)}${x.unit ? ' ' + esc(x.unit) : ''}${session.outletId === ALL_OUTLETS ? ' · ' + esc(outletName(x.outlet_id)) : ''}</div></div>
-      <span class="pill ${x.st === 'habis' ? 'crit' : 'warn'}">${x.st === 'habis' ? t('Out') : t('Low')}</span></li>`)
+      <span class="pill ${x.st === 'habis' ? 'crit' : 'warn'}">${x.st === 'habis' ? t('None left') : t('Low')}</span></li>`)
   ];
   if (!items.length) return `<li><span class="empty-row">${t('All good. Nothing needs attention right now.')}</span></li>`;
   return items.join('');
