@@ -110,16 +110,15 @@ Setiap kali ubah fail dalam `app/`:
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
 Dikemas kini 26 Nov 2026.
-- **PR #39** (branch `ccr-fb31f6a2-n9sjsg`) BELUM di-merge. Ia gantikan PR #25:
-  had Percuma bulan lepas + bulan ini (app + DB), owner tambah outlet, log keluar peranti ini sahaja,
-  daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan. `sw.js` CACHE = `v40`.
-- **Database production SUDAH aktif** walaupun app belum di-merge: Fasa 12b, 15, 16 (13/13 ujian lulus),
-  17 (29/29 lulus). Satu-satunya syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
-- Selepas merge #39:
-  1. Tutup PR #25 (semua isinya dah masuk #39).
-  2. Pengguna perlu set Supabase → Authentication: benarkan sign-up, dan tambah
-     `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
-  3. Uji dengan login sebenar: Home, Rekod, Gaji, Menu (jemput staf), dan tukar EN ↔ BM.
+- **PR #39 sudah di-merge** ke `main` dan live (`sw.js` CACHE = `v40`); PR #25 ditutup (isinya dalam #39).
+  Isi: had Percuma bulan lepas + bulan ini (app + DB), owner tambah outlet, log keluar peranti ini sahaja,
+  daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan.
+- Database production aktif: Fasa 12b, 15, 16 (13/13 ujian lulus), 17 (29/29 lulus). Satu-satunya
+  syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
+- Perlu tindakan pengguna: Supabase → Authentication: benarkan sign-up, dan tambah
+  `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
+- Belum diuji dengan login sebenar (hanya Supabase palsu + skrin log masuk live). Uji: Home, Rekod, Gaji,
+  Menu (jemput staf), dan tukar EN ↔ BM.
 - Belum dibuat: ujian `supabase/tests/20261123_fasa15_ujian.sql` (tambah outlet) belum dijalankan;
   staging kosong. Dialog gambar resit dicipta sekali, jadi teksnya tak bertukar bahasa sehingga muat semula
   (kecil). Label P&L (Borang B) sengaja dwibahasa.
