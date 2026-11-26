@@ -24,6 +24,27 @@ const payLabel = e => `${t(PAY_TYPE[e.pay_type][0])} ${rm(e.rate)}${t(PAY_TYPE[e
 // Bilangan minggu dalam tempoh (contoh 7 hari = 1, 30 hari = 4.29)
 const weeksIn = (from, to) => Math.round(((new Date(to) - new Date(from)) / 86400000 + 1) / 7 * 100) / 100;
 const errText = e => e?.message || t('Unknown error.');
+const daysInMonth = iso => Number(endOfMonth(iso).slice(-2));
+
+// Adakah tempoh ini tepat satu kitaran bulan? (1–30 Nov, atau 15 Nov – 14 Dis)
+function isMonthCycle(from, to) {
+  const d = Number(from.slice(-2));
+  if (d === 1) return to === endOfMonth(from);
+  const next = addDays(endOfMonth(from), 1);                 // 1hb bulan berikutnya
+  const day = Math.min(d - 1, daysInMonth(next));
+  return to === next.slice(0, 8) + String(day).padStart(2, '0');
+}
+
+// Gaji bulanan (sen) untuk hari yang belum dibayar.
+// Satu kitaran bulan penuh = gaji penuh. Tempoh lain dikira pro-rata ikut hari kalendar:
+// setiap hari bernilai gaji ÷ bilangan hari bulan itu (Nov = 30, Dis = 31).
+// Contoh: gaji RM2,000, tempoh 7 hari dalam November = 2000 × 7/30 = RM466.67.
+function monthlyBase(rateCents, days, from, to) {
+  const cycle = isMonthCycle(from, to);
+  const total = (to < from) ? 0 : Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+  const share = days.reduce((acc, d) => acc + (cycle ? 1 / total : 1 / daysInMonth(d)), 0);
+  return Math.round(rateCents * share);
+}
 
 async function loadEmployees() {
   let q = sb.from('employees').select('id,outlet_id,name,position,phone,pay_type,rate,ot_rate,is_manager,active').order('name');
@@ -361,7 +382,7 @@ function slipData(r) {
   const money = c => rm(fromCents(c));
   const baseItem = r.payType === 'harian' ? [t('Daily wage ({n} days × {r})', { n: r.days, r: rm(r.rate) }), money(r.base)]
     : r.payType === 'mingguan' ? [t('Weekly wage ({n} weeks × {r})', { n: r.weeks, r: rm(r.rate) }), money(r.base)]
-    : [t('Monthly salary'), money(r.base)];
+    : [r.base === cents(r.rate) ? t('Monthly salary') : t('Monthly salary (pro-rated, {r}/month)', { r: rm(r.rate) }), money(r.base)];
   const items = [baseItem, [t('OT ({n} hrs × {r})', { n: r.ot, r: rm(r.otRate) }), money(r.otAmt)], [t('Allowance'), money(r.allow)], [t('Deduction'), '-' + money(r.ded)]];
   if (r.adv) items.push([t('Advance deduction'), '-' + money(r.adv)]);
   const co = outletCompany(r.e.outlet_id);
@@ -519,7 +540,7 @@ async function renderPayroll() {
     <details class="card adv-box" id="pyAdvances"></details>
     <button class="btn ghost block" id="pyAdvanceBtn" type="button">${t('+ Give advance (early pay)')}</button>
     <div id="pyList" class="list"><div class="skel"></div></div>
-    <p class="note-line small">${icon('lock')}${t('Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full; deduct absences manually under "Deduction". Paid payslips are locked.')}</p>`;
+    <p class="note-line small">${icon('lock')}${t('Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full for a full month; shorter periods are pro-rated by calendar days. Deduct absences manually under "Deduction". Paid payslips are locked.')}</p>`;
 
   $('pyAdvanceBtn').onclick = () => openAdvance(null);
   box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
@@ -582,7 +603,7 @@ async function renderPayroll() {
     const weeks = covered.size ? Math.round(openDays / 7 * 100) / 100 : weeksIn(state.from, state.to);
     const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate))
       : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate))
-      : Math.round(cents(e.rate) * openDays / allDays.length);
+      : monthlyBase(cents(e.rate), allDays.filter(d => !covered.has(d)), state.from, state.to);
     const otAmt = Math.round(ot * cents(e.ot_rate));
     if (covered.size && !exact && base + otAmt === 0) return;  // baki hari tiada gaji
     const allow = cents(exact?.allowance), ded = cents(exact?.deduction);
@@ -618,7 +639,7 @@ async function renderPayroll() {
       ? `<div class="kv"><span>${t('{n} days × {r}', { n: r.days, r: rm(r.rate) })}</span><b>${rm(fromCents(r.base))}</b></div>`
       : r.payType === 'mingguan'
       ? `<div class="kv"><span>${t('{n} weeks × {r}', { n: r.weeks, r: rm(r.rate) })}${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`
-      : `<div class="kv"><span>${t('Monthly salary')}${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`;
+      : `<div class="kv"><span>${r.base === cents(r.rate) ? t('Monthly salary') : t('Monthly salary (pro-rated, {r}/month)', { r: rm(r.rate) })}${absentNote}</span><b>${rm(fromCents(r.base))}</b></div>`;
     const advLine = (r.adv || r.bal)
       ? `<div class="kv"><span>${t('Advance deduction')}${r.paid ? '' : ` (${t('balance')} ${rm(fromCents(r.bal))})`}</span><b class="neg" data-adv>−${rm(fromCents(r.adv))}</b></div>` : '';
     const own = r.from !== state.from || r.to !== state.to;
