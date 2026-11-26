@@ -37,6 +37,10 @@ harga lama masih boleh dibaca. Pengecualian: transaksi untuk Free terhad kepada 
 - `app/js/router.js`: navigasi hash (`#/rekod`). Senarai `PAGES` = halaman + `roles` + `tab`.
 - `app/js/pages/*.js`: satu fail satu halaman; eksport `{ render(view) }` yang pulangkan fungsi `cleanup` (pilihan).
 - `app/js/ui.js` (`$`, `esc`, `icon`, `toast`, `store`), `format.js` (`todayKL`, `rm`, `sen`, `addDays`), `session.js` (`session.role`, `session.plan`, `session.isManagerUp`).
+- `app/js/auth.js`: skrin log masuk, daftar, lupa/set semula kata laluan, sediakan syarikat, pautan jemputan (`?invite=TOKEN`).
+- `app/js/members.js`: Menu → akaun pengguna & jemput staf (owner/admin). `app/js/receipt.js`: gambar resit (Pro).
+- `app/js/i18n.js` (`t`, `getLang`, `setLang`, `locale`) + `app/js/i18n-ms.js` (kamus BM, ~760 entri).
+- `app/js/plan.js`: `freeHistoryStart()` = had tarikh Percuma di app (mesti sama dengan `history_floor()` di DB).
 - `app/css/app.css`: semua gaya. `app/sw.js`: service worker.
 - `supabase/migrations/`: `YYYYMMDD_faseN_nama.sql`. `supabase/tests/`: `YYYYMMDD_faseN_ujian.sql`.
 - `design/`: konsep reka bentuk sahaja, bukan sebahagian app.
@@ -71,6 +75,27 @@ Setiap kali ubah fail dalam `app/`:
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
   tunggu bahagian app siap dulu. Nombor fasa seterusnya: 18 (12b, 15, 16, 17 sudah digunakan).
+- Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
+  15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
+- Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
+  sama ada sesuatu fasa dah aktif, semak objeknya (table/policy/fungsi) dengan `select`, bukan senarai migration.
+- Projek Supabase: production `seducczotbziwhmugkrw`; staging `wphdvtmrsveoyksmewuk` (masih kosong, tiada skema).
+- Jalankan ujian melalui `execute_sql`: hasil keluar sebagai "error" `HASIL UJIAN (n gagal)`, itu normal.
+  Data ujian tak boleh guna syarikat B tanpa kategori & kaedah bayaran (FK), dan `created_by` wajib.
+- Tool Supabase (apply migration / SQL yang ubah data) minta pengesahan pengguna dalam app. Di app phone
+  kotak itu mungkin tak muncul dan tamat masa: minta pengguna buka sesi di komputer.
+
+## Cara uji app tanpa login sebenar (terbukti berjaya)
+- Tiada akaun ujian. Uji dengan Playwright + Supabase palsu: `python3 -m http.server 8765` dari root repo,
+  buka `http://localhost:8765/app/`, `page.route('**/*.supabase.co/**', ...)` pulangkan data palsu
+  (header `Accept: application/vnd.pgrst.object+json` = satu objek; `rpc/current_plan` = pakej).
+- Sesi palsu: `localStorage['sb-seducczotbziwhmugkrw-auth-token']` = JSON sesi dengan `expires_at` masa depan.
+  Bahasa: `localStorage['bp.lang'] = 'ms'`.
+- `cdn.jsdelivr.net` disekat proxy dalam sandbox: ambil supabase-js versi sama dengan
+  `npm pack @supabase/supabase-js@2.81.1` (dalam scratchpad, bukan repo) dan `route.fulfill({ path })`.
+- Tangkap `pageerror`; lawati setiap halaman untuk owner (Business & Free), staff, EN & BM, lebar 375px.
+- `node --check` TIDAK tangkap import berganda / nama import yang tiada. Semak import secara statik
+  (setiap nama yang di-import mesti dieksport fail sumber), kalau tak app terus tak boleh dibuka.
 
 ## Skills (`.claude/skills/`)
 - 3 skill dari obra/superpowers (MIT): `systematic-debugging`, `verification-before-completion`,
@@ -82,6 +107,22 @@ Setiap kali ubah fail dalam `app/`:
 - Kerja di branch kerja (bukan terus ke `main`); `main` = production (GitHub Pages).
 - Commit message dalam English, ringkas, mula dengan kawasan: `Payroll: ...`, `Report: ...`, `Key In: ...`, `Stock: ...`.
 - Satu commit satu perubahan yang logik.
+
+## Status semasa (kemas kini atau buang bahagian ini bila selesai)
+Dikemas kini 26 Nov 2026.
+- **PR #39** (branch `ccr-fb31f6a2-n9sjsg`) BELUM di-merge. Ia gantikan PR #25:
+  had Percuma bulan lepas + bulan ini (app + DB), owner tambah outlet, log keluar peranti ini sahaja,
+  daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan. `sw.js` CACHE = `v40`.
+- **Database production SUDAH aktif** walaupun app belum di-merge: Fasa 12b, 15, 16 (13/13 ujian lulus),
+  17 (29/29 lulus). Satu-satunya syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
+- Selepas merge #39:
+  1. Tutup PR #25 (semua isinya dah masuk #39).
+  2. Pengguna perlu set Supabase → Authentication: benarkan sign-up, dan tambah
+     `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
+  3. Uji dengan login sebenar: Home, Rekod, Gaji, Menu (jemput staf), dan tukar EN ↔ BM.
+- Belum dibuat: ujian `supabase/tests/20261123_fasa15_ujian.sql` (tambah outlet) belum dijalankan;
+  staging kosong. Dialog gambar resit dicipta sekali, jadi teksnya tak bertukar bahasa sehingga muat semula
+  (kecil). Label P&L (Borang B) sengaja dwibahasa.
 
 ## Sebelum kata "siap"
 - Buka app dalam Playwright (Chromium dah ada) pada lebar phone dan semak halaman yang berubah, jika boleh login.
