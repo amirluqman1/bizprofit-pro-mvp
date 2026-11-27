@@ -120,6 +120,12 @@ Dikemas kini 27 Nov 2026.
   (satu hari tak boleh dibayar dua kali, dikunci di DB; 17 slip lama = 128 hari diisi). App untuk Fasa 18 ada di
   branch `ccr-ddc75022-j732jq`, BELUM di-merge. Sebelum merge, app lama di `main` tak hantar `open_days`, jadi
   bayar baki hari selepas slip lain yang bertindih akan ditolak DB (selamat, cuma menyusahkan): merge segera.
+- **Rancangan POS (perbincangan, belum dibina)**: BizProfit jadi back office untuk owner + admin sahaja (manager
+  tak disarankan); maksimum 2 admin seoutlet untuk Pro, lebih perlu pakej lain (BELUM dikuatkuasa: sekarang
+  `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
+  sama (jualan masuk terus ke transaksi, tolak stok ikut `menu_ingredients`). Peranti: tablet Android + printer
+  ZyWell Z58-III (58mm, USB + Bluetooth, ESC/POS). Offline WAJIB. Halaman ujian: `pos/uji-printer.html`
+  (BLE terus / RawBT / WebUSB). e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
 - Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
   satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
