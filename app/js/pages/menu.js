@@ -29,7 +29,7 @@ export default {
 
       <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>${t('Plan')}: ${esc(planName())}<small>${trialDaysLeft() ? t('Pro trial · {n} days left', { n: trialDaysLeft() }) : t('Compare plans and upgrade')}</small></span>${icon('chev-right')}</a></div>
 
-      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>${t('Profit &amp; Loss statement')} ${isPro() ? '' : proTag()}<small>${t('Yearly statement per business, laid out like LHDN Form B')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>${t('Food Cost')} ${isPro() ? '' : proTag()}<small>${t('Cost per plate, menu margins and food cost %')}</small></span>${icon('chev-right')}</a></div>` : ''}
+      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>${t('Profit &amp; Loss statement')} ${isPro() ? '' : proTag()}<small>${t('Yearly statement per business, laid out like LHDN Form B')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/pos">${icon('cart')}<span>${t('POS (counter)')}<small>${t('POS settings, menu and sold-out items')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>${t('Food Cost')} ${isPro() ? '' : proTag()}<small>${t('Cost per plate, menu margins and food cost %')}</small></span>${icon('chev-right')}</a></div>` : ''}
 
       <div class="list">
         ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>${t('Install app')}<small>${t('Add BizProfit Pro to your phone home screen')}</small></span></button>`}

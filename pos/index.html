@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<title>BizProfit POS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%231E3A8A'/%3E%3Cpath d='M22 72V56M38 72V46M54 72V36M70 72V24' stroke='%2310B981' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="./pos.css">
+</head>
+<body>
+  <div id="boot" class="boot"><p data-i18n="Loading…">Loading…</p></div>
+
+  <!-- Log masuk (akaun yang sama dengan BizProfit) -->
+  <section id="login" class="login" hidden>
+    <form id="loginForm" class="card stack" novalidate>
+      <h1>BizProfit <span class="accent">POS</span></h1>
+      <p class="muted" data-i18n="Log in with your BizProfit account.">Log in with your BizProfit account.</p>
+      <label class="field"><span data-i18n="Email">Email</span><input id="loginEmail" type="email" autocomplete="username" required></label>
+      <label class="field"><span data-i18n="Password">Password</span><input id="loginPw" type="password" autocomplete="current-password" required></label>
+      <p id="loginMsg" class="err" hidden></p>
+      <button class="btn primary big" id="loginBtn" data-i18n="Log in">Log in</button>
+    </form>
+  </section>
+
+  <!-- Pilih outlet (owner/admin yang ada lebih dari satu outlet) -->
+  <section id="pickOutlet" class="login" hidden>
+    <div class="card stack"><h1 data-i18n="Choose outlet">Choose outlet</h1><div id="outletList" class="stack"></div></div>
+  </section>
+
+  <div id="app" class="app" hidden>
+    <header class="top">
+      <div class="brand"><b>POS</b><span id="topOutlet"></span></div>
+      <nav class="tabs" aria-label="POS">
+        <button type="button" class="tab on" data-view="order" data-i18n="Order">Order</button>
+        <button type="button" class="tab" data-view="bills"><span data-i18n="Open bills">Open bills</span> <i id="billCount" class="count" hidden></i></button>
+        <button type="button" class="tab" data-view="today" data-i18n="Today">Today</button>
+      </nav>
+      <div class="top-actions">
+        <button type="button" id="printerBtn" class="chip"><span class="dot"></span><span id="printerLabel" data-i18n="Printer">Printer</span></button>
+        <button type="button" id="moreBtn" class="chip" aria-label="Menu">☰</button>
+      </div>
+    </header>
+
+    <!-- Order: menu (kiri) + troli (kanan) -->
+    <main id="viewOrder" class="order">
+      <section class="menu-pane">
+        <div id="cats" class="cats" role="tablist"></div>
+        <div id="menuGrid" class="menu-grid"></div>
+      </section>
+      <aside id="cart" class="cart">
+        <div class="cart-head">
+          <button type="button" class="btn link cart-close" id="cartClose" data-i18n="‹ Back to menu">‹ Back to menu</button>
+          <div class="seg" role="group">
+            <button type="button" class="seg-opt on" data-type="makan_sini" data-i18n="Dine in">Dine in</button>
+            <button type="button" class="seg-opt" data-type="bungkus" data-i18n="Takeaway">Takeaway</button>
+          </div>
+          <div class="cart-meta">
+            <input id="tableNo" maxlength="20" inputmode="numeric" hidden>
+            <input id="billLabel" maxlength="40">
+          </div>
+          <p id="cartInfo" class="muted small"></p>
+        </div>
+        <div id="cartLines" class="cart-lines"></div>
+        <div class="cart-foot">
+          <div class="total"><span data-i18n="Total">Total</span><b id="cartTotal">RM 0.00</b></div>
+          <div class="cart-btns">
+            <button type="button" class="btn ghost" id="saveBill" data-i18n="Save bill">Save bill</button>
+            <button type="button" class="btn primary big" id="payBtn" data-i18n="Pay">Pay</button>
+          </div>
+          <div class="cart-btns small-btns">
+            <button type="button" class="btn link" id="newOrder" data-i18n="New order">New order</button>
+            <button type="button" class="btn link danger" id="voidBill" hidden data-i18n="Cancel bill">Cancel bill</button>
+          </div>
+        </div>
+      </aside>
+      <button type="button" id="cartBar" class="cart-bar"><span id="cartBarText"></span><b id="cartBarTotal"></b></button>
+    </main>
+
+    <main id="viewBills" class="list-view" hidden></main>
+    <main id="viewToday" class="list-view" hidden></main>
+  </div>
+
+  <!-- Bayar -->
+  <dialog id="payDialog">
+    <div class="stack">
+      <h2><span data-i18n="Pay">Pay</span> <b id="payTotal" class="accent"></b></h2>
+      <div id="payMethods" class="methods"></div>
+      <div id="cashBox" class="stack" hidden>
+        <label class="field"><span data-i18n="Cash received (RM)">Cash received (RM)</span><input id="cashIn" type="number" inputmode="decimal" min="0" step="0.01"></label>
+        <div id="quickCash" class="quick"></div>
+        <div class="change"><span data-i18n="Change">Change</span><b id="changeOut">RM 0.00</b></div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close="payDialog" data-i18n="Back">Back</button>
+        <button type="button" class="btn primary big" id="payConfirm" disabled data-i18n="Confirm payment">Confirm payment</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Selesai bayar -->
+  <dialog id="doneDialog">
+    <div class="stack center">
+      <p class="muted" data-i18n="Paid">Paid</p>
+      <p id="doneTotal" class="done-total"></p>
+      <p id="doneChange" class="done-change"></p>
+      <p id="donePrint" class="muted small"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="reprint" data-i18n="Print again">Print again</button>
+        <button type="button" class="btn primary big" id="doneNext" data-i18n="Next order">Next order</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Nota item -->
+  <dialog id="noteDialog">
+    <form id="noteForm" class="stack" method="dialog">
+      <h2 id="noteTitle"></h2>
+      <input id="noteIn" maxlength="100">
+      <div class="quick" id="noteQuick"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close="noteDialog" data-i18n="Cancel">Cancel</button>
+        <button class="btn primary" data-i18n="Save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Menu lain -->
+  <dialog id="moreDialog">
+    <div class="stack">
+      <p class="muted small" id="whoami"></p>
+      <div class="seg" role="group"><button type="button" class="seg-opt" data-lang="en">EN</button><button type="button" class="seg-opt" data-lang="ms">BM</button></div>
+      <button type="button" class="btn ghost" id="changeOutlet" data-i18n="Change outlet">Change outlet</button>
+      <a class="btn ghost" href="../app/" data-i18n="Open BizProfit">Open BizProfit</a>
+      <button type="button" class="btn ghost danger" id="logout" data-i18n="Log out">Log out</button>
+      <button type="button" class="btn link" data-close="moreDialog" data-i18n="Close">Close</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="../config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.81.1/dist/umd/supabase.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

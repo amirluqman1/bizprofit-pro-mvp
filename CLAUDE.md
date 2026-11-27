@@ -43,6 +43,8 @@ harga lama masih boleh dibaca. Pengecualian: transaksi untuk Free terhad kepada 
 - `app/js/plan.js`: `freeHistoryStart()` = had tarikh Percuma di app (mesti sama dengan `history_floor()` di DB).
 - `app/css/app.css`: semua gaya. `app/sw.js`: service worker.
 - `supabase/migrations/`: `YYYYMMDD_faseN_nama.sql`. `supabase/tests/`: `YYYYMMDD_faseN_ujian.sql`.
+- `pos/`: app POS kaunter (tablet). Import modul dari `../../app/js/`; teks juga guna `t()` + `i18n-ms.js`.
+  Resit ESC/POS ASCII sahaja, 32 aksara sebaris (`pos/js/printer.js`). `pos/uji-printer.html` = halaman ujian printer.
 - `design/`: konsep reka bentuk sahaja, bukan sebahagian app.
 - `index.html` & `inventory-emerald-v1.html` di root hanya melencong ke `app/`.
 
@@ -74,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 19 (12b, 15, 16, 17, 18 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 20 (12b, 15, 16, 17, 18, 19 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -118,12 +120,21 @@ Dikemas kini 27 Nov 2026.
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
 - **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
   (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
+- **Fasa 19 (POS database) AKTIF di production** (27 Nov, ujian GAGAL 0 di production). App POS dalam PR #43.
+  App: `pos/` (index.html, pos.css, js/app.js, js/printer.js; guna semula `app/js/` ui/session/format/i18n) dan
+  halaman BizProfit `app/js/pages/pos.js` (#/pos, owner/admin). POS belum ada service worker (offline ditangguh). Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
+  kaedah bayar = semua `payment_methods`, kategori "Jualan POS", 1 order = 1 transaksi (paparan ringkasan harian di
+  Rekod: keputusan nanti), slip dapur dicetak pada printer sama (On/Off), staff boleh buang item bil terbuka (direkod),
+  batal order berisi/dibayar = owner/admin + sebab. Kemudian: diskaun/SST, had pakej, offline, Key In manager+ sahaja
+  (buang Key In staff HANYA selepas POS jalan).
 - **Rancangan POS (perbincangan, belum dibina)**: BizProfit jadi back office untuk owner + admin sahaja (manager
   tak disarankan); maksimum 2 admin seoutlet untuk Pro, lebih perlu pakej lain (BELUM dikuatkuasa: sekarang
   `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
   sama (jualan masuk terus ke transaksi, tolak stok ikut `menu_ingredients`). Peranti: tablet Android + printer
   ZyWell Z58-III (58mm, USB + Bluetooth, ESC/POS). Offline WAJIB. Halaman ujian: `pos/uji-printer.html`
-  (BLE terus / RawBT / WebUSB). e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
+  (BLE terus / RawBT / WebUSB). **Terbukti 27 Nov: Web Bluetooth (BLE) terus dari Chrome tablet BERJAYA cetak**,
+  tanpa RawBT. Printer dikesan sebagai "Printer001"; servis `000018f0-...`, tulis ke `00002af1-0000-1000-8000-00805f9b34fb`
+  (writeWithoutResponse), 301 bait dalam potongan 100 bait OK. e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
 - Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
   satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 

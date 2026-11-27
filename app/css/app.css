@@ -942,3 +942,13 @@ a.h-tile:active { transform: scale(.99); }
 #mbLink { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--input); color: var(--muted); font-size: 13px; }
 #mbWa { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; text-decoration: none; }
 @media (max-width: 420px) { .mb-row { grid-template-columns: auto minmax(0, 1fr); } .mb-acts, .mb-row > .btn { grid-column: 2; justify-self: start; } }
+
+/* ---------- POS (back office) ---------- */
+.pm-cat { margin: 10px 2px 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.pm-row { display: flex; align-items: center; gap: 10px; }
+.pm-row .pm-main { flex: 1; min-width: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; }
+.pm-row .pm-main span { display: grid; }
+.pm-row .pill { cursor: pointer; flex: none; border: 0; color: var(--red); background: var(--red-bg); }
+.pm-row .pill.ok { color: var(--mint); background: var(--good-soft); }
+.pm-row.inactive .pm-main { opacity: .55; }
+a.btn { text-decoration: none; }
