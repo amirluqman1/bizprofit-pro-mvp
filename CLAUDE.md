@@ -115,28 +115,67 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 27 Nov 2026.
-- PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
-  sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
-- **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
-  (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
-- **Fasa 19 (POS database) AKTIF di production** (27 Nov, ujian GAGAL 0 di production). App POS dalam PR #43.
-  App: `pos/` (index.html, pos.css, js/app.js, js/printer.js; guna semula `app/js/` ui/session/format/i18n) dan
-  halaman BizProfit `app/js/pages/pos.js` (#/pos, owner/admin). POS belum ada service worker (offline ditangguh). Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
-  kaedah bayar = semua `payment_methods`, kategori "Jualan POS", 1 order = 1 transaksi (paparan ringkasan harian di
-  Rekod: keputusan nanti), slip dapur dicetak pada printer sama (On/Off), staff boleh buang item bil terbuka (direkod),
-  batal order berisi/dibayar = owner/admin + sebab. Kemudian: diskaun/SST, had pakej, offline, Key In manager+ sahaja
-  (buang Key In staff HANYA selepas POS jalan).
-- **Rancangan POS (perbincangan, belum dibina)**: BizProfit jadi back office untuk owner + admin sahaja (manager
-  tak disarankan); maksimum 2 admin seoutlet untuk Pro, lebih perlu pakej lain (BELUM dikuatkuasa: sekarang
-  `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
-  sama (jualan masuk terus ke transaksi, tolak stok ikut `menu_ingredients`). Peranti: tablet Android + printer
-  ZyWell Z58-III (58mm, USB + Bluetooth, ESC/POS). Offline WAJIB. Halaman ujian: `pos/uji-printer.html`
-  (BLE terus / RawBT / WebUSB). **Terbukti 27 Nov: Web Bluetooth (BLE) terus dari Chrome tablet BERJAYA cetak**,
-  tanpa RawBT. Printer dikesan sebagai "Printer001"; servis `000018f0-...`, tulis ke `00002af1-0000-1000-8000-00805f9b34fb`
-  (writeWithoutResponse), 301 bait dalam potongan 100 bait OK. e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
-- Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
-  satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
+Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS). Semua PR hingga #44 sudah di-merge.
+
+### Sudah siap & aktif di production
+- **Gaji (PR #41, Fasa 18)**: gaji bulanan pro-rata ikut hari kalendar (sebulan penuh = gaji penuh; "Minggu ini"
+  dulu bayar sebulan penuh: BUG sudah dibaiki). Pilihan "Jika tidak hadir" setiap pekerja mingguan/bulanan:
+  `penuh` / `sehari` (gaji ÷ hari bekerja, default 26 sebulan / 6 seminggu) / `tetap` (RM sehari). Separuh hari =
+  separuh potongan; cuti & hari tak ditanda TIDAK dipotong; upah harian tiada pilihan ini (pengguna sahkan semua).
+  `payroll_days` kunci setiap hari dibayar (PK employee+date); `pay_payroll()` satu-satunya cara jadi 'dibayar';
+  app hantar `open_days`, DB kira semula. Padam transaksi gaji = hari dilepaskan.
+- **Kehadiran (PR #44)**: pengesahan sebelum "Tanda semua … Hadir" + butang "↶ Batal tanda pukal terakhir"
+  (kumpulan baris dengan `updated_at` sama tepat). Insiden 27 Nov (168 hari tertanda) sudah dipulihkan pengguna.
+- **POS (PR #42, #43, Fasa 19)**: `pos/` app tablet + halaman BizProfit `#/pos` (Menu → POS (kaunter)).
+  Printer ZyWell Z58-III terbukti cetak melalui Web Bluetooth (BLE) terus dari Chrome Android, tanpa RawBT
+  (servis `000018f0-...`, tulis `00002af1-...`, potongan 100 bait). `pos/uji-printer.html` = halaman ujian printer.
+  Keputusan pengguna: nombor order & meja On/Off (default Off); bayar dulu DAN bil terbuka; kaedah bayar = semua
+  `payment_methods` (nama mengandungi tunai/cash = skrin baki); kategori "Jualan POS" (key `INPOS`, dicipta auto);
+  1 order = 1 transaksi; slip dapur pada printer sama (On/Off); staff boleh buang item bil terbuka (direkod
+  removed_at/by); batal order dibayar/bil berisi = owner/admin + wajib sebab; bil kosong staff boleh batal.
+  Harga disalin dari menu oleh DB; jumlah & baki dikira oleh `pos_pay_order()` (selamat dipanggil 2 kali).
+  ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
+
+### Perlu disahkan pengguna (belum diuji dengan login sebenar)
+- POS: setup menu di #/pos, buat order sebenar, cetak resit, semak "Jualan POS" di Rekod, bil terbuka, batal.
+  Semak juga sama ada printer bersambung sendiri bila POS dibuka semula (`navigator.bluetooth.getDevices`).
+  Semasa ditulis: 0 order POS, 0 menu berkategori di production.
+- Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
+- Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
+
+### Seterusnya (ikut keutamaan; tanya pengguna dahulu sebelum mula)
+1. **Maklum balas ujian POS sebenar** → baiki apa yang pengguna jumpa.
+2. **Rekod: paparan ringkasan harian jualan POS** (On/Off, paparan sahaja; data kekal 1 order = 1 transaksi).
+   Pengguna kata "jawab nanti".
+3. **Peranan selepas POS jalan** (keputusan pengguna): BizProfit = back office owner + admin (manager tak
+   disarankan); Key In di BizProfit untuk manager ke atas sahaja (buang Key In staff HANYA selepas POS dipakai);
+   Pro = maksimum 2 admin seoutlet, lebih perlu pakej lain. Perlu migration (sekarang `plan_limits` Pro = 10 akaun
+   staf, kira semua peranan) + kemas kini `plan.js` + README jadual peranan.
+4. **Offline POS** (pengguna: tangguh sampai nak komersialkan, tapi WAJIB sebelum jual): service worker untuk
+   `pos/`, menu disimpan, order beratur dalam IndexedDB, hantar semula guna ID sama (DB dah sedia: upsert
+   ignoreDuplicates + `pos_pay_order` idempotent).
+5. **Had pakej POS**: pengguna kata tunggu SaaS lengkap. Nota: `menu_items` tambah/ubah dikunci Pro ke atas (Fasa 12).
+6. POS kemudian: diskaun / caj servis / SST, skrin dapur (tablet kedua, ganti slip dapur), PIN tukar staf,
+   tolak stok automatik ikut `menu_ingredients`, e-Invois (bawah RM3 juta setahun dikecualikan mulai
+   1 Sep 2026 menurut sumber sekunder; sahkan di laman LHDN).
+7. **Baki kritik app (dari audit 26 Nov)**:
+   - Stok: `stok.js` simpan nilai mutlak `current_qty` → dua phone serentak boleh hilang satu kiraan.
+     Cadangan: RPC `adjust_stock(id, delta)`.
+   - Key In tiada simpanan offline / boleh rekod berganda bila line lemah (guna ID dijana klien macam POS).
+   - Kehadiran masih boleh diubah selepas gaji dibayar (wang tak berubah, tapi rekod tak sepadan).
+   - Jumlah RINGGIT slip gaji masih dikira di app (DB kunci HARI sahaja); manager boleh simpan base_amount sendiri.
+   - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
+   - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
+   - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 20.
+
+### Nota kerja untuk sesi baru
+- Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk
+  pengguna salin ke SQL Editor. Uji migration dalam Postgres tempatan DULU (lihat seksyen Migration); ralat nama
+  constraint auto (`<table>_<kolum>_check`) pernah menggagalkan Fasa 18 kali pertama.
+- Pengguna merge PR sendiri dengan cepat: selepas merge, mulakan semula branch kerja dari `origin/main` sebelum
+  commit baru, kalau tak commit tertinggal dan perlu PR baru.
+- Pengguna suka penerangan santai dalam BM, ringkas tapi lengkap; beri URL/SQL dalam kotak supaya mudah disalin.
 
 ## Sebelum kata "siap"
 - Buka app dalam Playwright (Chromium dah ada) pada lebar phone dan semak halaman yang berubah, jika boleh login.
