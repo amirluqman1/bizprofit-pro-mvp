@@ -11,6 +11,8 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 - **Stok** — inventori dengan − / +, senarai beli untuk WhatsApp, sejarah perubahan
 - **Report** — harian, mingguan, bulanan, tahunan; banding tempoh sebelum, purata & hari terbaik, prestasi outlet, perbelanjaan ikut kategori, jualan ikut kaedah bayaran, kongsi ringkasan ke WhatsApp
 - **Pekerja** — kehadiran harian, gaji harian/mingguan/bulanan, OT, elaun, potongan, advance, slip gaji
+  - Gaji bulanan: sebulan penuh = gaji penuh; tempoh lebih pendek dikira pro-rata ikut hari kalendar (gaji ÷ hari dalam bulan itu)
+  - Tidak hadir (mingguan/bulanan), tetapan setiap pekerja: bayar penuh, potong gaji sehari (gaji ÷ hari bekerja), atau potong RM tetap sehari. Separuh hari = separuh potongan; cuti tidak dipotong
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
 - **Akaun** — daftar sendiri (syarikat + outlet pertama, trial Pro 30 hari), lupa kata laluan, jemput staf melalui pautan WhatsApp (sekali guna, 7 hari), owner tambah outlet
 - **Bahasa** — English (asal) atau Bahasa Melayu; tukar di Menu, disimpan dalam peranti

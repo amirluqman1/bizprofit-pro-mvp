@@ -74,12 +74,16 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 18 (12b, 15, 16, 17 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 19 (12b, 15, 16, 17, 18 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
   sama ada sesuatu fasa dah aktif, semak objeknya (table/policy/fungsi) dengan `select`, bukan senarai migration.
 - Projek Supabase: production `seducczotbziwhmugkrw`; staging `wphdvtmrsveoyksmewuk` (masih kosong, tiada skema).
+- **Uji migration secara tempatan dulu** (terbukti berjaya, tangkap ralat sebelum pengguna run): Postgres 16 ada
+  dalam container. Tarik STRUKTUR sahaja dari production (baca: `pg_get_functiondef`, `pg_get_constraintdef`,
+  `pg_policies`, `pg_get_triggerdef`, kolum + grant), stub `auth.uid()`/`auth.users`/peranan `anon`,`authenticated`,
+  isi data palsu, kemudian jalankan migration + ujian. Jangan simpan dump dalam repo.
 - Jalankan ujian melalui `execute_sql`: hasil keluar sebagai "error" `HASIL UJIAN (n gagal)`, itu normal.
   Data ujian tak boleh guna syarikat B tanpa kategori & kaedah bayaran (FK), dan `created_by` wajib.
 - Tool Supabase (apply migration / SQL yang ubah data) minta pengesahan pengguna dalam app. Di app phone
@@ -109,20 +113,15 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 26 Nov 2026.
-- **PR #39** (branch `ccr-fb31f6a2-n9sjsg`) BELUM di-merge. Ia gantikan PR #25:
-  had Percuma bulan lepas + bulan ini (app + DB), owner tambah outlet, log keluar peranti ini sahaja,
-  daftar sendiri / reset kata laluan / jemput staf, BM sebagai bahasa pilihan. `sw.js` CACHE = `v40`.
-- **Database production SUDAH aktif** walaupun app belum di-merge: Fasa 12b, 15, 16 (13/13 ujian lulus),
-  17 (29/29 lulus). Satu-satunya syarikat sekarang pada pakej Business, jadi had Percuma belum kena sesiapa.
-- Selepas merge #39:
-  1. Tutup PR #25 (semua isinya dah masuk #39).
-  2. Pengguna perlu set Supabase → Authentication: benarkan sign-up, dan tambah
-     `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs (untuk e-mel sahkan & reset).
-  3. Uji dengan login sebenar: Home, Rekod, Gaji, Menu (jemput staf), dan tukar EN ↔ BM.
-- Belum dibuat: ujian `supabase/tests/20261123_fasa15_ujian.sql` (tambah outlet) belum dijalankan;
-  staging kosong. Dialog gambar resit dicipta sekali, jadi teksnya tak bertukar bahasa sehingga muat semula
-  (kecil). Label P&L (Borang B) sengaja dwibahasa.
+Dikemas kini 27 Nov 2026.
+- PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
+  sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
+- **Fasa 18 SUDAH aktif di production** (27 Nov 2026, ujian 25/25 lulus): potongan tidak hadir + `payroll_days`
+  (satu hari tak boleh dibayar dua kali, dikunci di DB; 17 slip lama = 128 hari diisi). App untuk Fasa 18 ada di
+  branch `ccr-ddc75022-j732jq`, BELUM di-merge. Sebelum merge, app lama di `main` tak hantar `open_days`, jadi
+  bayar baki hari selepas slip lain yang bertindih akan ditolak DB (selamat, cuma menyusahkan): merge segera.
+- Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
+  satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
 ## Sebelum kata "siap"
 - Buka app dalam Playwright (Chromium dah ada) pada lebar phone dan semak halaman yang berubah, jika boleh login.
