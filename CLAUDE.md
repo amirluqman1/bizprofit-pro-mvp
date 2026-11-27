@@ -76,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 20 (12b, 15, 16, 17, 18, 19 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 21 (12b, 15–20 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -136,6 +136,12 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
   Harga disalin dari menu oleh DB; jumlah & baki dikira oleh `pos_pay_order()` (selamat dipanggil 2 kali).
   ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
 
+- **Gaji Fasa 20 (branch `ccr-4c60307b-75ne9y`, migration BELUM dijalankan di production)**: `payroll_calc()` kira
+  gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
+  angka slip atau jumlah bersih tak sama dengan kiraan DB. Bayar gaji & advance = owner/admin sahaja (manager draf).
+  Elaun/potongan > RM0 wajib nota (`payroll.note`). `pekerja.js` guna kiraan integer yang SAMA (`rdiv`, `MONTH_LCM`);
+  diuji 600 kes rawak app vs DB = 0 beza. Ubah satu, ubah dua-dua. Keputusan pengguna 27 Nov.
+
 ### Perlu disahkan pengguna (belum diuji dengan login sebenar)
 - POS: setup menu di #/pos, buat order sebenar, cetak resit, semak "Jualan POS" di Rekod, bil terbuka, batal.
   Semak juga sama ada printer bersambung sendiri bila POS dibuka semula (`navigator.bluetooth.getDevices`).
@@ -163,11 +169,10 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
      Cadangan: RPC `adjust_stock(id, delta)`.
    - Key In tiada simpanan offline / boleh rekod berganda bila line lemah (guna ID dijana klien macam POS).
    - Kehadiran masih boleh diubah selepas gaji dibayar (wang tak berubah, tapi rekod tak sepadan).
-   - Jumlah RINGGIT slip gaji masih dikira di app (DB kunci HARI sahaja); manager boleh simpan base_amount sendiri.
    - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
    - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
    - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
-- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 20.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 21.
 
 ### Nota kerja untuk sesi baru
 - Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk

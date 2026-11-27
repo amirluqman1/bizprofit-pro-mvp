@@ -13,6 +13,7 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 - **Pekerja** — kehadiran harian, gaji harian/mingguan/bulanan, OT, elaun, potongan, advance, slip gaji
   - Gaji bulanan: sebulan penuh = gaji penuh; tempoh lebih pendek dikira pro-rata ikut hari kalendar (gaji ÷ hari dalam bulan itu)
   - Tidak hadir (mingguan/bulanan), tetapan setiap pekerja: bayar penuh, potong gaji sehari (gaji ÷ hari bekerja), atau potong RM tetap sehari. Separuh hari = separuh potongan; cuti tidak dipotong
+  - Semasa bayar, database kira semula gaji asas, OT, potongan tidak hadir dan advance; kalau angka berubah sejak dipapar, bayaran ditolak (muat semula). Elaun/potongan manual wajib ada sebab
 - **POS** (`pos/`, untuk tablet kaunter, Chrome Android) — ambil order makan sini/bungkus, bil terbuka (bayar lepas makan), semua kaedah bayaran + baki tunai, resit & slip dapur ke printer thermal 58mm melalui Bluetooth (BLE). Jualan masuk ke Rekod sebagai "Jualan POS". Jumlah dikira oleh database. Tetapan & menu POS: Menu → POS (kaunter)
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
 - **Akaun** — daftar sendiri (syarikat + outlet pertama, trial Pro 30 hari), lupa kata laluan, jemput staf melalui pautan WhatsApp (sekali guna, 7 hari), owner tambah outlet
@@ -28,7 +29,9 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 | Ubah & padam transaksi | ✓ | Outlet sendiri | ✗ | ✗ |
 | Log audit | ✓ | Outlet sendiri | ✗ | ✗ |
 | Stok | ✓ | Penuh (outlet sendiri) | Tambah & ubah kuantiti | Tambah & ubah kuantiti |
-| Pekerja & gaji | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| Pekerja & kehadiran | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| Gaji: sediakan draf | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| Gaji: bayar & beri advance | ✓ | Semua pekerja outlet sendiri | ✗ | ✗ |
 | Akaun pengguna & jemputan | Semua outlet; jemput admin/manager/staff | Outlet sendiri; jemput manager/staff | ✗ | ✗ |
 | Tambah outlet | ✓ (ikut had pakej) | ✗ | ✗ | ✗ |
 | POS: order, bil terbuka, bayar | ✓ | Outlet sendiri | Outlet sendiri | Outlet sendiri |
