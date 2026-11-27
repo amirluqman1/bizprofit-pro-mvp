@@ -123,7 +123,9 @@ Dikemas kini 27 Nov 2026.
   `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
   sama (jualan masuk terus ke transaksi, tolak stok ikut `menu_ingredients`). Peranti: tablet Android + printer
   ZyWell Z58-III (58mm, USB + Bluetooth, ESC/POS). Offline WAJIB. Halaman ujian: `pos/uji-printer.html`
-  (BLE terus / RawBT / WebUSB). e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
+  (BLE terus / RawBT / WebUSB). **Terbukti 27 Nov: Web Bluetooth (BLE) terus dari Chrome tablet BERJAYA cetak**,
+  tanpa RawBT. Printer dikesan sebagai "Printer001"; servis `000018f0-...`, tulis ke `00002af1-0000-1000-8000-00805f9b34fb`
+  (writeWithoutResponse), 301 bait dalam potongan 100 bait OK. e-Invois: bawah RM3 juta setahun dikecualikan (sumber sekunder, semak LHDN).
 - Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
   satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
