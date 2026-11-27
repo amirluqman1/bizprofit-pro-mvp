@@ -12,6 +12,7 @@ import laporan from './pages/laporan.js';
 import foodcost from './pages/foodcost.js';
 import pnl from './pages/pnl.js';
 import pakej from './pages/pakej.js';
+import pos from './pages/pos.js';
 
 // roles: siapa boleh buka halaman. Staff tidak boleh nampak Utama (ada profit) atau Pekerja.
 const PAGES = [
@@ -26,6 +27,8 @@ const PAGES = [
   // Penyata untung rugi (Borang B): pemilik bisnes (admin) & owner.
   { path: 'pnl', label: 'Profit & Loss', icon: 'receipt', page: pnl, roles: ['owner', 'admin'], tab: false },
   // Pakej langganan: semua boleh lihat; hanya owner boleh naik taraf.
+  // POS: tetapan & menu kaunter (owner/admin).
+  { path: 'pos', label: 'POS', icon: 'cart', page: pos, roles: ['owner', 'admin'], tab: false },
   { path: 'pakej', label: 'Plan', icon: 'layers', page: pakej, roles: ['owner', 'admin', 'manager', 'staff'], tab: false }
 ];
 
