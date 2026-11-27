@@ -74,7 +74,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 19 (12b, 15, 16, 17, 18 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 20 (12b, 15, 16, 17, 18, 19 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -118,6 +118,12 @@ Dikemas kini 27 Nov 2026.
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
 - **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
   (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
+- **Fasa 19 (POS database)**: migration + ujian (43/43 lulus di salinan tempatan) ada di branch kerja, BELUM
+  di-apply ke production. Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
+  kaedah bayar = semua `payment_methods`, kategori "Jualan POS", 1 order = 1 transaksi (paparan ringkasan harian di
+  Rekod: keputusan nanti), slip dapur dicetak pada printer sama (On/Off), staff boleh buang item bil terbuka (direkod),
+  batal order berisi/dibayar = owner/admin + sebab. Kemudian: diskaun/SST, had pakej, offline, Key In manager+ sahaja
+  (buang Key In staff HANYA selepas POS jalan).
 - **Rancangan POS (perbincangan, belum dibina)**: BizProfit jadi back office untuk owner + admin sahaja (manager
   tak disarankan); maksimum 2 admin seoutlet untuk Pro, lebih perlu pakej lain (BELUM dikuatkuasa: sekarang
   `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
