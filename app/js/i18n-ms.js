@@ -914,4 +914,12 @@ export const MS = {
   "Change outlet": "Tukar outlet",
   "Open BizProfit": "Buka BizProfit",
   "Set up the menu sold at the POS counter, with categories and sold-out status.": "Sediakan menu yang dijual di kaunter POS, dengan kategori dan status habis.",
+  // Kehadiran: batal tanda pukal
+  "Undo last bulk marking": "Batal tanda pukal terakhir",
+  "No bulk marking found in this period.": "Tiada tanda pukal dalam tempoh ini.",
+  "Undo the bulk \"Present\" marking from {at}?\n\n{n} days ({m} staff) will become empty again. Other marks are not touched.": "Batal tanda pukal \"Hadir\" pada {at}?\n\n{n} hari ({m} staf) akan jadi kosong semula. Tanda lain tidak terusik.",
+  "Undo failed: ": "Gagal batal: ",
+  "{n} days cleared.": "{n} hari dikosongkan semula.",
+  "Mark {n} unmarked staff as Present for {d}?": "Tanda {n} staf yang belum ditanda sebagai Hadir untuk {d}?",
+  "Mark {n} empty days ({m} staff) as Present?\n\nCheck first: absent and leave days must be marked before this.": "Tanda {n} hari kosong ({m} staf) sebagai Hadir?\n\nSemak dulu: hari tidak hadir dan cuti mesti ditanda sebelum ini.",
 };
