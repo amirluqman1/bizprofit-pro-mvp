@@ -650,7 +650,7 @@ async function renderPayroll() {
     if (covered.size && !exact && base + otAmt === 0) return;  // baki hari tiada gaji
     const allow = cents(exact?.allowance), ded = cents(exact?.deduction);
     const bal = Math.max(0, balance.get(e.id) || 0);
-    rows.push(recalc({ e, slip: exact, paid: false, from: state.from, to: state.to, partial: covered.size ? openDays : 0,
+    rows.push(recalc({ e, slip: exact, paid: false, from: state.from, to: state.to, partial: covered.size ? openDays : 0, openDays,
       days, ot, absent, absDays, absFull, absDed: 0, weeks, base, otAmt, allow, ded, bal, rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type }));
   });
 
@@ -738,7 +738,8 @@ async function renderPayroll() {
       employee_id: r.e.id, period_start: state.from, period_end: state.to, pay_type: r.payType,
       rate: r.rate, days_worked: r.days, ot_hours: r.ot, ot_rate: r.otRate,
       base_amount: fromCents(r.base), ot_amount: fromCents(r.otAmt), allowance: fromCents(r.allow), deduction: fromCents(r.ded),
-      absent_days: r.absDays || 0, absent_deduction: fromCents(r.absDed || 0)
+      absent_days: r.absDays || 0, absent_deduction: fromCents(r.absDed || 0),
+      open_days: r.openDays   // database semak semula semasa bayar (hari yang belum dibayar)
     };
     const res = r.slip
       ? await sb.from('payroll').update(payload).eq('id', r.slip.id).select('id').maybeSingle()

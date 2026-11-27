@@ -112,11 +112,11 @@ Setiap kali ubah fail dalam `app/`:
 Dikemas kini 26 Nov 2026.
 - PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
-- **Fasa 18 (potongan tidak hadir)** ada di branch kerja tapi migration BELUM di-apply ke production.
-  App versi ini baca kolum baru `employees.absent_rule/absent_workdays/absent_amount` dan
-  `payroll.absent_days/absent_deduction`: **apply migration DULU sebelum merge**, kalau tak halaman Pekerja rosak.
-- Belum dibuat: had "satu hari tak boleh dibayar dua kali" hanya dikawal di app (`covered` dalam `pekerja.js`);
-  database belum halang slip dibayar yang bertindih. Stok simpan nilai mutlak (dua phone serentak boleh hilang
+- **Fasa 18** (potongan tidak hadir + `payroll_days`: satu hari tak boleh dibayar dua kali, dikunci di DB)
+  ada di branch kerja tapi migration BELUM di-apply ke production. App versi ini baca kolum baru
+  `employees.absent_*` dan `payroll.absent_days/absent_deduction/open_days`: **apply migration DULU sebelum
+  merge**, kalau tak halaman Pekerja rosak. Semasa ditulis: 17 slip dibayar, tiada yang bertindih.
+- Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
   satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
 ## Sebelum kata "siap"

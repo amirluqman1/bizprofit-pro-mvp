@@ -1,6 +1,7 @@
 -- =====================================================================
--- BizProfit Pro · Fasa 18: Peraturan potongan tidak hadir (gaji mingguan & bulanan)
+-- BizProfit Pro · Fasa 18: Potongan tidak hadir + satu hari tak boleh dibayar dua kali
 --
+-- BAHAGIAN A: Peraturan potongan tidak hadir (gaji mingguan & bulanan)
 -- Apa berubah:
 --   1. Setiap pekerja (gaji mingguan/bulanan) ada peraturan bila tidak hadir:
 --        'penuh'  : bayar penuh, tiada potongan automatik (sama seperti sebelum ini)
@@ -20,8 +21,26 @@
 --   TIDAK dipotong. Hari yang sudah dibayar dalam slip lain tidak dikira lagi.
 --   Potongan tidak boleh menjadikan gaji kasar negatif (dihadkan kepada asas + OT + elaun − potongan).
 --
+-- BAHAGIAN B: Satu hari kerja tidak boleh dibayar dua kali (dikunci di database)
+--   Sebelum ini hanya app yang elak bayar dua kali. Sekarang:
+--   4. Table payroll_days: setiap hari yang sudah dibayar untuk seorang pekerja (satu baris
+--      sehari). Kunci utama (employee_id, work_date): hari yang sama TIDAK boleh masuk dua kali,
+--      walaupun dua orang tekan Bayar serentak dari dua phone.
+--   5. payroll.open_days: bilangan hari dalam tempoh yang app anggap belum dibayar semasa kira
+--      slip. Semasa bayar, database kira semula; kalau tak sama (ada hari dibayar oleh slip lain
+--      selepas app kira), bayaran ditolak dan pengguna perlu muat semula. NULL = semua hari
+--      dalam tempoh mesti belum dibayar (app versi lama).
+--   6. Slip hanya boleh jadi 'dibayar' melalui pay_payroll() (sebelum ini UPDATE terus
+--      status = 'dibayar' dibenarkan oleh policy, tanpa transaksi Staff Wages).
+--   7. Padam transaksi gaji (Fasa 9) buka semula slip sebagai draf: hari-harinya dilepaskan.
+--   Slip dibayar sedia ada diisi ke payroll_days ikut turutan bayar (data production: tiada
+--   slip dibayar yang bertindih semasa migration ditulis).
+--   Nota: jumlah ringgit slip masih dikira di app; yang dikunci di sini ialah HARI.
+--
 -- Siapa boleh buat apa:
---   Tiada policy baru. Kolum baru pada employees ikut policy "urus pekerja"
+--   payroll_days: baca ikut can_manage_employee() + tenant_isolation; tiada siapa boleh
+--   tambah/ubah/padam terus (hanya melalui trigger semasa bayar / buka semula).
+--   Selain itu tiada policy baru. Kolum baru pada employees ikut policy "urus pekerja"
 --   (owner/admin semua; manager outlet sendiri & bukan peringkat pengurus).
 --   Kolum baru pada payroll ikut policy gaji sedia ada (tambah/ubah draf sahaja,
 --   perlu Pro/Business). Slip dibayar kekal dikunci.
@@ -53,7 +72,70 @@ alter table public.payroll drop column net_amount;
 alter table public.payroll add column net_amount numeric(12,2)
   generated always as (greatest(base_amount + ot_amount + allowance - deduction - absent_deduction - advance_deduction, 0)) stored;
 
--- 3. Bayar gaji: tolak potongan tidak hadir sebelum advance ----------------
+-- 3. Hari dibayar (BAHAGIAN B) ------------------------------------------------
+alter table public.payroll add column open_days smallint check (open_days >= 0);
+
+create table public.payroll_days (
+  business_id uuid not null references public.businesses(id),
+  employee_id uuid not null,
+  work_date date not null,
+  payroll_id uuid not null references public.payroll(id) on delete cascade,
+  primary key (employee_id, work_date),
+  constraint payroll_days_employee_fk foreign key (business_id, employee_id) references public.employees (business_id, id)
+);
+create index idx_payroll_days_payroll on public.payroll_days (payroll_id);
+alter table public.payroll_days enable row level security;
+revoke all on public.payroll_days from anon, authenticated;
+grant select on public.payroll_days to authenticated;
+create policy tenant_isolation on public.payroll_days as restrictive for all to authenticated
+  using (business_id = (select public.current_business_id())) with check (business_id = (select public.current_business_id()));
+create policy "baca hari dibayar" on public.payroll_days for select to authenticated
+  using ((select public.can_manage_employee(employee_id)));
+
+-- Isi slip dibayar sedia ada, ikut turutan bayar (hari yang dah diambil slip lebih awal dilangkau).
+insert into public.payroll_days (business_id, employee_id, work_date, payroll_id)
+select p.business_id, p.employee_id, d::date, p.id
+from public.payroll p
+cross join lateral generate_series(p.period_start, p.period_end, interval '1 day') d
+where p.status = 'dibayar'
+order by p.paid_at, p.created_at
+on conflict do nothing;
+
+-- Trigger: kunci hari semasa slip jadi 'dibayar'; lepaskan bila dibuka semula sebagai draf.
+create function public.payroll_days_sync() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  jumlah int := new.period_end - new.period_start + 1;
+  terbuka int;
+begin
+  if old.status = 'draf' and new.status = 'dibayar' then
+    if coalesce(current_setting('bizprofit.bayar', true), '') <> new.id::text then
+      raise exception 'Slip gaji hanya boleh dibayar melalui butang Bayar';
+    end if;
+    select count(*) into terbuka
+    from generate_series(new.period_start, new.period_end, interval '1 day') d
+    where not exists (select 1 from public.payroll_days x where x.employee_id = new.employee_id and x.work_date = d::date);
+    if terbuka = 0 or terbuka <> coalesce(new.open_days, jumlah) then
+      raise exception 'Sebahagian hari dalam tempoh ini sudah dibayar dalam slip lain. Muat semula halaman Gaji dan cuba lagi.';
+    end if;
+    begin
+      insert into public.payroll_days (business_id, employee_id, work_date, payroll_id)
+      select new.business_id, new.employee_id, d::date, new.id
+      from generate_series(new.period_start, new.period_end, interval '1 day') d
+      where not exists (select 1 from public.payroll_days x where x.employee_id = new.employee_id and x.work_date = d::date);
+    exception when unique_violation then
+      raise exception 'Sebahagian hari dalam tempoh ini baru sahaja dibayar dari peranti lain. Muat semula halaman Gaji.';
+    end;
+  elsif old.status = 'dibayar' and new.status = 'draf' then
+    delete from public.payroll_days where payroll_id = old.id;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.payroll_days_sync() from public, anon, authenticated;
+create trigger trg_payroll_days after update of status on public.payroll
+  for each row execute function public.payroll_days_sync();
+
+-- 4. Bayar gaji: tolak potongan tidak hadir sebelum advance ----------------
 create or replace function public.pay_payroll(p_payroll uuid, p_payment_method text)
 returns bigint language plpgsql security invoker set search_path = '' as $$
 declare
@@ -81,7 +163,9 @@ begin
     returning id into tx;
   end if;
 
+  perform set_config('bizprofit.bayar', p_payroll::text, true);   -- izin trigger: bayaran melalui fungsi ini
   update public.payroll set status = 'dibayar', paid_at = now(), transaction_id = tx where id = p_payroll;
+  perform set_config('bizprofit.bayar', '', true);
   return tx;   -- null jika gaji ditampung sepenuhnya oleh advance
 end $$;
 revoke execute on function public.pay_payroll(uuid, text) from public, anon;
