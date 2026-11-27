@@ -116,10 +116,8 @@ Setiap kali ubah fail dalam `app/`:
 Dikemas kini 27 Nov 2026.
 - PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
-- **Fasa 18 SUDAH aktif di production** (27 Nov 2026, ujian 25/25 lulus): potongan tidak hadir + `payroll_days`
-  (satu hari tak boleh dibayar dua kali, dikunci di DB; 17 slip lama = 128 hari diisi). App untuk Fasa 18 ada di
-  branch `ccr-ddc75022-j732jq`, BELUM di-merge. Sebelum merge, app lama di `main` tak hantar `open_days`, jadi
-  bayar baki hari selepas slip lain yang bertindih akan ditolak DB (selamat, cuma menyusahkan): merge segera.
+- **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
+  (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
 - **Rancangan POS (perbincangan, belum dibina)**: BizProfit jadi back office untuk owner + admin sahaja (manager
   tak disarankan); maksimum 2 admin seoutlet untuk Pro, lebih perlu pakej lain (BELUM dikuatkuasa: sekarang
   `plan_limits` Pro = 10 akaun staf). App POS berasingan untuk staff ambil order + cetak resit, guna Supabase yang
