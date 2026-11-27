@@ -123,9 +123,10 @@ async function renderAttendanceDay(box) {
       <label class="field">${t('Date')}<input id="atDate" type="date" max="${todayKL()}" value="${state.date}"></label>
       <p class="greet-sub" id="atSummary"></p>
       <button class="btn ghost block" id="atAll" type="button">${t('Mark all unmarked: Present')}</button>
+      <button class="btn link block" id="atUndo" type="button">↶ ${t('Undo last bulk marking')}</button>
     </section>
     <div id="atList" class="list"></div>`;
-  if (!active.length) { $('atList').innerHTML = emptyStaff(); $('atAll').hidden = true; return; }
+  if (!active.length) { $('atList').innerHTML = emptyStaff(); $('atAll').hidden = true; $('atUndo').hidden = true; return; }
 
   let marks = new Map();
   async function load() {
@@ -182,12 +183,14 @@ async function renderAttendanceDay(box) {
   $('atAll').onclick = async () => {
     const todo = active.filter(e => !marks.has(e.id));
     if (!todo.length) { toast(t('All staff are already marked.')); return; }
+    if (!confirm(t('Mark {n} unmarked staff as Present for {d}?', { n: todo.length, d: dateLong(state.date) }))) return;
     const { error } = await sb.from('attendance').upsert(
       todo.map(e => ({ employee_id: e.id, work_date: state.date, status: 'hadir', ot_hours: 0 })), { onConflict: 'employee_id,work_date' });
     if (error) { toast(t('Could not mark: ') + errText(error), 'error'); return; }
     toast(t('{n} staff marked Present.', { n: todo.length }));
     load();
   };
+  $('atUndo').onclick = () => undoBulk(state.date, state.date, active.map(e => e.id), load);
   await load();
 }
 
@@ -226,6 +229,7 @@ async function renderAttendanceGrid(box) {
       </div>
       <p class="greet-sub" id="agSum">${t('Loading…')}</p>
       <button class="btn ghost block" id="agAll" type="button">${t('Mark all empty days: Present')}</button>
+      <button class="btn link block" id="agUndo" type="button">↶ ${t('Undo last bulk marking')}</button>
     </section>
     ${active.length ? `<div class="card at-grid-wrap"><table class="at-grid">
       <thead><tr><th class="at-corner">${t('Staff')}</th>${days.map(d => `<th class="${d === today ? 'today' : ''}"><button type="button" class="at-day" data-day="${d}" ${d > today ? 'disabled' : ''} aria-label="${esc(t('Edit {d}', { d: dateLong(d) }))}"><span>${dow1(new Date(d + 'T00:00:00Z').getUTCDay())}</span>${Number(d.slice(-2))}</button></th>`).join('')}<th>${t('Days')}</th></tr></thead>
@@ -241,7 +245,7 @@ async function renderAttendanceGrid(box) {
     const n = state.atView === 'week' ? addDays(from, 7) : addDays(to, 1);
     state.date = n > today ? today : n; renderAttendance();
   };
-  if (!active.length) { $('agAll').hidden = true; $('agSum').textContent = ''; return; }
+  if (!active.length) { $('agAll').hidden = true; $('agUndo').hidden = true; $('agSum').textContent = ''; return; }
 
   const marks = new Map();   // "empId|tarikh" -> { status, ot }
   const { data, error } = await sb.from('attendance').select('employee_id,work_date,status,ot_hours')
@@ -284,6 +288,8 @@ async function renderAttendanceGrid(box) {
     const rows = ids.flatMap(id => days.filter(d => d <= today && !marks.get(`${id}|${d}`)?.status)
       .map(d => ({ employee_id: id, work_date: d, status: 'hadir', ot_hours: 0 })));
     if (!rows.length) { toast(t('No empty days to mark.')); return; }
+    const staffN = new Set(rows.map(r => r.employee_id)).size;
+    if (!confirm(t('Mark {n} empty days ({m} staff) as Present?\n\nCheck first: absent and leave days must be marked before this.', { n: rows.length, m: staffN }))) return;
     const { error: err } = await sb.from('attendance').upsert(rows, { onConflict: 'employee_id,work_date' });
     if (err) { toast(t('Could not mark: ') + errText(err), 'error'); return; }
     rows.forEach(r => { const k = `${r.employee_id}|${r.work_date}`; marks.set(k, { status: 'hadir', ot: 0 }); paintCell(k); });
@@ -308,6 +314,32 @@ async function renderAttendanceGrid(box) {
     if (day) { timers.forEach((tm, k) => { clearTimeout(tm); save(k); }); state.date = day.dataset.day; state.atView = 'day'; renderAttendance(); }
   });
   $('agAll').onclick = () => fill(active.map(e => e.id));
+  $('agUndo').onclick = () => undoBulk(from, to, active.map(e => e.id), renderAttendance);
+}
+
+// Batal tanda pukal terakhir: "Tanda semua … Hadir" simpan semua baris dalam SATU arahan,
+// jadi semuanya ada updated_at yang sama tepat. Cari kumpulan terkini (>= 2 baris Hadir, OT 0)
+// dalam tempoh yang dipapar dan padam baris itu sahaja. Tanda satu-satu tidak tersentuh.
+async function undoBulk(from, to, ids, after) {
+  if (!ids.length) return;
+  const { data, error } = await sb.from('attendance').select('id,employee_id,updated_at')
+    .eq('status', 'hadir').eq('ot_hours', 0).gte('work_date', from).lte('work_date', to).in('employee_id', ids)
+    .order('updated_at', { ascending: false }).limit(5000);
+  if (error) { toast(t('Could not load attendance.'), 'error'); return; }
+  const groups = new Map();
+  (data || []).forEach(r => groups.set(r.updated_at, [...(groups.get(r.updated_at) || []), r]));
+  const batch = [...groups.entries()].find(([, rows]) => rows.length >= 2);
+  if (!batch) { toast(t('No bulk marking found in this period.')); return; }
+  const [when, rows] = batch;
+  const staffN = new Set(rows.map(r => r.employee_id)).size;
+  const at = new Date(when).toLocaleString(locale(), { timeZone: 'Asia/Kuala_Lumpur', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  if (!confirm(t('Undo the bulk "Present" marking from {at}?\n\n{n} days ({m} staff) will become empty again. Other marks are not touched.', { at, n: rows.length, m: staffN }))) return;
+  for (let i = 0; i < rows.length; i += 200) {
+    const { error: err } = await sb.from('attendance').delete().in('id', rows.slice(i, i + 200).map(r => r.id));
+    if (err) { toast(t('Undo failed: ') + errText(err), 'error'); after(); return; }
+  }
+  toast(t('{n} days cleared.', { n: rows.length }));
+  after();
 }
 
 function emptyStaff() {
