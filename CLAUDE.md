@@ -43,6 +43,8 @@ harga lama masih boleh dibaca. Pengecualian: transaksi untuk Free terhad kepada 
 - `app/js/plan.js`: `freeHistoryStart()` = had tarikh Percuma di app (mesti sama dengan `history_floor()` di DB).
 - `app/css/app.css`: semua gaya. `app/sw.js`: service worker.
 - `supabase/migrations/`: `YYYYMMDD_faseN_nama.sql`. `supabase/tests/`: `YYYYMMDD_faseN_ujian.sql`.
+- `pos/`: app POS kaunter (tablet). Import modul dari `../../app/js/`; teks juga guna `t()` + `i18n-ms.js`.
+  Resit ESC/POS ASCII sahaja, 32 aksara sebaris (`pos/js/printer.js`). `pos/uji-printer.html` = halaman ujian printer.
 - `design/`: konsep reka bentuk sahaja, bukan sebahagian app.
 - `index.html` & `inventory-emerald-v1.html` di root hanya melencong ke `app/`.
 
@@ -118,8 +120,10 @@ Dikemas kini 27 Nov 2026.
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
 - **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
   (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
-- **Fasa 19 (POS database)**: migration + ujian (43/43 lulus di salinan tempatan) ada di branch kerja, BELUM
-  di-apply ke production. Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
+- **Fasa 19 (POS database)**: migration + ujian (43/43 lulus di salinan tempatan). Kotak salin diberi kepada pengguna
+  27 Nov; semak sama ada sudah aktif (`select to_regclass('public.pos_orders')`) sebelum merge app POS.
+  App: `pos/` (index.html, pos.css, js/app.js, js/printer.js; guna semula `app/js/` ui/session/format/i18n) dan
+  halaman BizProfit `app/js/pages/pos.js` (#/pos, owner/admin). POS belum ada service worker (offline ditangguh). Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
   kaedah bayar = semua `payment_methods`, kategori "Jualan POS", 1 order = 1 transaksi (paparan ringkasan harian di
   Rekod: keputusan nanti), slip dapur dicetak pada printer sama (On/Off), staff boleh buang item bil terbuka (direkod),
   batal order berisi/dibayar = owner/admin + sebab. Kemudian: diskaun/SST, had pakej, offline, Key In manager+ sahaja
