@@ -59,7 +59,7 @@ alter table public.employees
   add column absent_rule text not null default 'penuh' check (absent_rule in ('penuh', 'sehari', 'tetap')),
   add column absent_workdays smallint check (absent_workdays between 1 and 31),
   add column absent_amount numeric(12,2) check (absent_amount >= 0);
-alter table public.employees add constraint employees_absent_rule_check check (
+alter table public.employees add constraint employees_absent_setting_check check (
   (absent_rule <> 'sehari' or absent_workdays is not null)
   and (absent_rule <> 'tetap' or absent_amount is not null)
 );

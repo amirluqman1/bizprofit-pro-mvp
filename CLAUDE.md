@@ -80,6 +80,10 @@ Setiap kali ubah fail dalam `app/`:
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
   sama ada sesuatu fasa dah aktif, semak objeknya (table/policy/fungsi) dengan `select`, bukan senarai migration.
 - Projek Supabase: production `seducczotbziwhmugkrw`; staging `wphdvtmrsveoyksmewuk` (masih kosong, tiada skema).
+- **Uji migration secara tempatan dulu** (terbukti berjaya, tangkap ralat sebelum pengguna run): Postgres 16 ada
+  dalam container. Tarik STRUKTUR sahaja dari production (baca: `pg_get_functiondef`, `pg_get_constraintdef`,
+  `pg_policies`, `pg_get_triggerdef`, kolum + grant), stub `auth.uid()`/`auth.users`/peranan `anon`,`authenticated`,
+  isi data palsu, kemudian jalankan migration + ujian. Jangan simpan dump dalam repo.
 - Jalankan ujian melalui `execute_sql`: hasil keluar sebagai "error" `HASIL UJIAN (n gagal)`, itu normal.
   Data ujian tak boleh guna syarikat B tanpa kategori & kaedah bayaran (FK), dan `created_by` wajib.
 - Tool Supabase (apply migration / SQL yang ubah data) minta pengesahan pengguna dalam app. Di app phone
