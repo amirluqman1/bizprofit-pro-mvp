@@ -120,8 +120,7 @@ Dikemas kini 27 Nov 2026.
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
 - **Fasa 18 aktif di production DAN app sudah di-merge (PR #41)**: potongan tidak hadir + `payroll_days`
   (satu hari tak boleh dibayar dua kali, dikunci di DB). Pengguna perlu uji dengan login sebenar.
-- **Fasa 19 (POS database)**: migration + ujian (43/43 lulus di salinan tempatan). Kotak salin diberi kepada pengguna
-  27 Nov; semak sama ada sudah aktif (`select to_regclass('public.pos_orders')`) sebelum merge app POS.
+- **Fasa 19 (POS database) AKTIF di production** (27 Nov, ujian GAGAL 0 di production). App POS dalam PR #43.
   App: `pos/` (index.html, pos.css, js/app.js, js/printer.js; guna semula `app/js/` ui/session/format/i18n) dan
   halaman BizProfit `app/js/pages/pos.js` (#/pos, owner/admin). POS belum ada service worker (offline ditangguh). Keputusan pengguna: nombor order & meja On/Off (default Off), bayar dulu DAN bil terbuka,
   kaedah bayar = semua `payment_methods`, kategori "Jualan POS", 1 order = 1 transaksi (paparan ringkasan harian di
