@@ -113,13 +113,13 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 26 Nov 2026.
+Dikemas kini 27 Nov 2026.
 - PR #39 dan #40 sudah di-merge ke `main`. Pengguna masih perlu set Supabase → Authentication (benarkan
   sign-up, tambah `https://amirluqman1.github.io/bizprofit-pro-mvp/` dalam Redirect URLs) dan uji dengan login sebenar.
-- **Fasa 18** (potongan tidak hadir + `payroll_days`: satu hari tak boleh dibayar dua kali, dikunci di DB)
-  ada di branch kerja tapi migration BELUM di-apply ke production. App versi ini baca kolum baru
-  `employees.absent_*` dan `payroll.absent_days/absent_deduction/open_days`: **apply migration DULU sebelum
-  merge**, kalau tak halaman Pekerja rosak. Semasa ditulis: 17 slip dibayar, tiada yang bertindih.
+- **Fasa 18 SUDAH aktif di production** (27 Nov 2026, ujian 25/25 lulus): potongan tidak hadir + `payroll_days`
+  (satu hari tak boleh dibayar dua kali, dikunci di DB; 17 slip lama = 128 hari diisi). App untuk Fasa 18 ada di
+  branch `ccr-ddc75022-j732jq`, BELUM di-merge. Sebelum merge, app lama di `main` tak hantar `open_days`, jadi
+  bayar baki hari selepas slip lain yang bertindih akan ditolak DB (selamat, cuma menyusahkan): merge segera.
 - Belum dibuat: jumlah ringgit slip masih dikira di app (DB kunci HARI sahaja). Stok simpan nilai mutlak (dua phone serentak boleh hilang
   satu kiraan). Key In tiada simpanan offline. Ujian Fasa 15 belum dijalankan; staging kosong.
 
