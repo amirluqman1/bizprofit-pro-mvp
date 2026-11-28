@@ -76,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 24 (12b, 15–23 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 25 (12b, 15–24 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -165,6 +165,13 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   Slip dibayar tak berubah; OT terlupa = elaun + sebab dalam slip seterusnya. Tanda/batal pukal langkau hari dibayar.
   Semasa ditulis: 56 daripada 128 hari dibayar sudah diubah selepas bayar (insiden 27 Nov); data lama tidak disentuh.
 
+- **Hari mula minggu (Fasa 24, aktif di production 28 Nov; migration dijalankan pengguna, ujian tempatan 0 gagal)**:
+  `outlets.week_start` (0 = Ahad ... 6 = Sabtu, lalai 1 = Isnin), owner/admin ubah di Menu → Outlet. Grid kehadiran Week dan
+  butang "This week" di Payroll ikut tetapan (`weekStartDay()` dalam `session.js`, `weekStartOf()` dalam `format.js`).
+  Semua outlet = guna nilai sama jika seragam, kalau tidak Isnin. Tiada kesan pada kiraan DB (ikut `open_days`).
+  Laporan: pengguna kata sudah fleksibel; Food Cost belum disetting. Kod tahan jika kolum belum wujud.
+- **Menu dikemas (28 Nov)**: kad akaun satu baris, Outlet & Akaun pengguna boleh dilipat, tajuk kumpulan Business/Tools/Settings.
+
 ### Perlu disahkan pengguna (belum diuji dengan login sebenar)
 - POS: setup menu di #/pos, buat order sebenar, cetak resit, semak "Jualan POS" di Rekod, bil terbuka, batal.
   Semak juga sama ada printer bersambung sendiri bila POS dibuka semula (`navigator.bluetooth.getDevices`).
@@ -201,7 +208,7 @@ antara fasa; tanya soalan "Perlu ditanya" di awal setiap fasa). Item POS di bawa
    - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
    - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
    - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
-- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 24.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 25.
 
 ### Nota kerja untuk sesi baru
 - Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk
