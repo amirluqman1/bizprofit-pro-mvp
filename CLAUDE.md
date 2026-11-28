@@ -76,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 23 (12b, 15–22 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 24 (12b, 15–23 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -145,6 +145,12 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   kategori (`menu_categories.color`, palet 8). Kategori kekal teks dalam `menu_items.category`; trigger cipta baris
   `menu_categories` automatik. POS tahan jika Fasa 22 belum dijalankan (tiada warna/susun kategori).
   Fasa 22 aktif di production 28 Nov (disahkan: RLS + 6 policy + 3 trigger + 3 fungsi; kategori sedia ada diisi).
+  Shift (Fasa 23, `pos/js/shift.js`; keputusan pengguna 28 Nov): satu shift dibuka setiap outlet (`pos_shifts`); order
+  tak boleh DIBAYAR tanpa shift (trigger `pos_orders_shift_guard` isi `shift_id`; batal order dibayar isi `void_shift_id`).
+  Jangkaan laci = modal + tunai dibayar dalam shift − pulangan tunai order dibatal dalam shift + cash in − cash out.
+  Cash out (`pos_cash_move` 'keluar') = transaksi Out di Rekod (kategori dipilih, kaedah tunai); cash in bukan transaksi.
+  Tutup = kiraan buta: `pos_shift_summary` sembunyi jangkaan untuk bukan owner/admin semasa shift dibuka; `pos_close_shift`
+  simpan gambaran akhir (tak berubah). Semua staf POS boleh buka/tutup/cash in-out. POS tahan jika Fasa 23 belum dijalankan.
 
 - **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
@@ -193,7 +199,7 @@ antara fasa; tanya soalan "Perlu ditanya" di awal setiap fasa). Item POS di bawa
    - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
    - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
    - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
-- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 23.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 24.
 
 ### Nota kerja untuk sesi baru
 - Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk

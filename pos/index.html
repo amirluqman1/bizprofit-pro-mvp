@@ -39,6 +39,7 @@
         <button type="button" class="tab" data-view="today" data-i18n="Today">Today</button>
       </nav>
       <div class="top-actions">
+        <button type="button" id="shiftBtn" class="chip shift-chip" hidden><span class="dot"></span><span id="shiftLabel"></span></button>
         <button type="button" id="editMenuBtn" class="chip" hidden>✎ <span data-i18n="Edit menu">Edit menu</span></button>
         <button type="button" id="printerBtn" class="chip"><span class="dot"></span><span id="printerLabel" data-i18n="Printer">Printer</span></button>
         <button type="button" id="moreBtn" class="chip" aria-label="Menu">☰</button>
@@ -47,6 +48,16 @@
 
     <!-- Order: menu (kiri) + troli (kanan) -->
     <main id="viewOrder" class="order">
+      <!-- Shift belum dibuka: wajib buka shift (kira duit modal laci) sebelum jual -->
+      <div id="shiftGate" class="shift-gate" hidden>
+        <div class="card stack gate-card">
+          <h2 data-i18n="Shop is closed">Shop is closed</h2>
+          <p class="muted" data-i18n="Open a shift to start selling. Count the cash in the drawer now.">Open a shift to start selling. Count the cash in the drawer now.</p>
+          <label class="field"><span data-i18n="Cash in the drawer now (RM)">Cash in the drawer now (RM)</span><input id="gateFloat" type="number" inputmode="decimal" min="0" step="0.01"></label>
+          <p id="gateLast" class="muted small"></p>
+          <button type="button" class="btn primary big" id="gateOpen" data-i18n="Open shift">Open shift</button>
+        </div>
+      </div>
       <section class="menu-pane">
         <div id="editBar" class="edit-bar" hidden>
           <span><b data-i18n="Editing menu">Editing menu</b> · <span id="editHint"></span></span>
@@ -142,6 +153,59 @@
       <button type="button" class="btn ghost danger" id="logout" data-i18n="Log out">Log out</button>
       <button type="button" class="btn link" data-close="moreDialog" data-i18n="Close">Close</button>
     </div>
+  </dialog>
+
+  <!-- Shift: ringkasan + tindakan -->
+  <dialog id="shiftDialog">
+    <div class="stack">
+      <h2 data-i18n="Shift">Shift</h2>
+      <div id="shiftBody"></div>
+      <div class="two-btn">
+        <button type="button" class="btn ghost" id="smOut" data-i18n="− Cash out">− Cash out</button>
+        <button type="button" class="btn ghost" id="smIn" data-i18n="+ Cash in">+ Cash in</button>
+      </div>
+      <div class="two-btn">
+        <button type="button" class="btn ghost" id="smPrint" data-i18n="Print summary">Print summary</button>
+        <button type="button" class="btn primary" id="smClose" data-i18n="Close shift">Close shift</button>
+      </div>
+      <button type="button" class="btn link" data-close="shiftDialog" data-i18n="Close">Close</button>
+    </div>
+  </dialog>
+  <dialog id="cashMoveDialog">
+    <form id="cmForm" class="stack" novalidate>
+      <h2 id="cmTitle"></h2>
+      <label class="field"><span data-i18n="Amount (RM)">Amount (RM)</span><input id="cmAmount" type="number" inputmode="decimal" min="0" step="0.01"></label>
+      <label class="field"><span data-i18n="Reason">Reason</span><input id="cmReason" maxlength="200" autocomplete="off"></label>
+      <label class="field" id="cmCatWrap"><span data-i18n="Expense category">Expense category</span><select id="cmCat"></select></label>
+      <p id="cmHint" class="muted small"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close="cashMoveDialog" data-i18n="Cancel">Cancel</button>
+        <button class="btn primary" id="cmSave" data-i18n="Save">Save</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="closeShiftDialog">
+    <form id="csForm" class="stack" novalidate>
+      <div id="csStep1" class="stack">
+        <h2 data-i18n="Close shift">Close shift</h2>
+        <p class="muted" data-i18n="Count all the cash in the drawer and enter the total. The expected amount is shown after you confirm.">Count all the cash in the drawer and enter the total. The expected amount is shown after you confirm.</p>
+        <label class="field"><span data-i18n="Cash counted (RM)">Cash counted (RM)</span><input id="csCount" type="number" inputmode="decimal" min="0" step="0.01"></label>
+        <label class="field"><span data-i18n="Note (optional)">Note (optional)</span><input id="csNote" maxlength="200" autocomplete="off"></label>
+        <p id="csBills" class="warn small"></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn ghost" data-close="closeShiftDialog" data-i18n="Cancel">Cancel</button>
+          <button class="btn primary" id="csConfirm" data-i18n="Close shift">Close shift</button>
+        </div>
+      </div>
+      <div id="csStep2" class="stack" hidden>
+        <h2 data-i18n="Shift closed">Shift closed</h2>
+        <div id="csResult"></div>
+        <div class="dialog-actions">
+          <button type="button" class="btn ghost" id="csPrint" data-i18n="Print report">Print report</button>
+          <button type="button" class="btn primary" id="csDone" data-i18n="Done">Done</button>
+        </div>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

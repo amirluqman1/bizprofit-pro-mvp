@@ -159,3 +159,26 @@ dialog::backdrop { background: rgba(2, 6, 23, .7); }
 .sw-btn.on { outline: 3px solid #fff; outline-offset: 2px; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 15px; }
 .check input { width: 20px; height: 20px; }
+
+/* ---------- Shift (Fasa 23) ---------- */
+.order { position: relative; }
+.shift-gate { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, .94); }
+.gate-card { width: min(440px, 100%); }
+.shift-chip .dot { background: var(--red); }
+.shift-chip.ok .dot { background: var(--mint); }
+.kv-list { display: grid; gap: 2px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.kv span { color: var(--muted); }
+.kv b { font-family: var(--mono); white-space: nowrap; }
+.kv.total b { font-size: 20px; color: var(--mint); }
+.kv.small { font-size: 13px; padding: 5px 0; }
+.neg, .kv.neg b { color: var(--red) !important; }
+.pos, .kv.pos b { color: var(--mint); }
+.warn { color: #fbbf24; margin: 0; }
+.warn:empty { display: none; }
+.sub-h { margin: 6px 0 0; font-size: 15px; }
+.two-btn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shift-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 6px; }
+.shift-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.shift-head .btn { min-height: 38px; padding: 6px 14px; }
+.app:has(.shift-gate:not([hidden])) .cart-bar { display: none !important; }   /* kedai tutup: sembunyi bar troli (phone) */

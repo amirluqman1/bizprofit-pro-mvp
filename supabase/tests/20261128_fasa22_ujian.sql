@@ -6,7 +6,7 @@ declare res text := ''; gagal int := 0; n int; s text;
   uO uuid := gen_random_uuid(); uAd uuid := gen_random_uuid(); uAd2 uuid := gen_random_uuid();
   uM uuid := gen_random_uuid(); uS uuid := gen_random_uuid(); uB uuid := gen_random_uuid();
   bizA uuid; bizB uuid; out1 uuid; out2 uuid; outB uuid;
-  mNasi uuid; mMee uuid; mTeh uuid; mMilo uuid; mLauk uuid; mB uuid;
+  mNasi uuid; mMee uuid; mTeh uuid; mMilo uuid; mLauk uuid; mB uuid; oPos uuid := gen_random_uuid();
 begin
   begin
     -- ===== Data ujian (sebagai postgres) =====
@@ -81,15 +81,13 @@ begin
     begin delete from public.menu_items where id = mLauk;
       res := res || E'Padam lauk yang digunakan resepi: DITERIMA (SALAH)\n'; gagal := gagal + 1;
     exception when others then res := res || format(E'Padam lauk yang digunakan resepi: ditolak (betul) — %s\n', sqlerrm); end;
-    reset role;
-    insert into public.pos_order_items (menu_item_id, name) values (mMee, 'Mee Goreng');
-    perform set_config('request.jwt.claims', json_build_object('sub', uO, 'role', 'authenticated')::text, true);
-    set local role authenticated;
+    insert into public.pos_orders (id, outlet_id) values (oPos, out1);
+    insert into public.pos_order_items (order_id, menu_item_id, qty) values (oPos, mMee, 1);
     delete from public.menu_items where id = mMee;
     get diagnostics n = row_count;
     res := res || format(E'Owner padam menu: %s baris (jangka 1)\n', n); if n <> 1 then gagal := gagal + 1; end if;
     reset role;
-    select count(*) into n from public.pos_order_items where name = 'Mee Goreng' and menu_item_id is null;
+    select count(*) into n from public.pos_order_items where order_id = oPos and name = 'Mee Goreng' and menu_item_id is null;
     res := res || format(E'Order lama selepas menu dipadam: %s baris kekal (jangka 1)\n', n); if n <> 1 then gagal := gagal + 1; end if;
 
     -- ===== Admin outlet 1 =====

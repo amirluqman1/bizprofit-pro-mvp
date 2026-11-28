@@ -6,6 +6,7 @@ import { sb, session, loadAccount, NO_PROFILE } from '../../app/js/session.js';
 import { rm } from '../../app/js/format.js';
 import { t, getLang, setLang, applyStatic, locale } from '../../app/js/i18n.js';
 import * as printer from './printer.js';
+import { setupShift, loadShift, needsShift, renderShiftToday } from './shift.js';
 import { setupMenuEdit, canEdit, categoryList, sortedMenus, catKey, colorOf, openMenuDialog, openCategoryDialog, OTHER } from './menu-edit.js';
 
 const OUTLET_KEY = 'bp.pos.outlet';
@@ -81,9 +82,9 @@ async function enter() {
   $('topOutlet').textContent = session.outlets.find(o => o.id === st.outletId)?.name || '';
   $('whoami').textContent = `${session.user.email} · ${session.outlets.find(o => o.id === st.outletId)?.name || ''}`;
   st.cart = newCart();
-  if (!menuEditReady) { setupMenuEdit({ st, reload: loadMenus, render: renderOrder }); menuEditReady = true; }
+  if (!menuEditReady) { setupMenuEdit({ st, reload: loadMenus, render: renderOrder }); setupShift({ st }); menuEditReady = true; }
   $('editMenuBtn').hidden = !canEdit();
-  await Promise.all([loadSettings(), loadMenus(), loadMethods()]);
+  await Promise.all([loadSettings(), loadMenus(), loadMethods(), loadShift()]);
   renderOrder();
   refreshOpenCount();
   printer.reconnect().then(paintPrinter);
@@ -118,6 +119,7 @@ function showView(v) {
   $('viewOrder').hidden = v !== 'order';
   $('viewBills').hidden = v !== 'bills';
   $('viewToday').hidden = v !== 'today';
+  $('shiftGate').hidden = v !== 'order' || !needsShift();
   if (v === 'bills') renderBills();
   if (v === 'today') renderToday();
 }
@@ -523,13 +525,14 @@ async function renderToday() {
   const byMethod = {};
   paid.forEach(o => { byMethod[o.payment_method] = (byMethod[o.payment_method] || 0) + sen(o.total); });
   const sum = paid.reduce((a, o) => a + sen(o.total), 0);
-  box.innerHTML = `<div class="summary"><div><b>${rm(sum / 100)}</b><span>${t('{n} paid orders', { n: paid.length })}</span></div>
+  box.innerHTML = `<div id="todayShift"></div><div class="summary"><div><b>${rm(sum / 100)}</b><span>${t('{n} paid orders', { n: paid.length })}</span></div>
       ${Object.entries(byMethod).map(([m, v]) => `<div><b>${rm(v / 100)}</b><span>${esc(m)}</span></div>`).join('')}</div>
     ${orders.length ? orders.map(o => `<div class="row ${o.status === 'batal' ? 'void' : ''}"><div class="main"><b>${esc(orderTitle(o))}</b>
         <small>${timeOf(o.paid_at || o.created_at)} · ${o.status === 'batal' ? `${t('Cancelled')}${o.void_reason ? ': ' + esc(o.void_reason) : ''}` : esc(o.payment_method || '')}</small></div>
         <span class="amt">${rm(o.total)}</span>
         ${o.status === 'dibayar' ? `<button type="button" class="btn ghost" data-print="${esc(o.id)}">${t('Print')}</button>${session.isAdminUp ? `<button type="button" class="btn link danger" data-void="${esc(o.id)}">${t('Cancel')}</button>` : ''}` : ''}
       </div>`).join('') : `<div class="empty">${t('No orders yet today.')}</div>`}`;
+  renderShiftToday($('todayShift'));
   box.onclick = async e => {
     const pr = e.target.closest('[data-print]');
     if (pr) { const r = await fetchReceipt(pr.dataset.print); st.lastReceipt = r; tryPrint(receiptBytes(r)); return; }
