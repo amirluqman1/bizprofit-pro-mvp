@@ -76,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 22 (12b, 15–21 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 23 (12b, 15–22 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -111,6 +111,9 @@ Setiap kali ubah fail dalam `app/`:
 
 ## Git
 - Kerja di branch kerja (bukan terus ke `main`); `main` = production (GitHub Pages).
+- **Pengecualian (pengguna, 28 Nov): kerja POS terus commit & push ke `main`** (POS belum dilancarkan).
+  Tetap uji dulu; fail BizProfit yang dikongsi (`app/js/*`, `i18n-ms.js`) terus live. Migration tetap perlu izin
+  dan dijalankan SEBELUM kod yang bergantung padanya ditolak (atau kod mesti tahan bila objek DB belum wujud).
 - Commit message dalam English, ringkas, mula dengan kawasan: `Payroll: ...`, `Report: ...`, `Key In: ...`, `Stock: ...`.
 - Satu commit satu perubahan yang logik.
 
@@ -137,6 +140,10 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
   Laci duit: `ESC p` pin 2 + pin 5 dihantar di awal resit bila bayar TUNAI sahaja (cetak semula tidak buka laci);
   `pos/uji-printer.html` ada butang "Uji laci duit". Ditambah 28 Nov selepas pengguna lapor laci tak terbuka.
+  Edit menu dalam POS (Fasa 22, `pos/js/menu-edit.js`): owner/admin ✎ Edit menu → tambah/ubah/padam menu & kategori,
+  seret ⠿ untuk susun (dalam satu kategori; RPC `reorder_menu`), seret kategori (`reorder_menu_categories`), warna
+  kategori (`menu_categories.color`, palet 8). Kategori kekal teks dalam `menu_items.category`; trigger cipta baris
+  `menu_categories` automatik. POS tahan jika Fasa 22 belum dijalankan (tiada warna/susun kategori).
 
 - **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
@@ -184,7 +191,7 @@ antara fasa; tanya soalan "Perlu ditanya" di awal setiap fasa). Item POS di bawa
    - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
    - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
    - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
-- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 22.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 23.
 
 ### Nota kerja untuk sesi baru
 - Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk

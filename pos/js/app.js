@@ -6,6 +6,7 @@ import { sb, session, loadAccount, NO_PROFILE } from '../../app/js/session.js';
 import { rm } from '../../app/js/format.js';
 import { t, getLang, setLang, applyStatic, locale } from '../../app/js/i18n.js';
 import * as printer from './printer.js';
+import { setupMenuEdit, canEdit, categoryList, sortedMenus, catKey, colorOf, openMenuDialog, openCategoryDialog, OTHER } from './menu-edit.js';
 
 const OUTLET_KEY = 'bp.pos.outlet';
 const isCash = name => /tunai|cash/i.test(name || '');
@@ -14,7 +15,8 @@ const uuid = () => crypto.randomUUID();
 const errText = e => e?.message || t('Unknown error.');
 
 const st = {
-  outletId: null, settings: {}, menus: [], cat: null, methods: [],
+  outletId: null, settings: {}, menus: [], categories: [], cat: null, methods: [],
+  editing: false,      // mod Edit menu (owner/admin)
   view: 'order', openCount: 0,
   cart: null,          // lihat newCart()
   lastReceipt: null    // { order, items } untuk cetak semula
@@ -79,6 +81,8 @@ async function enter() {
   $('topOutlet').textContent = session.outlets.find(o => o.id === st.outletId)?.name || '';
   $('whoami').textContent = `${session.user.email} · ${session.outlets.find(o => o.id === st.outletId)?.name || ''}`;
   st.cart = newCart();
+  if (!menuEditReady) { setupMenuEdit({ st, reload: loadMenus, render: renderOrder }); menuEditReady = true; }
+  $('editMenuBtn').hidden = !canEdit();
   await Promise.all([loadSettings(), loadMenus(), loadMethods()]);
   renderOrder();
   refreshOpenCount();
@@ -90,11 +94,15 @@ async function loadSettings() {
   if (error) toast(t('Could not load POS settings. Has the POS database update (Fasa 19) been applied?'), 'error');
   st.settings = data || {};
 }
+let menuEditReady = false;
 async function loadMenus() {
-  const { data, error } = await sb.from('menu_items').select('id,name,selling_price,category,available,sort_order')
-    .eq('outlet_id', st.outletId).gt('selling_price', 0).order('sort_order').order('name');
+  const [{ data, error }, cats] = await Promise.all([
+    sb.from('menu_items').select('id,name,selling_price,category,available,sort_order')
+      .eq('outlet_id', st.outletId).gt('selling_price', 0).order('sort_order').order('name'),
+    sb.from('menu_categories').select('name,color,sort_order').eq('outlet_id', st.outletId)]);
   if (error) { toast(t('Could not load the menu.'), 'error'); st.menus = []; return; }
   st.menus = data || [];
+  st.categories = cats.error ? [] : (cats.data || []);   // sebelum Fasa 22: tiada warna/susunan kategori
 }
 async function loadMethods() {
   const { data } = await sb.from('payment_methods').select('name').order('name');
@@ -116,35 +124,57 @@ function showView(v) {
 
 // ================= Menu & troli =================
 function renderOrder() {
-  const cats = [...new Set(st.menus.map(m => m.category || t('Other')))];
-  if (st.cat && !cats.includes(st.cat)) st.cat = null;
-  $('cats').innerHTML = cats.length > 1
+  const cats = categoryList(st), ed = st.editing;
+  if (st.cat && !cats.some(c => c.key === st.cat)) st.cat = null;
+  $('cats').classList.toggle('editing', ed);
+  $('menuGrid').classList.toggle('editing', ed);
+  $('editBar').hidden = !ed;
+  $('editMenuBtn').classList.toggle('on', ed);
+  // Kategori: warna + (mod edit) seret untuk susun, tekan kategori terpilih untuk ubah, "+" untuk tambah.
+  $('cats').innerHTML = (cats.length > 1 || ed)
     ? [`<button type="button" class="cat ${st.cat ? '' : 'on'}" data-cat="">${t('All')}</button>`,
-       ...cats.map(c => `<button type="button" class="cat ${st.cat === c ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`)].join('')
+       ...cats.map(c => `<button type="button" class="cat ${st.cat === c.key ? 'on' : ''}" data-cat="${esc(c.key)}"
+          ${ed && c.key !== OTHER ? `data-id="${esc(c.key)}"` : ''} ${c.color ? `style="--c:${c.color}"` : ''}>${c.color ? '<i class="sw"></i>' : ''}${esc(c.name)}${ed && st.cat === c.key && c.key !== OTHER ? ' <span class="pen">✎</span>' : ''}</button>`),
+       ...(ed ? [`<button type="button" class="cat add" data-addcat>${t('+ Category')}</button>`] : [])].join('')
     : '';
   renderMenuGrid();
   renderCart();
 }
 
 function renderMenuGrid() {
-  const list = st.menus.filter(m => !st.cat || (m.category || t('Other')) === st.cat);
+  const list = sortedMenus(st).filter(m => !st.cat || catKey(m) === st.cat);
   const inCart = id => st.cart.lines.filter(l => l.menuId === id && !l.removed).reduce((a, l) => a + l.qty, 0);
-  $('menuGrid').innerHTML = list.length
-    ? list.map(m => {
-        const q = inCart(m.id);
-        return `<button type="button" class="mi" data-menu="${esc(m.id)}" ${m.available ? '' : 'disabled'}>${q ? `<i class="q">${q}</i>` : ''}<b>${esc(m.name)}</b><span>${m.available ? rm(m.selling_price) : t('Sold out')}</span></button>`;
-      }).join('')
-    : `<div class="empty">${st.menus.length ? t('No menu in this category.') : t('No menu yet. The owner or admin adds menu items in BizProfit → Menu → POS (counter).')}</div>`;
+  const ed = st.editing, canDrag = ed && (st.cat || categoryList(st).length <= 1);   // susun dalam satu kategori
+  $('editHint').textContent = !ed ? '' : canDrag ? t('Drag ⠿ to move a menu. Tap a menu to edit it.') : t('Choose a category above to arrange its menus. Tap a menu to edit it.');
+  const tiles = list.map(m => {
+    const q = inCart(m.id), c = colorOf(st, m);
+    return `<button type="button" class="mi ${m.available ? '' : 'off'}" data-menu="${esc(m.id)}" ${canDrag ? `data-id="${esc(m.id)}"` : ''}
+      ${!ed && !m.available ? 'disabled' : ''} ${c ? `style="--c:${c}"` : ''}>${canDrag ? '<i class="grip" aria-hidden="true">⠿</i>' : ''}${!ed && q ? `<i class="q">${q}</i>` : ''}<b>${esc(m.name)}</b><span>${m.available ? rm(m.selling_price) : t('Sold out')}</span></button>`;
+  });
+  if (ed) tiles.push(`<button type="button" class="mi add" data-addmenu>${t('+ Add menu')}</button>`);
+  $('menuGrid').innerHTML = tiles.length ? tiles.join('')
+    : `<div class="empty">${st.menus.length ? t('No menu in this category.') : canEdit() ? t('No menu yet. Tap "✎ Edit menu" at the top to add menu items.') : t('No menu yet. Ask the owner or admin to add menu items.')}</div>`;
 }
 
 $('cats').addEventListener('click', e => {
+  if (e.target.closest('[data-addcat]')) { openCategoryDialog(null); return; }
   const b = e.target.closest('[data-cat]');
   if (!b) return;
-  st.cat = b.dataset.cat || null;
+  const key = b.dataset.cat || null;
+  if (st.editing && key && key !== OTHER && st.cat === key) { openCategoryDialog(key); return; }   // tekan sekali lagi = ubah
+  st.cat = key;
   renderOrder();
 });
+$('editMenuBtn').onclick = () => { st.editing = !st.editing; renderOrder(); };
+$('editDone').onclick = () => { st.editing = false; renderOrder(); };
 
 $('menuGrid').addEventListener('click', e => {
+  if (st.editing) {
+    if (e.target.closest('[data-addmenu]')) { openMenuDialog(null); return; }
+    const em = e.target.closest('[data-menu]');
+    if (em) openMenuDialog(st.menus.find(x => x.id === em.dataset.menu));
+    return;
+  }
   const b = e.target.closest('[data-menu]');
   if (!b || b.disabled) return;
   const m = st.menus.find(x => x.id === b.dataset.menu);

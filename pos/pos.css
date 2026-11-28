@@ -136,3 +136,26 @@ dialog::backdrop { background: rgba(2, 6, 23, .7); }
   .brand span { max-width: 40vw; }
 }
 @media (prefers-reduced-motion: reduce) { .cart { transition: none; } }
+
+/* ---------- Warna kategori + mod Edit menu (Fasa 22) ---------- */
+.cat .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 7px; vertical-align: 0; }
+.cat.on[style*="--c"] { background: var(--c); border-color: var(--c); color: #04140d; }
+.cat.on[style*="--c"] .sw { background: #04140d; opacity: .35; }
+.cat .pen { opacity: .8; }
+.cat.add { border-style: dashed; color: var(--text); }
+.mi[style*="--c"] { border-color: color-mix(in srgb, var(--c) 55%, var(--line)); background: color-mix(in srgb, var(--c) 14%, var(--panel)); }
+.mi.off { opacity: .55; }
+.mi.add { border: 1.5px dashed var(--line-2); background: transparent; color: var(--muted); align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+.menu-grid.editing .mi:not(.add) { border-style: dashed; }
+.mi .grip { position: absolute; top: 4px; right: 4px; width: 40px; height: 40px; display: grid; place-items: center; font-style: normal; font-size: 20px; color: var(--muted); border-radius: 10px; background: rgba(15, 23, 42, .55); touch-action: none; cursor: grab; }
+.cats.editing .cat[data-id] { touch-action: none; cursor: grab; }
+.edit-bar { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin: 10px 12px 0; padding: 8px 8px 8px 14px; border-radius: 12px; background: rgba(59, 130, 246, .14); border: 1px solid rgba(59, 130, 246, .45); font-size: 14px; }
+.edit-bar .btn { min-height: 38px; padding: 6px 16px; }
+#editMenuBtn.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.drag-ph { opacity: .25; }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; opacity: .92; box-shadow: 0 14px 34px rgba(0, 0, 0, .5); transform-origin: center; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw-btn { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line-2); background: var(--c, var(--input)); color: var(--muted); cursor: pointer; font-size: 16px; }
+.sw-btn.on { outline: 3px solid #fff; outline-offset: 2px; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.check input { width: 20px; height: 20px; }

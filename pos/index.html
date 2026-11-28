@@ -39,6 +39,7 @@
         <button type="button" class="tab" data-view="today" data-i18n="Today">Today</button>
       </nav>
       <div class="top-actions">
+        <button type="button" id="editMenuBtn" class="chip" hidden>✎ <span data-i18n="Edit menu">Edit menu</span></button>
         <button type="button" id="printerBtn" class="chip"><span class="dot"></span><span id="printerLabel" data-i18n="Printer">Printer</span></button>
         <button type="button" id="moreBtn" class="chip" aria-label="Menu">☰</button>
       </div>
@@ -47,6 +48,10 @@
     <!-- Order: menu (kiri) + troli (kanan) -->
     <main id="viewOrder" class="order">
       <section class="menu-pane">
+        <div id="editBar" class="edit-bar" hidden>
+          <span><b data-i18n="Editing menu">Editing menu</b> · <span id="editHint"></span></span>
+          <button type="button" class="btn primary" id="editDone" data-i18n="Done">Done</button>
+        </div>
         <div id="cats" class="cats" role="tablist"></div>
         <div id="menuGrid" class="menu-grid"></div>
       </section>

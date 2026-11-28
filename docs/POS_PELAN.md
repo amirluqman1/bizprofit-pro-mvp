@@ -89,4 +89,5 @@ Kiraan jumlah di tablet mesti sama tepat dengan database (macam gaji Fasa 20: uj
 
 ## Status
 - [x] Laci automatik bila bayar tunai (PR #48), menunggu ujian di kedai
+- [x] P0 (permintaan pengguna 28 Nov, didahulukan): Edit menu dalam POS + seret susun + warna kategori (Fasa 22)
 - [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] P5 · [ ] P6a · [ ] P6b · [ ] P7 · [ ] P8
