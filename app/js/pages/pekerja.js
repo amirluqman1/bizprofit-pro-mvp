@@ -129,6 +129,28 @@ async function renderAttendance() {
   return state.atView === 'day' ? renderAttendanceDay($('atBody')) : renderAttendanceGrid($('atBody'));
 }
 
+// ---------- Hari yang gajinya sudah dibayar (Fasa 21) ----------
+// Dikunci di database: manager & staff tak boleh ubah; owner/admin hanya melalui
+// change_paid_attendance() dengan sebab (direkod dalam attendance_audit). Slip dibayar tak berubah.
+const dayKey = (id, d) => `${id}|${d}`;
+async function loadPaidDays(ids, from, to) {
+  if (!ids.length) return new Set();
+  const { data, error } = await sb.from('payroll_days').select('employee_id,work_date')
+    .in('employee_id', ids).gte('work_date', from).lte('work_date', to);
+  return new Set(error ? [] : (data || []).map(r => dayKey(r.employee_id, r.work_date)));   // gagal baca: DB tetap kunci
+}
+// Pulangkan true jika berjaya diubah. status null = buang tanda.
+async function changePaidDay(empId, date, status, ot) {
+  if (!session.isAdminUp) { toast(t('Salary for this day is already paid. Only the owner or admin can change it.'), 'error'); return false; }
+  const reason = prompt(t('Salary for {d} is already paid. Why are you changing it? (saved in the log)\n\nForgot OT? Add it as an allowance with a reason in the next payslip.', { d: dateLong(date) }));
+  if (reason === null) return false;
+  if (!reason.trim()) { toast(t('Write a reason to change a paid day.'), 'error'); return false; }
+  const { error } = await sb.rpc('change_paid_attendance', { p_employee: empId, p_date: date, p_status: status, p_ot: ot || 0, p_reason: reason.trim() });
+  if (error) { toast(t('Save failed: ') + errText(error), 'error'); return false; }
+  toast(t('Changed and logged. The paid payslip does not change.'));
+  return true;
+}
+
 async function renderAttendanceDay(box) {
   const active = employees.filter(e => e.active);
   box.innerHTML = `
@@ -141,22 +163,36 @@ async function renderAttendanceDay(box) {
     <div id="atList" class="list"></div>`;
   if (!active.length) { $('atList').innerHTML = emptyStaff(); $('atAll').hidden = true; $('atUndo').hidden = true; return; }
 
-  let marks = new Map();
+  let marks = new Map(), paid = new Set(), logs = new Map();
+  const locked = id => paid.has(dayKey(id, state.date));
   async function load() {
-    const { data, error } = await sb.from('attendance').select('employee_id,status,ot_hours')
-      .eq('work_date', state.date).in('employee_id', active.map(e => e.id));
+    const ids = active.map(e => e.id);
+    const [{ data, error }, paidSet] = await Promise.all([
+      sb.from('attendance').select('employee_id,status,ot_hours').eq('work_date', state.date).in('employee_id', ids),
+      loadPaidDays(ids, state.date, state.date)]);
     if (error) { toast(t('Could not load attendance.'), 'error'); return; }
     marks = new Map((data || []).map(a => [a.employee_id, a]));
+    paid = paidSet;
+    logs = new Map();
+    if (session.isAdminUp && paid.size) {   // log perubahan selepas bayar (owner/admin sahaja boleh baca)
+      const { data: lg } = await sb.from('attendance_audit').select('employee_id,reason,changed_by_email,changed_at')
+        .eq('work_date', state.date).in('employee_id', ids).order('changed_at', { ascending: false });
+      (lg || []).forEach(l => { if (!logs.has(l.employee_id)) logs.set(l.employee_id, l); });
+    }
     draw();
   }
   function draw() {
     $('atList').innerHTML = active.map(e => {
-      const m = marks.get(e.id);
-      return `<div class="card emp" data-emp="${esc(e.id)}">
+      const m = marks.get(e.id), lock = locked(e.id), off = lock && !session.isAdminUp ? 'disabled' : '';
+      const log = logs.get(e.id);
+      return `<div class="card emp${lock ? ' locked' : ''}" data-emp="${esc(e.id)}">
         <div class="emp-head"><div><b>${esc(e.name)}</b><span class="sub">${esc([e.position, session.outletId === ALL_OUTLETS ? outletName(e.outlet_id) : ''].filter(Boolean).join(' · '))}</span></div>
-          <label class="ot">OT<input type="number" inputmode="decimal" min="0" max="24" step="0.5" value="${m ? Number(m.ot_hours) : 0}" data-ot="${esc(e.id)}" aria-label="${t('OT hours {x}', { x: esc(e.name) })}">hrs</label></div>
+          <label class="ot">OT<input type="number" inputmode="decimal" min="0" max="24" step="0.5" value="${m ? Number(m.ot_hours) : 0}" data-ot="${esc(e.id)}" ${off} aria-label="${t('OT hours {x}', { x: esc(e.name) })}">hrs</label></div>
         <div class="chips st">${Object.entries(STATUS).map(([k, v]) =>
-          `<button type="button" class="chip ${k} ${m?.status === k ? 'on' : ''}" data-status="${k}" data-id="${esc(e.id)}" aria-pressed="${m?.status === k}">${t(v)}</button>`).join('')}</div>
+          `<button type="button" class="chip ${k} ${m?.status === k ? 'on' : ''}" data-status="${k}" data-id="${esc(e.id)}" ${off} aria-pressed="${m?.status === k}">${t(v)}</button>`).join('')}</div>
+        ${lock ? `<p class="note-line small">${icon('lock')}${session.isAdminUp ? t('Salary paid for this day. Changes need a reason and are logged.') : t('Salary paid for this day. Locked.')}</p>` : ''}
+        ${log ? `<p class="note-line small">${t('Changed after payment: {r} ({w}, {d})', { r: esc(log.reason), w: esc(log.changed_by_email || '-'),
+          d: esc(new Date(log.changed_at).toLocaleString(locale(), { timeZone: 'Asia/Kuala_Lumpur', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) })}</p>` : ''}
       </div>`;
     }).join('');
     const count = k => [...marks.values()].filter(m => m.status === k).length;
@@ -174,6 +210,11 @@ async function renderAttendanceDay(box) {
     const b = e.target.closest('[data-status]');
     if (!b) return;
     const id = b.dataset.id, cur = marks.get(id);
+    if (locked(id)) {                                // hari dibayar: owner/admin dengan sebab
+      const next = cur?.status === b.dataset.status ? null : b.dataset.status;
+      if (await changePaidDay(id, state.date, next, next ? Number(cur?.ot_hours || 0) : 0)) load();
+      return;
+    }
     if (cur?.status === b.dataset.status) {          // tekan sekali lagi = buang tanda
       const { error } = await sb.from('attendance').delete().eq('employee_id', id).eq('work_date', state.date);
       if (error) { toast(t('Could not remove mark.'), 'error'); return; }
@@ -187,6 +228,11 @@ async function renderAttendanceDay(box) {
     const ot = Number(inp.value);
     if (!(ot >= 0 && ot <= 24)) { toast(t('OT hours must be between 0 and 24.'), 'error'); inp.value = marks.get(inp.dataset.ot)?.ot_hours || 0; return; }
     const cur = marks.get(inp.dataset.ot);
+    if (locked(inp.dataset.ot)) {
+      if (await changePaidDay(inp.dataset.ot, state.date, cur?.status || 'hadir', ot)) load();
+      else inp.value = cur ? Number(cur.ot_hours) : 0;
+      return;
+    }
     if (await save(inp.dataset.ot, cur?.status || 'hadir', ot)) { draw(); toast(t('OT saved.')); }
   });
   $('atDate').addEventListener('change', e => {
@@ -194,7 +240,7 @@ async function renderAttendanceDay(box) {
     state.date = e.target.value; load();
   });
   $('atAll').onclick = async () => {
-    const todo = active.filter(e => !marks.has(e.id));
+    const todo = active.filter(e => !marks.has(e.id) && !locked(e.id));   // hari dibayar tidak disentuh
     if (!todo.length) { toast(t('All staff are already marked.')); return; }
     if (!confirm(t('Mark {n} unmarked staff as Present for {d}?', { n: todo.length, d: dateLong(state.date) }))) return;
     const { error } = await sb.from('attendance').upsert(
@@ -251,7 +297,8 @@ async function renderAttendanceGrid(box) {
         ${days.map(d => `<td><button type="button" class="at-cell" data-c="${esc(e.id)}|${d}" ${d > today ? 'disabled' : ''} aria-label="${esc(e.name)} ${esc(d)}"></button></td>`).join('')}
         <td class="at-tot" data-tot="${esc(e.id)}"></td></tr>`).join('')}</tbody>
     </table></div>
-    <p class="note-line small">${icon('check')}${t('Tap a box: <b>{p}</b> Present → <b>½</b> Half day → <b>{l}</b> Leave → <b>{a}</b> Absent → empty. Tap a <b>name</b> to mark that person\'s empty days Present. Tap a <b>date</b> to edit OT for that day.', { p: atCode('hadir'), l: atCode('cuti'), a: atCode('tidak_hadir') })}</p>` : emptyStaff()}`;
+    <p class="note-line small">${icon('check')}${t('Tap a box: <b>{p}</b> Present → <b>½</b> Half day → <b>{l}</b> Leave → <b>{a}</b> Absent → empty. Tap a <b>name</b> to mark that person\'s empty days Present. Tap a <b>date</b> to edit OT for that day.', { p: atCode('hadir'), l: atCode('cuti'), a: atCode('tidak_hadir') })}</p>
+    <p class="note-line small">${icon('lock')}${t('Dashed box = salary already paid for that day. Only the owner or admin can change it, with a reason.')}</p>` : emptyStaff()}`;
 
   $('agPrev').onclick = () => { state.date = state.atView === 'week' ? addDays(from, -7) : addDays(from, -1); renderAttendance(); };
   $('agNext').onclick = () => {
@@ -265,14 +312,16 @@ async function renderAttendanceGrid(box) {
     .gte('work_date', from).lte('work_date', to).in('employee_id', active.map(e => e.id));
   if (error) { $('agSum').textContent = t('Could not load attendance. Try again.'); return; }
   (data || []).forEach(a => marks.set(`${a.employee_id}|${a.work_date}`, { status: a.status, ot: Number(a.ot_hours) }));
+  const paid = await loadPaidDays(active.map(e => e.id), from, to);
 
   const grid = box.querySelector('.at-grid');
   const paintCell = key => {
     const el = grid.querySelector(`[data-c="${key}"]`);
     const st = marks.get(key)?.status;
-    el.className = 'at-cell' + (st ? ' s-' + st : '');
+    el.className = 'at-cell' + (st ? ' s-' + st : '') + (paid.has(key) ? ' locked' : '');
     el.textContent = st ? atCode(st) : '';
-    el.title = st ? t(STATUS[st]) + (marks.get(key).ot ? ' · ' + t('OT {n} hrs', { n: marks.get(key).ot }) : '') : t('Not marked');
+    el.title = (st ? t(STATUS[st]) + (marks.get(key).ot ? ' · ' + t('OT {n} hrs', { n: marks.get(key).ot }) : '') : t('Not marked'))
+      + (paid.has(key) ? ' · ' + t('Salary paid (locked)') : '');
   };
   const paintTotals = () => {
     active.forEach(e => {
@@ -284,7 +333,7 @@ async function renderAttendanceGrid(box) {
     const n = k => all.filter(x => x === k).length;
     $('agSum').textContent = `${t('Present')} ${n('hadir')} · ${t('Half day')} ${n('separuh')} · ${t('Leave')} ${n('cuti')} · ${t('Absent')} ${n('tidak_hadir')} · ${t('Empty')} ${n(undefined)}`;
   };
-  marks.forEach((_, k) => { if (grid.querySelector(`[data-c="${k}"]`)) paintCell(k); });
+  new Set([...marks.keys(), ...paid]).forEach(k => { if (grid.querySelector(`[data-c="${k}"]`)) paintCell(k); });
   paintTotals();
 
   // Simpan selepas berhenti menekan (boleh tekan berulang kali untuk pilih status).
@@ -298,7 +347,7 @@ async function renderAttendanceGrid(box) {
     if (err) { toast(t('Save failed: ') + errText(err), 'error'); renderAttendance(); }
   };
   const fill = async ids => {
-    const rows = ids.flatMap(id => days.filter(d => d <= today && !marks.get(`${id}|${d}`)?.status)
+    const rows = ids.flatMap(id => days.filter(d => d <= today && !marks.get(`${id}|${d}`)?.status && !paid.has(`${id}|${d}`))
       .map(d => ({ employee_id: id, work_date: d, status: 'hadir', ot_hours: 0 })));
     if (!rows.length) { toast(t('No empty days to mark.')); return; }
     const staffN = new Set(rows.map(r => r.employee_id)).size;
@@ -315,6 +364,14 @@ async function renderAttendanceGrid(box) {
     if (cell) {
       const key = cell.dataset.c, cur = marks.get(key);
       const next = AT_CYCLE[(AT_CYCLE.indexOf(cur?.status ?? null) + 1) % AT_CYCLE.length];
+      if (paid.has(key)) {                           // hari dibayar: terus (tanpa tunggu), dengan sebab
+        const [id, d] = key.split('|');
+        changePaidDay(id, d, next, next ? (cur?.ot || 0) : 0).then(ok => {
+          if (!ok) return;
+          marks.set(key, { status: next, ot: next ? (cur?.ot || 0) : 0 }); paintCell(key); paintTotals();
+        });
+        return;
+      }
       marks.set(key, { status: next, ot: next ? (cur?.ot || 0) : 0 });
       paintCell(key); paintTotals();
       clearTimeout(timers.get(key));
@@ -335,12 +392,14 @@ async function renderAttendanceGrid(box) {
 // dalam tempoh yang dipapar dan padam baris itu sahaja. Tanda satu-satu tidak tersentuh.
 async function undoBulk(from, to, ids, after) {
   if (!ids.length) return;
-  const { data, error } = await sb.from('attendance').select('id,employee_id,updated_at')
+  const { data, error } = await sb.from('attendance').select('id,employee_id,work_date,updated_at')
     .eq('status', 'hadir').eq('ot_hours', 0).gte('work_date', from).lte('work_date', to).in('employee_id', ids)
     .order('updated_at', { ascending: false }).limit(5000);
   if (error) { toast(t('Could not load attendance.'), 'error'); return; }
+  const paid = await loadPaidDays(ids, from, to);   // hari dibayar tidak dibatalkan
   const groups = new Map();
-  (data || []).forEach(r => groups.set(r.updated_at, [...(groups.get(r.updated_at) || []), r]));
+  (data || []).filter(r => !paid.has(dayKey(r.employee_id, r.work_date)))
+    .forEach(r => groups.set(r.updated_at, [...(groups.get(r.updated_at) || []), r]));
   const batch = [...groups.entries()].find(([, rows]) => rows.length >= 2);
   if (!batch) { toast(t('No bulk marking found in this period.')); return; }
   const [when, rows] = batch;

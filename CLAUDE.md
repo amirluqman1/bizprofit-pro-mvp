@@ -76,7 +76,7 @@ Setiap kali ubah fail dalam `app/`:
   keluarkan sebagai ralat "HASIL UJIAN" supaya semuanya rollback.
 - Ujian mesti uji pengasingan antara syarikat (`business_id` lain) setiap kali ada table/policy baru.
 - Fasa 14 (off day, elaun/potongan tetap, advance ansuran) ada draf tapi **belum** di repo/database;
-  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 21 (12b, 15–20 sudah digunakan).
+  tunggu bahagian app siap dulu. Nombor fasa seterusnya: 22 (12b, 15–21 sudah digunakan).
 - Tarikh fail tak ikut susunan nombor fasa (cth. `20261123_fasa15` sebelum `20261124_fasa13`). Fasa 12b,
   15, 16, 17 asalnya dari PR #25 dan dinamakan semula supaya tak bertembung dengan draf Fasa 14.
 - Sejarah migration dalam Supabase tak lengkap (ada yang dijalankan terus di SQL Editor). Untuk tahu
@@ -115,7 +115,7 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS). Semua PR hingga #44 sudah di-merge.
+Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
 
 ### Sudah siap & aktif di production
 - **Gaji (PR #41, Fasa 18)**: gaji bulanan pro-rata ikut hari kalendar (sebulan penuh = gaji penuh; "Minggu ini"
@@ -136,17 +136,24 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
   Harga disalin dari menu oleh DB; jumlah & baki dikira oleh `pos_pay_order()` (selamat dipanggil 2 kali).
   ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
 
-- **Gaji Fasa 20 (branch `ccr-4c60307b-75ne9y`, migration BELUM dijalankan di production)**: `payroll_calc()` kira
+- **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
   angka slip atau jumlah bersih tak sama dengan kiraan DB. Bayar gaji & advance = owner/admin sahaja (manager draf).
   Elaun/potongan > RM0 wajib nota (`payroll.note`). `pekerja.js` guna kiraan integer yang SAMA (`rdiv`, `MONTH_LCM`);
   diuji 600 kes rawak app vs DB = 0 beza. Ubah satu, ubah dua-dua. Keputusan pengguna 27 Nov.
+
+- **Kehadiran Fasa 21 (branch `ccr-4c60307b-75ne9y`, migration BELUM dijalankan di production)**: hari dalam
+  `payroll_days` dikunci oleh trigger `attendance_paid_guard`: manager/staff ditolak; owner/admin hanya melalui
+  `change_paid_attendance(emp, tarikh, status|null, ot, sebab)` → log kekal `attendance_audit` (baca: owner/admin).
+  Slip dibayar tak berubah; OT terlupa = elaun + sebab dalam slip seterusnya. Tanda/batal pukal langkau hari dibayar.
+  Semasa ditulis: 56 daripada 128 hari dibayar sudah diubah selepas bayar (insiden 27 Nov); data lama tidak disentuh.
 
 ### Perlu disahkan pengguna (belum diuji dengan login sebenar)
 - POS: setup menu di #/pos, buat order sebenar, cetak resit, semak "Jualan POS" di Rekod, bil terbuka, batal.
   Semak juga sama ada printer bersambung sendiri bila POS dibuka semula (`navigator.bluetooth.getDevices`).
   Semasa ditulis: 0 order POS, 0 menu berkategori di production.
 - Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
+- Gaji Fasa 20: bayar satu slip sebenar (owner), manager nampak "Simpan draf" sahaja, sebab elaun tercetak dalam PDF.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
 ### Seterusnya (ikut keutamaan; tanya pengguna dahulu sebelum mula)
@@ -165,14 +172,14 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
    tolak stok automatik ikut `menu_ingredients`, e-Invois (bawah RM3 juta setahun dikecualikan mulai
    1 Sep 2026 menurut sumber sekunder; sahkan di laman LHDN).
 7. **Baki kritik app (dari audit 26 Nov)**:
-   - Stok: `stok.js` simpan nilai mutlak `current_qty` → dua phone serentak boleh hilang satu kiraan.
+   - (Pengguna 28 Nov: "takde masalah, biar dulu" untuk dua ini; simpan, jangan mula tanpa tanya.)
+     Stok: `stok.js` simpan nilai mutlak `current_qty` → dua phone serentak boleh hilang satu kiraan.
      Cadangan: RPC `adjust_stock(id, delta)`.
-   - Key In tiada simpanan offline / boleh rekod berganda bila line lemah (guna ID dijana klien macam POS).
-   - Kehadiran masih boleh diubah selepas gaji dibayar (wang tak berubah, tapi rekod tak sepadan).
+     Key In tiada simpanan offline / boleh rekod berganda bila line lemah (guna ID dijana klien macam POS).
    - Ujian Fasa 15 belum dijalankan; staging kosong; tiada CI untuk ujian DB.
    - Kod wang bercampur (`cents()` dalam pekerja.js, `sen()` dalam format.js, `Math.round(x*100)` di rekod.js).
    - `pekerja.js` besar (~900 baris): pertimbang pecahkan bahagian gaji.
-- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 21.
+- Fasa 14 (off day, elaun/potongan tetap, advance ansuran): draf lama, belum di repo; nombor fasa seterusnya 22.
 
 ### Nota kerja untuk sesi baru
 - Pengguna guna PHONE. Kotak pengesahan tool Supabase tak muncul di phone: beri SQL dalam blok kod (```sql) untuk

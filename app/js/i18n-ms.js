@@ -927,4 +927,13 @@ export const MS = {
   "Reason: {x}": "Sebab: {x}",
   "Only the owner or admin can pay salaries. Save a draft for them to review and pay.": "Hanya owner atau admin boleh bayar gaji. Simpan draf untuk mereka semak dan bayar.",
   "Write the reason for the allowance or deduction before paying.": "Tulis sebab elaun atau potongan sebelum bayar.",
+  "Salary for this day is already paid. Only the owner or admin can change it.": "Gaji untuk hari ini sudah dibayar. Hanya owner atau admin boleh ubah.",
+  "Salary for {d} is already paid. Why are you changing it? (saved in the log)\n\nForgot OT? Add it as an allowance with a reason in the next payslip.": "Gaji untuk {d} sudah dibayar. Kenapa nak ubah? (disimpan dalam log)\n\nTerlupa OT? Masukkan sebagai elaun beserta sebab dalam slip gaji seterusnya.",
+  "Write a reason to change a paid day.": "Tulis sebab untuk ubah hari yang sudah dibayar.",
+  "Changed and logged. The paid payslip does not change.": "Sudah diubah dan direkod dalam log. Slip gaji yang dibayar tidak berubah.",
+  "Salary paid for this day. Changes need a reason and are logged.": "Gaji hari ini sudah dibayar. Perubahan perlu sebab dan direkod dalam log.",
+  "Salary paid for this day. Locked.": "Gaji hari ini sudah dibayar. Dikunci.",
+  "Changed after payment: {r} ({w}, {d})": "Diubah selepas bayar: {r} ({w}, {d})",
+  "Salary paid (locked)": "Gaji dibayar (dikunci)",
+  "Dashed box = salary already paid for that day. Only the owner or admin can change it, with a reason.": "Kotak bergaris putus = gaji hari itu sudah dibayar. Hanya owner atau admin boleh ubah, dengan sebab.",
 };

@@ -14,6 +14,7 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
   - Gaji bulanan: sebulan penuh = gaji penuh; tempoh lebih pendek dikira pro-rata ikut hari kalendar (gaji ÷ hari dalam bulan itu)
   - Tidak hadir (mingguan/bulanan), tetapan setiap pekerja: bayar penuh, potong gaji sehari (gaji ÷ hari bekerja), atau potong RM tetap sehari. Separuh hari = separuh potongan; cuti tidak dipotong
   - Semasa bayar, database kira semula gaji asas, OT, potongan tidak hadir dan advance; kalau angka berubah sejak dipapar, bayaran ditolak (muat semula). Elaun/potongan manual wajib ada sebab
+  - Kehadiran hari yang gajinya sudah dibayar dikunci: manager/staff tak boleh ubah; owner/admin boleh dengan sebab, direkod dalam log yang tidak boleh diubah. Slip dibayar tidak berubah (OT terlupa = elaun dalam slip seterusnya)
 - **POS** (`pos/`, untuk tablet kaunter, Chrome Android) — ambil order makan sini/bungkus, bil terbuka (bayar lepas makan), semua kaedah bayaran + baki tunai, resit & slip dapur ke printer thermal 58mm melalui Bluetooth (BLE). Jualan masuk ke Rekod sebagai "Jualan POS". Jumlah dikira oleh database. Tetapan & menu POS: Menu → POS (kaunter)
 - **PWA** — pasang di skrin utama; boleh dibuka tanpa internet (data perlukan internet)
 - **Akaun** — daftar sendiri (syarikat + outlet pertama, trial Pro 30 hari), lupa kata laluan, jemput staf melalui pautan WhatsApp (sekali guna, 7 hari), owner tambah outlet
@@ -30,6 +31,7 @@ Dibina sebagai PWA (HTML, CSS, JavaScript) dengan Supabase. Sedia untuk SaaS (se
 | Log audit | ✓ | Outlet sendiri | ✗ | ✗ |
 | Stok | ✓ | Penuh (outlet sendiri) | Tambah & ubah kuantiti | Tambah & ubah kuantiti |
 | Pekerja & kehadiran | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
+| Ubah kehadiran hari yang gaji dah dibayar | ✓ (wajib sebab, direkod) | Outlet sendiri (wajib sebab, direkod) | ✗ | ✗ |
 | Gaji: sediakan draf | ✓ | Semua pekerja outlet sendiri | Pekerja outlet sendiri (bukan peringkat pengurus) | ✗ |
 | Gaji: bayar & beri advance | ✓ | Semua pekerja outlet sendiri | ✗ | ✗ |
 | Akaun pengguna & jemputan | Semua outlet; jemput admin/manager/staff | Outlet sendiri; jemput manager/staff | ✗ | ✗ |
