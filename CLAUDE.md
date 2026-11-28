@@ -151,6 +151,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   Cash out (`pos_cash_move` 'keluar') = transaksi Out di Rekod (kategori dipilih, kaedah tunai); cash in bukan transaksi.
   Tutup = kiraan buta: `pos_shift_summary` sembunyi jangkaan untuk bukan owner/admin semasa shift dibuka; `pos_close_shift`
   simpan gambaran akhir (tak berubah). Semua staf POS boleh buka/tutup/cash in-out. POS tahan jika Fasa 23 belum dijalankan.
+  Fasa 23 aktif di production 28 Nov (disahkan: RLS + 4 policy + trigger + 7 fungsi; ujian SQL production tidak dijalankan).
 
 - **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
@@ -171,6 +172,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
 - Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
 - Gaji Fasa 20: bayar satu slip sebenar (owner), manager nampak "Simpan draf" sahaja, sebab elaun tercetak dalam PDF.
 - POS edit menu: uji seret ⠿ dengan jari di tablet sebenar (Playwright hanya uji dengan tetikus).
+- POS shift: buka shift, jual tunai/QR, cash out (semak masuk Rekod), cash in, tutup shift (kiraan buta), laporan dicetak.
 - POS laci duit: uji di `pos/uji-printer.html` (butang 4) dan bayar tunai sebenar. Belum disahkan Z58-III ada port DK.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
