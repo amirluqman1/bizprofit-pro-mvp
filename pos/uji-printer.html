@@ -58,6 +58,12 @@
   </section>
 
   <section class="card">
+    <h2><span class="num">4</span> Uji laci duit</h2>
+    <p class="muted">Laci mesti dicucuk ke port <b>DK / Cash Drawer</b> (kabel macam kabel telefon, RJ11) di belakang printer, dan laci dalam keadaan <b>tidak berkunci</b>. Tekan butang, pilih printer: laci patut terbuka (tiada kertas dicetak).</p>
+    <button id="btDrawer" type="button">Sambung Bluetooth &amp; buka laci</button>
+  </section>
+
+  <section class="card">
     <h2>Resit ujian yang akan dicetak</h2>
     <div class="preview" id="preview"></div>
   </section>
@@ -149,9 +155,13 @@ const BLE_SERVICES = [
   '0000ffe0-0000-1000-8000-00805f9b34fb', '0000fee7-0000-1000-8000-00805f9b34fb',
   '0000ae30-0000-1000-8000-00805f9b34fb', '0000ae00-0000-1000-8000-00805f9b34fb'
 ];
-document.getElementById('btBle').onclick = async () => {
-  const label = document.getElementById('btBle').textContent;
-  busy('btBle', true, 'Menyambung…');
+// Arahan buka laci: ESC p untuk pin 2 dan pin 5 (sama dengan pos/js/printer.js).
+const DRAWER = new Uint8Array([0x1B, 0x40, 0x1B, 0x70, 0x00, 0x19, 0xFA, 0x1B, 0x70, 0x01, 0x19, 0xFA]);
+document.getElementById('btBle').onclick = () => bleSend('btBle', buildReceipt, 'resit');
+document.getElementById('btDrawer').onclick = () => bleSend('btDrawer', () => DRAWER, 'arahan laci');
+async function bleSend(btn, makeData, what) {
+  const label = document.getElementById(btn).textContent;
+  busy(btn, true, 'Menyambung…');
   let device;
   try {
     device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: BLE_SERVICES });
@@ -170,7 +180,7 @@ document.getElementById('btBle').onclick = async () => {
     }
     if (!ch) throw new Error('Tiada saluran tulis. Printer ini mungkin Bluetooth Classic: cuba cara 2 (RawBT).');
     log(`BLE: guna ${ch.uuid}`);
-    const data = buildReceipt();
+    const data = makeData();
     const send = async size => {
       for (let i = 0; i < data.length; i += size) {
         const part = data.slice(i, i + size);
@@ -180,15 +190,15 @@ document.getElementById('btBle').onclick = async () => {
       }
     };
     try { await send(100); } catch (e) { log(`BLE: hantar 100 bait gagal (${e.message}), cuba 20 bait…`); await send(20); }
-    log(`BLE: ✓ ${data.length} bait dihantar. Semak printer!`);
+    log(`BLE: ✓ ${what} dihantar (${data.length} bait). Semak printer / laci!`);
   } catch (e) {
     if (e.name === 'NotFoundError') log('BLE: dibatalkan, atau printer tak muncul dalam senarai (kemungkinan Bluetooth Classic: cuba cara 2).');
     else log(`BLE: ✗ ${e.name || ''} ${e.message}`);
   } finally {
     try { device?.gatt?.connected && device.gatt.disconnect(); } catch {}
-    busy('btBle', false, label);
+    busy(btn, false, label);
   }
-};
+}
 
 // ===== Cara 2: RawBT =====
 // Hantar arahan ESC/POS (base64) ke app RawBT melalui intent Android. Jika app belum dipasang, Chrome buka Play Store.

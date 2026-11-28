@@ -87,6 +87,9 @@ export function escpos() {
     line: (ch = '-') => api.text(ch.repeat(WIDTH)),
     feed: n => api.raw(0x1B, 0x64, n),
     cut: () => api.raw(0x1D, 0x56, 0x42, 0x00),
+    // Buka laci duit yang dicucuk ke port DK/RJ11 printer: ESC p m t1 t2 (denyut 50ms, rehat 500ms).
+    // Hantar untuk pin 2 DAN pin 5 (laci berbeza guna pin berbeza). Printer tanpa laci abaikan.
+    drawer: () => api.raw(0x1B, 0x70, 0x00, 0x19, 0xFA, 0x1B, 0x70, 0x01, 0x19, 0xFA),
     bytes: () => new Uint8Array(out)
   };
   return api;

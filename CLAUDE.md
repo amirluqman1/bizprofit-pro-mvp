@@ -115,7 +115,7 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
+Dikemas kini 28 Nov 2026. Semua PR hingga #47 sudah di-merge.
 
 ### Sudah siap & aktif di production
 - **Gaji (PR #41, Fasa 18)**: gaji bulanan pro-rata ikut hari kalendar (sebulan penuh = gaji penuh; "Minggu ini"
@@ -135,6 +135,8 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
   removed_at/by); batal order dibayar/bil berisi = owner/admin + wajib sebab; bil kosong staff boleh batal.
   Harga disalin dari menu oleh DB; jumlah & baki dikira oleh `pos_pay_order()` (selamat dipanggil 2 kali).
   ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
+  Laci duit: `ESC p` pin 2 + pin 5 dihantar di awal resit bila bayar TUNAI sahaja (cetak semula tidak buka laci);
+  `pos/uji-printer.html` ada butang "Uji laci duit". Ditambah 28 Nov selepas pengguna lapor laci tak terbuka.
 
 - **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
@@ -142,7 +144,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
   Elaun/potongan > RM0 wajib nota (`payroll.note`). `pekerja.js` guna kiraan integer yang SAMA (`rdiv`, `MONTH_LCM`);
   diuji 600 kes rawak app vs DB = 0 beza. Ubah satu, ubah dua-dua. Keputusan pengguna 27 Nov.
 
-- **Kehadiran Fasa 21 (branch `ccr-4c60307b-75ne9y`, migration BELUM dijalankan di production)**: hari dalam
+- **Kehadiran Fasa 21 (PR #47, aktif di production 28 Nov; ujian production dilangkau atas keputusan pengguna)**: hari dalam
   `payroll_days` dikunci oleh trigger `attendance_paid_guard`: manager/staff ditolak; owner/admin hanya melalui
   `change_paid_attendance(emp, tarikh, status|null, ot, sebab)` → log kekal `attendance_audit` (baca: owner/admin).
   Slip dibayar tak berubah; OT terlupa = elaun + sebab dalam slip seterusnya. Tanda/batal pukal langkau hari dibayar.
@@ -154,6 +156,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
   Semasa ditulis: 0 order POS, 0 menu berkategori di production.
 - Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
 - Gaji Fasa 20: bayar satu slip sebenar (owner), manager nampak "Simpan draf" sahaja, sebab elaun tercetak dalam PDF.
+- POS laci duit: uji di `pos/uji-printer.html` (butang 4) dan bayar tunai sebenar. Belum disahkan Z58-III ada port DK.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
 ### Seterusnya (ikut keutamaan; tanya pengguna dahulu sebelum mula)

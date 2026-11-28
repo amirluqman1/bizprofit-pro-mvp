@@ -331,7 +331,7 @@ $('payConfirm').onclick = async () => {
     const receipt = await fetchReceipt(st.cart.id);
     st.lastReceipt = receipt;
     showDone(data, receipt);
-    let bytes = receiptBytes(receipt);
+    let bytes = receiptBytes(receipt, { drawer: cash != null });   // tunai: buka laci duit sekali
     if (st.settings.kitchen_slip && kitchen.length) bytes = concat(bytes, kitchenSlip({ ...st.cart, orderNo: data.order_no }, kitchen));
     await tryPrint(bytes, true);
     st.cart = newCart(); renderOrder(); closeCart(); refreshOpenCount();
@@ -368,10 +368,12 @@ function itemLines(p, left, right) {
   const parts = printer.wrap(left, room);
   parts.forEach((s, i) => p.text(i === parts.length - 1 ? printer.lr(s, right) : s));
 }
-function receiptBytes({ order, items }) {
+function receiptBytes({ order, items }, { drawer = false } = {}) {
   const outlet = session.outlets.find(o => o.id === order.outlet_id) || {};
   const company = outlet.company_name?.trim() || session.business?.name || 'BizProfit';
-  const p = printer.escpos().init().align('center');
+  const p = printer.escpos().init();
+  if (drawer) p.drawer();          // laci terbuka semasa resit dicetak (cetak semula: tidak)
+  p.align('center');
   p.bold(true).size(1, 2); printer.wrap(company).forEach(l => p.text(l)); p.size(1, 1).bold(false);
   if (outlet.name && outlet.name !== company) p.text(outlet.name);
   if (outlet.company_reg_no) p.text(outlet.company_reg_no);
