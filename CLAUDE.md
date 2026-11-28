@@ -144,6 +144,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   seret ⠿ untuk susun (dalam satu kategori; RPC `reorder_menu`), seret kategori (`reorder_menu_categories`), warna
   kategori (`menu_categories.color`, palet 8). Kategori kekal teks dalam `menu_items.category`; trigger cipta baris
   `menu_categories` automatik. POS tahan jika Fasa 22 belum dijalankan (tiada warna/susun kategori).
+  Fasa 22 aktif di production 28 Nov (disahkan: RLS + 6 policy + 3 trigger + 3 fungsi; kategori sedia ada diisi).
 
 - **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
@@ -163,6 +164,7 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
   Semasa ditulis: 0 order POS, 0 menu berkategori di production.
 - Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
 - Gaji Fasa 20: bayar satu slip sebenar (owner), manager nampak "Simpan draf" sahaja, sebab elaun tercetak dalam PDF.
+- POS edit menu: uji seret ⠿ dengan jari di tablet sebenar (Playwright hanya uji dengan tetikus).
 - POS laci duit: uji di `pos/uji-printer.html` (butang 4) dan bayar tunai sebenar. Belum disahkan Z58-III ada port DK.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
