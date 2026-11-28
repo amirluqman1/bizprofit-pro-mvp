@@ -922,4 +922,9 @@ export const MS = {
   "{n} days cleared.": "{n} hari dikosongkan semula.",
   "Mark {n} unmarked staff as Present for {d}?": "Tanda {n} staf yang belum ditanda sebagai Hadir untuk {d}?",
   "Mark {n} empty days ({m} staff) as Present?\n\nCheck first: absent and leave days must be marked before this.": "Tanda {n} hari kosong ({m} staf) sebagai Hadir?\n\nSemak dulu: hari tidak hadir dan cuti mesti ditanda sebelum ini.",
+  "Reason for allowance / deduction": "Sebab elaun / potongan",
+  "Required if allowance or deduction is above RM 0": "Wajib jika elaun atau potongan lebih RM 0",
+  "Reason: {x}": "Sebab: {x}",
+  "Only the owner or admin can pay salaries. Save a draft for them to review and pay.": "Hanya owner atau admin boleh bayar gaji. Simpan draf untuk mereka semak dan bayar.",
+  "Write the reason for the allowance or deduction before paying.": "Tulis sebab elaun atau potongan sebelum bayar.",
 };

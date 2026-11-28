@@ -19,6 +19,9 @@ const tabFromHash = () => {
 };
 const cents = n => Math.round(Number(n || 0) * 100);
 const fromCents = c => c / 100;
+// Bahagi dan bundar separuh ke atas secara TEPAT (integer, BigInt): sama dengan round() dalam
+// payroll_calc() di database. Jangan guna float untuk gaji: 1 sen beza = bayaran ditolak.
+const rdiv = (a, b) => Number((2n * BigInt(a) + BigInt(b)) / (2n * BigInt(b)));
 const PAY_TYPE = { harian: ['Daily', '/day', 'Daily wage (RM)'], mingguan: ['Weekly', '/week', 'Weekly wage (RM)'], bulanan: ['Monthly', '/month', 'Monthly salary (RM)'] };   // diterjemah semasa papar
 const payLabel = e => `${t(PAY_TYPE[e.pay_type][0])} ${rm(e.rate)}${t(PAY_TYPE[e.pay_type][1])}${Number(e.ot_rate) ? ' · OT ' + rm(e.ot_rate) + t('/hr') : ''}`;
 // Bilangan minggu dalam tempoh (contoh 7 hari = 1, 30 hari = 4.29)
@@ -36,7 +39,11 @@ const DEFAULT_WORKDAYS = { mingguan: 6, bulanan: 26 };
 const absentRuleOf = e => (e.pay_type === 'harian' ? 'penuh' : e.absent_rule || 'penuh');
 // Potongan sehari dalam sen (boleh ada pecahan; dibundarkan selepas darab hari).
 const absentPerDay = e => absentRuleOf(e) === 'sehari' ? cents(e.rate) / Number(e.absent_workdays || DEFAULT_WORKDAYS[e.pay_type])
-  : absentRuleOf(e) === 'tetap' ? cents(e.absent_amount) : 0;
+  : absentRuleOf(e) === 'tetap' ? cents(e.absent_amount) : 0;   // paparan sahaja
+// Jumlah potongan (sen) untuk `halves` separuh hari tidak hadir; dibundar sekali (sama dengan database).
+const absentFull = (e, halves) => absentRuleOf(e) === 'sehari'
+  ? rdiv(BigInt(halves) * BigInt(cents(e.rate)), 2 * Number(e.absent_workdays || DEFAULT_WORKDAYS[e.pay_type]))
+  : absentRuleOf(e) === 'tetap' ? rdiv(BigInt(halves) * BigInt(cents(e.absent_amount)), 2) : 0;
 const daysInMonth = iso => Number(endOfMonth(iso).slice(-2));
 
 // Adakah tempoh ini tepat satu kitaran bulan? (1–30 Nov, atau 15 Nov – 14 Dis)
@@ -52,11 +59,17 @@ function isMonthCycle(from, to) {
 // Satu kitaran bulan penuh = gaji penuh. Tempoh lain dikira pro-rata ikut hari kalendar:
 // setiap hari bernilai gaji ÷ bilangan hari bulan itu (Nov = 30, Dis = 31).
 // Contoh: gaji RM2,000, tempoh 7 hari dalam November = 2000 × 7/30 = RM466.67.
+// 377580 = KSK(28, 29, 30, 31): setiap hari = 377580 ÷ hari bulan itu, supaya kiraan tepat tanpa pecahan.
+// Mesti sama dengan payroll_calc() di database (Fasa 20).
+const MONTH_LCM = 377580;
 function monthlyBase(rateCents, days, from, to) {
-  const cycle = isMonthCycle(from, to);
-  const total = (to < from) ? 0 : Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
-  const share = days.reduce((acc, d) => acc + (cycle ? 1 / total : 1 / daysInMonth(d)), 0);
-  return Math.round(rateCents * share);
+  if (to < from || !days.length) return 0;
+  if (isMonthCycle(from, to)) {
+    const total = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+    return rdiv(BigInt(rateCents) * BigInt(days.length), total);
+  }
+  const share = days.reduce((acc, d) => acc + MONTH_LCM / daysInMonth(d), 0);
+  return rdiv(BigInt(rateCents) * BigInt(share), MONTH_LCM);
 }
 
 async function loadEmployees() {
@@ -459,7 +472,7 @@ function slipData(r) {
   return {
     business: co.name, regNo: co.regNo,
     info: [['Name', r.e.name], ...(r.e.position ? [['Position', r.e.position]] : []), ['Outlet', outletName(r.e.outlet_id)],
-      ['Period', dateRange(r.from, r.to)]],
+      ['Period', dateRange(r.from, r.to)], ...(r.note && (r.allow || r.ded) ? [['Note', r.note]] : [])],
     items, total: money(r.net),
     status: r.paid ? `${t('Paid')} ${new Date(r.slip.paid_at).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}`
       : r.slip ? t('Draft (unpaid)') : t('Unpaid')
@@ -481,11 +494,13 @@ function comboData(list) {
   if (absDed) items.push([t('Absent deduction (total {n} days)', { n: sum('absDays') }), '-' + money(absDed)]);
   if (adv) items.push([t('Advance deduction (total)'), '-' + money(adv)]);
   const paid = list.filter(r => r.paid);
+  const notes = list.filter(r => r.note && (r.allow || r.ded)).map(r => r.note);
   const co = outletCompany(r0.e.outlet_id);
   return {
     business: co.name, regNo: co.regNo, compact: items.length > 9,
     info: [['Name', r0.e.name], ...(r0.e.position ? [['Position', r0.e.position]] : []), ['Outlet', outletName(r0.e.outlet_id)],
-      ['Payments', t('{n} payslips combined', { n: list.length })], ['Period', dateRange(state.from, state.to)]],
+      ['Payments', t('{n} payslips combined', { n: list.length })], ['Period', dateRange(state.from, state.to)],
+      ...(notes.length ? [['Note', notes.join('; ')]] : [])],
     items, total: money(sum('net')),
     status: paid.length === list.length
       ? t(paid.length === 1 ? 'Paid in {n} payment ({d})' : 'Paid in {n} payments ({d})', { n: paid.length, d: paid.map(r => short(new Date(r.slip.paid_at).toLocaleDateString('sv-SE', { timeZone: 'Asia/Kuala_Lumpur' }))).join(', ') })
@@ -513,8 +528,10 @@ function drawSlip(doc, d) {
   doc.setFontSize(10);
   d.info.filter(i => i[0] !== 'Period').forEach(([k, v]) => {
     doc.setFont('helvetica', 'normal'); color(GREY); doc.text(t(k), M + 1, y); doc.text(':', M + 29, y);
-    doc.setFont('helvetica', 'bold'); color(INK); doc.text(pdfText(v), M + 35, y, { maxWidth: R - M - 35 });
-    y += 6.5;
+    doc.setFont('helvetica', 'bold'); color(INK);
+    const lines = doc.splitTextToSize(pdfText(v), R - M - 35);   // nota panjang: turun baris, jangan bertindih
+    doc.text(lines, M + 35, y);
+    y += 6.5 + (lines.length - 1) * 4.5;
   });
   y += 1; stroke(LINE); doc.setLineWidth(0.3); doc.line(M, y, R, y); y += 7;
 
@@ -589,6 +606,7 @@ let payrollVersion = 0;   // hanya pemuatan terkini dipaparkan (elak paparan ber
 
 async function renderPayroll() {
   const v = ++payrollVersion;
+  const canPay = session.isAdminUp;   // bayar gaji & advance: owner/admin sahaja (dikunci di database, Fasa 20)
   const box = $('pkBody');
   if (!isPro()) { box.innerHTML = lockCard('Payroll', 'Calculate daily, weekly or monthly pay with OT, allowances, deductions and advances, then share a PDF payslip.'); return; }
   box.innerHTML = `
@@ -609,11 +627,11 @@ async function renderPayroll() {
       </div>
     </section>
     <details class="card adv-box" id="pyAdvances"></details>
-    <button class="btn ghost block" id="pyAdvanceBtn" type="button">${t('+ Give advance (early pay)')}</button>
+    ${canPay ? `<button class="btn ghost block" id="pyAdvanceBtn" type="button">${t('+ Give advance (early pay)')}</button>` : ''}
     <div id="pyList" class="list"><div class="skel"></div></div>
     <p class="note-line small">${icon('lock')}${t('Daily wage = days present × rate (half day = 0.5). Monthly salary is paid in full for a full month; shorter periods are pro-rated by calendar days. Weekly and monthly absences follow each staff member\'s setting in the Staff tab. Paid payslips are locked.')}</p>`;
 
-  $('pyAdvanceBtn').onclick = () => openAdvance(null);
+  if (canPay) $('pyAdvanceBtn').onclick = () => openAdvance(null);
   box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
     state.preset = b.dataset.preset; [state.from, state.to] = presetRange(state.preset); renderPayroll();
   });
@@ -648,7 +666,7 @@ async function renderPayroll() {
 
   const allDays = [];
   for (let d = state.from; d <= state.to; d = addDays(d, 1)) allDays.push(d);
-  const paidRow = (e, slip) => ({ e, slip, paid: true, from: slip.period_start, to: slip.period_end,
+  const paidRow = (e, slip) => ({ e, slip, paid: true, note: slip.note || '', from: slip.period_start, to: slip.period_end,
     days: Number(slip.days_worked), ot: Number(slip.ot_hours), absent: 0,
     base: cents(slip.base_amount), otAmt: cents(slip.ot_amount), allow: cents(slip.allowance), ded: cents(slip.deduction),
     absDays: Number(slip.absent_days || 0), absDed: cents(slip.absent_deduction), absFull: cents(slip.absent_deduction),
@@ -669,20 +687,24 @@ async function renderPayroll() {
     const openDays = allDays.length - covered.size;
     if (covered.size && !openDays && !exact) return;          // semua hari dah dibayar
     const mine = (att.data || []).filter(a => a.employee_id === e.id && !covered.has(a.work_date));
-    const days = mine.reduce((acc, a) => acc + DAY_VALUE[a.status], 0);
-    const ot = mine.reduce((acc, a) => acc + Number(a.ot_hours), 0);
+    // Semua dalam integer (separuh hari, jam OT × 100) supaya sama tepat dengan payroll_calc() di database.
+    const halves = mine.reduce((acc, a) => acc + DAY_VALUE[a.status] * 2, 0);
+    const ot100 = mine.reduce((acc, a) => acc + Math.round(Number(a.ot_hours) * 100), 0);
+    const days = halves / 2, ot = ot100 / 100;
     const absent = mine.filter(a => a.status === 'tidak_hadir').length;
-    const absDays = absentRuleOf(e) === 'penuh' ? 0 : mine.reduce((acc, a) => acc + (ABSENT_VALUE[a.status] || 0), 0);
-    const absFull = Math.round(absDays * absentPerDay(e));
-    const weeks = covered.size ? Math.round(openDays / 7 * 100) / 100 : weeksIn(state.from, state.to);
-    const base = e.pay_type === 'harian' ? Math.round(days * cents(e.rate))
-      : e.pay_type === 'mingguan' ? Math.round(weeks * cents(e.rate))
+    const absHalves = absentRuleOf(e) === 'penuh' ? 0 : mine.reduce((acc, a) => acc + (ABSENT_VALUE[a.status] || 0) * 2, 0);
+    const absDays = absHalves / 2;
+    const absFull = absentFull(e, absHalves);
+    const weeks100 = rdiv(openDays * 100, 7);                 // minggu × 100 (30 hari = 429 → 4.29 minggu)
+    const weeks = weeks100 / 100;
+    const base = e.pay_type === 'harian' ? rdiv(BigInt(halves) * BigInt(cents(e.rate)), 2)
+      : e.pay_type === 'mingguan' ? rdiv(BigInt(weeks100) * BigInt(cents(e.rate)), 100)
       : monthlyBase(cents(e.rate), allDays.filter(d => !covered.has(d)), state.from, state.to);
-    const otAmt = Math.round(ot * cents(e.ot_rate));
+    const otAmt = rdiv(BigInt(ot100) * BigInt(cents(e.ot_rate)), 100);
     if (covered.size && !exact && base + otAmt === 0) return;  // baki hari tiada gaji
-    const allow = cents(exact?.allowance), ded = cents(exact?.deduction);
+    const allow = cents(exact?.allowance), ded = cents(exact?.deduction), note = exact?.note || '';
     const bal = Math.max(0, balance.get(e.id) || 0);
-    rows.push(recalc({ e, slip: exact, paid: false, from: state.from, to: state.to, partial: covered.size ? openDays : 0, openDays,
+    rows.push(recalc({ e, slip: exact, paid: false, note, from: state.from, to: state.to, partial: covered.size ? openDays : 0, openDays,
       days, ot, absent, absDays, absFull, absDed: 0, weeks, base, otAmt, allow, ded, bal, rate: Number(e.rate), otRate: Number(e.ot_rate), payType: e.pay_type }));
   });
 
@@ -731,9 +753,11 @@ async function renderPayroll() {
         ${baseLine}
         <div class="kv"><span>${t('OT {n} hrs × {r}', { n: r.ot, r: rm(r.otRate) })}</span><b>${rm(fromCents(r.otAmt))}</b></div>
         ${r.paid
-          ? `<div class="kv"><span>${t('Allowance')}</span><b>${rm(fromCents(r.allow))}</b></div><div class="kv"><span>${t('Deduction')}</span><b class="neg">−${rm(fromCents(r.ded))}</b></div>`
+          ? `<div class="kv"><span>${t('Allowance')}</span><b>${rm(fromCents(r.allow))}</b></div><div class="kv"><span>${t('Deduction')}</span><b class="neg">−${rm(fromCents(r.ded))}</b></div>
+              ${r.note && (r.allow || r.ded) ? `<p class="note-line small">${t('Reason: {x}', { x: esc(r.note) })}</p>` : ''}`
           : `<div class="two"><label class="field">${t('Allowance (RM)')}<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.allow)}" data-allow></label>
-              <label class="field">${t('Deduction (RM)')}<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.ded)}" data-ded></label></div>`}
+              <label class="field">${t('Deduction (RM)')}<input type="number" inputmode="decimal" min="0" step="0.01" value="${fromCents(r.ded)}" data-ded></label></div>
+              <label class="field">${t('Reason for allowance / deduction')}<input type="text" maxlength="200" value="${esc(r.note)}" placeholder="${t('Required if allowance or deduction is above RM 0')}" data-note></label>`}
         ${absLine}
         ${advLine}
       </div>
@@ -742,9 +766,10 @@ async function renderPayroll() {
       <div class="dialog-actions">
         <button class="btn ghost" type="button" data-pdf>${icon('download')}PDF</button>
         <button class="btn ghost" type="button" data-copy>${t('Copy payslip')}</button>
-        ${r.e.active && !r.paid ? `<button class="btn ghost" type="button" data-advance>${t('+ Advance')}</button>` : ''}
-        ${r.paid ? '' : `<button class="btn ghost" type="button" data-draft>${t('Save draft')}</button><button class="btn primary" type="button" data-pay>${t('Pay')}</button>`}
+        ${canPay && r.e.active && !r.paid ? `<button class="btn ghost" type="button" data-advance>${t('+ Advance')}</button>` : ''}
+        ${r.paid ? '' : `<button class="btn ghost" type="button" data-draft>${t('Save draft')}</button>${canPay ? `<button class="btn primary" type="button" data-pay>${t('Pay')}</button>` : ''}`}
       </div>
+      ${!canPay && !r.paid ? `<p class="note-line small">${icon('lock')}${t('Only the owner or admin can pay salaries. Save a draft for them to review and pay.')}</p>` : ''}
     </section>`;
   }).join('');
 
@@ -754,6 +779,7 @@ async function renderPayroll() {
     return (a >= 0 && d >= 0) ? { allow: Math.round(a * 100), ded: Math.round(d * 100) } : null;
   };
   $('pyList').addEventListener('input', e => {
+    if (e.target.matches('[data-note]')) { rowOf(e.target).note = e.target.value; return; }
     if (!e.target.matches('[data-allow],[data-ded]')) return;
     const card = e.target.closest('[data-row]'), r = rowOf(card), x = readExtras(card);
     if (!x) return;
@@ -771,6 +797,7 @@ async function renderPayroll() {
       rate: r.rate, days_worked: r.days, ot_hours: r.ot, ot_rate: r.otRate,
       base_amount: fromCents(r.base), ot_amount: fromCents(r.otAmt), allowance: fromCents(r.allow), deduction: fromCents(r.ded),
       absent_days: r.absDays || 0, absent_deduction: fromCents(r.absDed || 0),
+      note: (r.note || '').trim() || null,   // sebab elaun/potongan (wajib sebelum bayar jika > RM0)
       open_days: r.openDays   // database semak semula semasa bayar (hari yang belum dibayar)
     };
     const res = r.slip
@@ -821,6 +848,11 @@ async function renderPayroll() {
     }
     if (btn.matches('[data-pay]')) {
       if (r.net <= 0 && r.adv <= 0) { toast(t('Total is RM 0, nothing to pay.'), 'error'); return; }
+      if ((r.allow || r.ded) && !(r.note || '').trim()) {
+        toast(t('Write the reason for the allowance or deduction before paying.'), 'error');
+        card.querySelector('[data-note]')?.focus();
+        return;
+      }
       const methods = await loadPayMethods();
       $('payInfo').textContent = `${r.e.name} · ${dateRange(r.from, r.to)} · ${rm(fromCents(r.net))}` + (r.adv ? ` (${t('after advance deduction {a}', { a: rm(fromCents(r.adv)) })})` : '');
       $('payMethod').replaceChildren(...methods.map(m => new Option(m, m)));
@@ -835,9 +867,15 @@ async function renderPayroll() {
     $('payConfirm').disabled = true;
     const id = await saveDraft(r);            // simpan nilai terkini dahulu
     if (!id) { $('payConfirm').disabled = false; return; }
-    const { error } = await sb.rpc('pay_payroll', { p_payroll: id, p_payment_method: $('payMethod').value });
+    // Database kira semula dan tolak bayaran jika angka atau jumlah bersih tak sama dengan yang dipapar.
+    const { error } = await sb.rpc('pay_payroll', { p_payroll: id, p_payment_method: $('payMethod').value, p_expected_net: fromCents(r.net) });
     $('payConfirm').disabled = false;
-    if (error) { toast(t('Payment failed: ') + errText(error), 'error'); return; }
+    if (error) {
+      toast(t('Payment failed: ') + errText(error), 'error');
+      $('payDialog').close();
+      renderPayroll();   // papar angka terkini dari database sebelum cuba lagi
+      return;
+    }
     $('payDialog').close();
     toast(r.net > 0 ? t("{x}'s salary paid and recorded as Staff Wages.", { x: r.e.name }) : t("{x}'s salary is fully covered by advance.", { x: r.e.name }));
     renderPayroll();
