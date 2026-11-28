@@ -115,7 +115,7 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS). Semua PR hingga #44 sudah di-merge.
+Dikemas kini 28 Nov 2026. Semua PR hingga #46 sudah di-merge.
 
 ### Sudah siap & aktif di production
 - **Gaji (PR #41, Fasa 18)**: gaji bulanan pro-rata ikut hari kalendar (sebulan penuh = gaji penuh; "Minggu ini"
@@ -136,7 +136,7 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
   Harga disalin dari menu oleh DB; jumlah & baki dikira oleh `pos_pay_order()` (selamat dipanggil 2 kali).
   ID order/item dijana di tablet (asas offline). Jualan POS tak boleh dipadam/ubah jumlah di Rekod.
 
-- **Gaji Fasa 20 (branch `ccr-4c60307b-75ne9y`, migration BELUM dijalankan di production)**: `payroll_calc()` kira
+- **Gaji Fasa 20 (PR #46, aktif di production 28 Nov; ujian di production 0 gagal)**: `payroll_calc()` kira
   gaji asas/OT/potongan tidak hadir dalam sen integer; `pay_payroll(slip, kaedah, p_expected_net)` tolak bayaran jika
   angka slip atau jumlah bersih tak sama dengan kiraan DB. Bayar gaji & advance = owner/admin sahaja (manager draf).
   Elaun/potongan > RM0 wajib nota (`payroll.note`). `pekerja.js` guna kiraan integer yang SAMA (`rdiv`, `MONTH_LCM`);
@@ -147,6 +147,7 @@ Dikemas kini 27 Nov 2026 (akhir sesi panjang: kritik app → baiki gaji → POS)
   Semak juga sama ada printer bersambung sendiri bila POS dibuka semula (`navigator.bluetooth.getDevices`).
   Semasa ditulis: 0 order POS, 0 menu berkategori di production.
 - Gaji: "Jika tidak hadir" di Staf, dan angka Gaji untuk "Minggu ini" (pekerja bulanan).
+- Gaji Fasa 20: bayar satu slip sebenar (owner), manager nampak "Simpan draf" sahaja, sebab elaun tercetak dalam PDF.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
 ### Seterusnya (ikut keutamaan; tanya pengguna dahulu sebelum mula)
