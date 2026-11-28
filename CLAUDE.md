@@ -45,7 +45,7 @@ harga lama masih boleh dibaca. Pengecualian: transaksi untuk Free terhad kepada 
 - `supabase/migrations/`: `YYYYMMDD_faseN_nama.sql`. `supabase/tests/`: `YYYYMMDD_faseN_ujian.sql`.
 - `pos/`: app POS kaunter (tablet). Import modul dari `../../app/js/`; teks juga guna `t()` + `i18n-ms.js`.
   Resit ESC/POS ASCII sahaja, 32 aksara sebaris (`pos/js/printer.js`). `pos/uji-printer.html` = halaman ujian printer.
-- `design/`: konsep reka bentuk sahaja, bukan sebahagian app.
+- `design/`: konsep reka bentuk sahaja, bukan sebahagian app. `docs/`: pelan kerja (cth. `POS_PELAN.md`).
 - `index.html` & `inventory-emerald-v1.html` di root hanya melencong ke `app/`.
 
 ## Konvensyen kod
@@ -115,7 +115,7 @@ Setiap kali ubah fail dalam `app/`:
 - Satu commit satu perubahan yang logik.
 
 ## Status semasa (kemas kini atau buang bahagian ini bila selesai)
-Dikemas kini 28 Nov 2026. Semua PR hingga #47 sudah di-merge.
+Dikemas kini 28 Nov 2026. Semua PR hingga #48 sudah di-merge.
 
 ### Sudah siap & aktif di production
 - **Gaji (PR #41, Fasa 18)**: gaji bulanan pro-rata ikut hari kalendar (sebulan penuh = gaji penuh; "Minggu ini"
@@ -160,6 +160,8 @@ Dikemas kini 28 Nov 2026. Semua PR hingga #47 sudah di-merge.
 - Supabase → Authentication: benarkan sign-up + Redirect URL `https://amirluqman1.github.io/bizprofit-pro-mvp/`.
 
 ### Seterusnya (ikut keutamaan; tanya pengguna dahulu sebelum mula)
+**POS: ikut `docs/POS_PELAN.md`** (P1–P8, susunan ikut kebergantungan; satu fasa satu PR; pengguna uji di kedai
+antara fasa; tanya soalan "Perlu ditanya" di awal setiap fasa). Item POS di bawah sudah dimasukkan ke pelan itu.
 1. **Maklum balas ujian POS sebenar** → baiki apa yang pengguna jumpa.
 2. **Rekod: paparan ringkasan harian jualan POS** (On/Off, paparan sahaja; data kekal 1 order = 1 transaksi).
    Pengguna kata "jawab nanti".
