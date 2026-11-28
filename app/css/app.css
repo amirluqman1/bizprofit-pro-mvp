@@ -900,6 +900,8 @@ a.h-tile:active { transform: scale(.99); }
 .at-name { display: block; width: 78px; padding: 6px 4px 6px 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .at-cell { width: 30px; height: 32px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
 .at-cell:disabled { opacity: .25; cursor: default; }
+.at-cell.locked { border-style: dashed; border-color: var(--muted); }   /* gaji hari ini sudah dibayar */
+.chips.st .chip:disabled, .ot input:disabled { opacity: .55; cursor: default; }
 .at-cell.s-hadir { background: var(--good-soft); border-color: rgba(16, 185, 129, .45); color: var(--mint); }
 .at-cell.s-separuh { background: var(--amber-bg); border-color: rgba(247, 197, 107, .4); color: var(--amber); }
 .at-cell.s-cuti { background: rgba(122, 180, 230, .12); border-color: rgba(122, 180, 230, .4); color: #9fd4f7; }
