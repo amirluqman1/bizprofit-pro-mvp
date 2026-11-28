@@ -2,8 +2,8 @@
 // Owner: semua pekerja. Manager: pekerja outlet sendiri yang bukan peringkat pengurus.
 // Semua sekatan ini dikuatkuasa di database; UI hanya menyusun paparan.
 import { $, esc, icon, toast, loadJsPdf, pdfText } from '../ui.js';
-import { sb, session, ALL_OUTLETS, outletName, outletCompany } from '../session.js';
-import { rm, todayKL, addDays, endOfMonth, dateRange, dateLong } from '../format.js';
+import { sb, session, ALL_OUTLETS, outletName, outletCompany, weekStartDay } from '../session.js';
+import { rm, todayKL, addDays, endOfMonth, dateRange, dateLong, weekStartOf } from '../format.js';
 import { isPro, lockCard, proTag } from '../plan.js';
 import { t, locale, getLang } from '../i18n.js';
 
@@ -90,7 +90,7 @@ async function loadPayMethods() {
 function presetRange(preset) {
   const td = todayKL();
   if (preset === 'bulan_lepas') { const s = addDays(td.slice(0, 7) + '-01', -1).slice(0, 7) + '-01'; return [s, endOfMonth(s)]; }
-  if (preset === 'minggu_ini') { const dow = new Date(td + 'T00:00:00Z').getUTCDay(); const s = addDays(td, -((dow + 6) % 7)); return [s, addDays(s, 6)]; }
+  if (preset === 'minggu_ini') { const s = weekStartOf(td, weekStartDay()); return [s, addDays(s, 6)]; }
   const s = td.slice(0, 7) + '-01'; return [s, endOfMonth(s)];
 }
 
@@ -264,7 +264,7 @@ const dow1 = i => (DOW1S[getLang()] || DOW1S.en)[i];
 function gridRange() {
   const d = state.date;
   if (state.atView === 'week') {
-    const s = addDays(d, -((new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7));   // Isnin – Ahad
+    const s = weekStartOf(d, weekStartDay());   // ikut tetapan outlet (lalai Isnin – Ahad)
     return [s, addDays(s, 6)];
   }
   const s = d.slice(0, 8) + '01';

@@ -6,6 +6,8 @@ import { planName, trialDaysLeft, isPro, proTag, PLANS, planKey } from '../plan.
 import { t, getLang, setLang } from '../i18n.js';
 import { membersHTML, bindMembers } from '../members.js';
 
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];   // nilai (i + 1) % 7: Isnin = 1 ... Ahad = 0
+
 export default {
   render(view) {
     const ownOutlet = session.outlets.find(o => o.id === session.profile.outlet_id)?.name || '-';
@@ -71,6 +73,8 @@ export default {
           <p class="note" id="coOutlet"></p>
           <label class="field">${t('Company name')}<input id="coName" maxlength="120" placeholder="${t('e.g. Lubok Sarapan Enterprise')}"></label>
           <label class="field">${t('Registration no. (SSM)')} <small>${t('optional')}</small><input id="coReg" maxlength="60" placeholder="${t('e.g. 202301012345 (1234567-X)')}"></label>
+          <label class="field">${t('Week starts on')}<select id="coWeek">${WEEKDAYS.map((d, i) => `<option value="${(i + 1) % 7}">${t(d)}</option>`).join('')}</select>
+            <small>${t('Used for the weekly attendance grid and "This week" in Payroll. Paid payslips do not change.')}</small></label>
           <div class="dialog-actions">
             <button class="btn ghost" type="button" id="coCancel">${t('Cancel')}</button>
             <button class="btn primary" id="coSave">${t('Save')}</button>
@@ -164,12 +168,16 @@ export default {
         $('coOutlet').textContent = t('Outlet') + ': ' + editing.name;
         $('coName').value = editing.company_name || '';
         $('coReg').value = editing.company_reg_no || '';
+        $('coWeek').value = String(editing.week_start ?? 1);
         $('coDialog').showModal();
       };
       $('coCancel').onclick = () => $('coDialog').close();
       $('coForm').addEventListener('submit', async e => {
         e.preventDefault();
         const payload = { company_name: $('coName').value.trim() || null, company_reg_no: $('coReg').value.trim() || null };
+        // Hanya hantar hari mula minggu jika berubah: elak ralat bila Fasa 24 belum dijalankan.
+        const ws = Number($('coWeek').value);
+        if (ws !== (editing.week_start ?? 1)) payload.week_start = ws;
         $('coSave').disabled = true;
         const { data, error } = await sb.from('outlets').update(payload).eq('id', editing.id).select('id');
         $('coSave').disabled = false;

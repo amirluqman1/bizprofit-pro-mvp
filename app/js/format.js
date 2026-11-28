@@ -46,3 +46,6 @@ export function dateRange(from, to) {
   const sameYear = from.slice(0, 4) === to.slice(0, 4);
   return dateShort(from) + (sameYear ? '' : ' ' + from.slice(0, 4)) + ' – ' + dateShort(to) + ' ' + to.slice(0, 4);
 }
+
+// Hari pertama minggu yang mengandungi tarikh d. ws: 0 = Ahad ... 6 = Sabtu (lalai 1 = Isnin).
+export const weekStartOf = (d, ws = 1) => addDays(d, -((new Date(d + 'T00:00:00Z').getUTCDay() - ws + 7) % 7));

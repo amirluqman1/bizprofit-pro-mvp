@@ -50,6 +50,21 @@ export function outletCompany(id) {
   return { name: o?.company_name?.trim() || session.business?.name || 'BizProfit Pro', regNo: o?.company_reg_no?.trim() || '' };
 }
 
+// Senarai outlet + hari mula minggu (Fasa 24). Jika kolum belum wujud, muat tanpa dan anggap Isnin.
+async function loadOutlets() {
+  const r = await sb.from('outlets').select('id,name,company_name,company_reg_no,week_start').order('name');
+  if (!r.error) return r;
+  return sb.from('outlets').select('id,name,company_name,company_reg_no').order('name');
+}
+
+// Hari mula minggu untuk outlet dipilih (0 = Ahad ... 6 = Sabtu). Semua outlet: guna nilai yang sama
+// jika semua outlet seragam, kalau tidak Isnin.
+export function weekStartDay() {
+  const list = session.outletId === ALL_OUTLETS ? session.outlets : session.outlets.filter(o => o.id === session.outletId);
+  const set = new Set(list.map(o => o.week_start ?? 1));
+  return set.size === 1 ? [...set][0] : 1;
+}
+
 // Muat profil, syarikat dan outlet. Pulangkan mesej ralat, atau null jika berjaya.
 export async function loadAccount(user) {
   session.user = user;
@@ -61,7 +76,7 @@ export async function loadAccount(user) {
 
   const [{ data: biz }, { data: outlets, error: oe }] = await Promise.all([
     sb.from('businesses').select('*').maybeSingle(),   // '*' supaya tak gagal sebelum kolum pakej wujud
-    sb.from('outlets').select('id,name,company_name,company_reg_no').order('name')
+    loadOutlets()
   ]);
   if (oe) return t('Could not load the outlet list.');
   session.business = biz || null;
