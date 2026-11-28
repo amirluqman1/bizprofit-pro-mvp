@@ -10,27 +10,29 @@ export default {
   render(view) {
     const ownOutlet = session.outlets.find(o => o.id === session.profile.outlet_id)?.name || '-';
     view.innerHTML = `
-      <section class="card">
-        <dl class="info-grid">
-          <dt>${t('Email')}</dt><dd>${esc(session.user.email)}</dd>
-          <dt>${t('Role')}</dt><dd>${esc(t(ROLE_NAME[session.role] || session.role))}</dd>
-          <dt>${t('Outlet')}</dt><dd>${esc(session.isOwner ? t('All outlets') : ownOutlet)}</dd>
-          <dt>${t('Company')}</dt><dd>${esc(session.business?.name || '-')}</dd>
-        </dl>
+      <section class="card acct">
+        <span class="acct-ic">${icon('user')}</span>
+        <div class="acct-main"><b>${esc(session.user.email)}</b>
+          <small>${esc(t(ROLE_NAME[session.role] || session.role))} · ${esc(session.isOwner ? t('All outlets') : ownOutlet)}</small></div>
       </section>
 
+      <h2 class="menu-group">${t('Business')}</h2>
       ${session.isAdminUp ? `
+      <details class="card fold" id="outletFold">
+        <summary><span>${t('Outlets')}</span><em class="fold-n">${session.outlets.length}</em></summary>
       <div class="list" id="coList">
         ${session.outlets.map(o => `<button class="row-btn" type="button" data-outlet="${esc(o.id)}">${icon('store')}<span>${esc(o.name)}<small>${esc(o.company_name ? o.company_name + (o.company_reg_no ? ' · ' + o.company_reg_no : '') : t('Not set'))}</small></span>${icon('chev-right')}</button>`).join('')}
         ${session.isOwner ? `<button class="row-btn" type="button" id="olAdd">${icon('plus-box')}<span>${t('+ Add outlet')}<small>${t('{n} of {max} outlets on the {plan} plan', { n: session.outlets.length, max: PLANS[planKey()].outlets, plan: esc(planName()) })}</small></span></button>` : ''}
-      </div>` : ''}
+      </div>
+      </details>` : ''}
 
       ${membersHTML()}
 
       <div class="list"><a class="row-btn" href="#/pakej">${icon('layers')}<span>${t('Plan')}: ${esc(planName())}<small>${trialDaysLeft() ? t('Pro trial · {n} days left', { n: trialDaysLeft() }) : t('Compare plans and upgrade')}</small></span>${icon('chev-right')}</a></div>
 
-      ${session.isAdminUp ? `<div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>${t('Profit &amp; Loss statement')} ${isPro() ? '' : proTag()}<small>${t('Yearly statement per business, laid out like LHDN Form B')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/pos">${icon('cart')}<span>${t('POS (counter)')}<small>${t('POS settings, menu and sold-out items')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>${t('Food Cost')} ${isPro() ? '' : proTag()}<small>${t('Cost per plate, menu margins and food cost %')}</small></span>${icon('chev-right')}</a></div>` : ''}
+      ${session.isAdminUp ? `<h2 class="menu-group">${t('Tools')}</h2><div class="list"><a class="row-btn" href="#/pnl">${icon('receipt')}<span>${t('Profit &amp; Loss statement')} ${isPro() ? '' : proTag()}<small>${t('Yearly statement per business, laid out like LHDN Form B')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/pos">${icon('cart')}<span>${t('POS (counter)')}<small>${t('POS settings, menu and sold-out items')}</small></span>${icon('chev-right')}</a><a class="row-btn" href="#/foodcost">${icon('cart')}<span>${t('Food Cost')} ${isPro() ? '' : proTag()}<small>${t('Cost per plate, menu margins and food cost %')}</small></span>${icon('chev-right')}</a></div>` : ''}
 
+      <h2 class="menu-group">${t('Settings')}</h2>
       <div class="list">
         ${isInstalled() ? '' : `<button class="row-btn" type="button" id="installBtn">${icon('download')}<span>${t('Install app')}<small>${t('Add BizProfit Pro to your phone home screen')}</small></span></button>`}
         <div class="row-btn lang-row">${icon('link')}<span>${t('Language')}<small>${t('Bahasa Melayu or English')}</small></span>

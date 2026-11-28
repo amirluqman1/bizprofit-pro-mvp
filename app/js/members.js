@@ -14,12 +14,12 @@ const shortDate = iso => new Date(iso).toLocaleDateString(locale(), { day: 'nume
 export function membersHTML() {
   if (!session.isAdminUp) return '';
   return `
-    <section class="card members" aria-labelledby="mbTitle">
-      <div class="section-row"><h2 class="section-title" id="mbTitle">${t('User accounts')}</h2>
-        <button class="btn white" id="mbInvite" type="button">${t('+ Invite staff')}</button></div>
+    <details class="card fold members" id="mbFold">
+      <summary><span id="mbTitle">${t('User accounts')}</span><em class="fold-n" id="mbCount"></em></summary>
       <p class="note small">${t('Each person gets their own login. Share the invite link by WhatsApp; it works once and expires in 7 days.')}</p>
+      <button class="btn ghost sm" id="mbInvite" type="button">${t('+ Invite staff')}</button>
       <div id="mbList" class="mb-list"><div class="skel"></div></div>
-    </section>
+    </details>
 
     <dialog id="mbDialog">
       <form id="mbForm" class="stack" novalidate>
@@ -78,6 +78,7 @@ async function load() {
         <button class="btn ghost sm danger" type="button" data-cancel="${esc(x.id)}">${t('Cancel')}</button></div>
     </div>`).join('');
   $('mbList').innerHTML = members + pending;
+  $('mbCount').textContent = (m.data || []).length;
 }
 
 function openShare(token, role, outletId, label) {

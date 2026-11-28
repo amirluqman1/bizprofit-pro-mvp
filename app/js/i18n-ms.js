@@ -13,6 +13,8 @@ export const MS = {
   'Notifications': 'Notifikasi',
   'Notifications: {n} items need restocking': 'Notifikasi: {n} barang perlu ditambah',
   'Account': 'Akaun',
+  'Settings': 'Tetapan',
+  'Tools': 'Alat',
   'Choose outlet': 'Pilih outlet',
   'Main menu': 'Menu utama',
   'No internet. The app still opens, but data cannot be loaded or saved.': 'Tiada internet. App masih boleh dibuka, tapi data tak boleh dimuat atau disimpan.',
